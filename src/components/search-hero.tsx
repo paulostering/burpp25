@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -178,19 +179,30 @@ export function SearchHero() {
   }
 
   return (
-    <div className="bg-gray-100">
-      <div className="mx-auto max-w-4xl px-4 py-48">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-4">
-            Find the perfect service for your needs
+    <div className="relative bg-gray-100 rounded-bl-3xl overflow-hidden">
+      {/* Background Image */}
+      <div className="absolute inset-0 z-0">
+        <Image
+          src="/images/home-hero.jpeg"
+          alt="Hero Background"
+          fill
+          className="object-cover"
+          priority
+        />
+      </div>
+      
+      <div className="relative z-10 mx-auto max-w-6xl pt-48 mx-6">
+        <div className="text-left mb-8 max-w-3xl">
+          <h1 className="text-5xl font-bold mb-4 text-white">
+            Find Your Next Anything
           </h1>
-          <p className="text-lg text-muted-foreground">
-            Discover local professionals and book services instantly
+          <p className="text-xl text-white">
+            Burpp is your go-to source for finding highly rated independent contractors to assist you with anything. <strong>Fast. Local. Reliable</strong>
           </p>
         </div>
 
         {/* Search Form */}
-        <div className="relative w-full max-w-4xl mx-auto">
+        <div className="relative w-full max-w-4xl">
           <div className="flex items-center bg-white border border-gray-300 rounded-full shadow-lg hover:shadow-xl transition-shadow duration-200 pl-6 pr-3 py-2 h-16">
             {/* Category Section */}
             <div className="flex-1 min-w-0 relative" ref={categoryContainerRef}>
@@ -206,7 +218,7 @@ export function SearchHero() {
                   }
                 }}
                 onFocus={() => setIsCategoryOpen(true)}
-                className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 text-base text-gray-700 placeholder:text-gray-500 pr-8"
+                className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 text-xl font-semibold text-gray-700 placeholder:text-gray-500 pr-8"
               />
               {categorySearch && (
                 <button
@@ -287,7 +299,7 @@ export function SearchHero() {
                     handleLocationSearch(e.target.value)
                   }}
                   onFocus={() => setIsLocationOpen(true)}
-                  className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 text-base text-gray-700 placeholder:text-gray-500 pr-8"
+                  className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 text-xl font-semibold text-gray-700 placeholder:text-gray-500 pr-8"
                 />
                 {location && (
                   <button
@@ -337,6 +349,18 @@ export function SearchHero() {
             >
               <Search className="h-5 w-5" />
             </Button>
+          </div>
+        </div>
+        
+        {/* Scuba Instructor Tag - Inline */}
+        <div className="mt-4 flex items-center mt-36 mb-12">
+          <div className="bg-black/50 backdrop-blur-sm pl-4 pr-8 py-4 shadow-lg border-l-4 border-primary">
+            <div className="text-lg font-medium text-white">
+              Scuba Instructor
+            </div>
+            <div className="text-xs text-white/80">
+              Claire From Haleiwa, HI
+            </div>
           </div>
         </div>
       </div>

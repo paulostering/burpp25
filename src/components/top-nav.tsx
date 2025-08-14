@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
@@ -29,7 +30,7 @@ export function TopNav() {
   // Hide navigation on auth pages
   const isAuthPage = pathname?.includes('/login') || pathname?.includes('/signup')
   // Show condensed search on non-homepage pages
-  const isHomePage = pathname === '/'
+  const isHomePage = pathname === '/' || pathname === '/home'
   const showCondensedSearch = !isHomePage && !isAuthPage && !isRegistrationPage
 
   const computeInitial = (user: { user_metadata?: { first_name?: string }; email?: string } | null | undefined) => {
@@ -90,8 +91,14 @@ export function TopNav() {
       <div className="mx-auto flex h-14 items-center justify-between px-10">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2 font-semibold">
-            <div className="h-6 w-6 rounded bg-primary" aria-hidden />
-            <span>Logo</span>
+            <Image 
+              src="/images/burpp_logo.png" 
+              alt="Burpp Logo" 
+              width={80} 
+              height={32} 
+              className="h-8 w-auto"
+              priority
+            />
           </Link>
           
           {/* Condensed Search */}
