@@ -1,0 +1,167 @@
+'use client'
+
+import { useState } from 'react'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Search, MoreHorizontal, Eye, Edit, Trash2, CheckCircle, XCircle } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import type { VendorProfile } from '@/types/db'
+
+interface VendorsDataTableProps {
+  vendors: VendorProfile[]
+}
+
+export function VendorsDataTable({ vendors }: VendorsDataTableProps) {
+  const [searchTerm, setSearchTerm] = useState('')
+
+  const filteredVendors = vendors.filter(vendor =>
+    vendor.business_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    vendor.profile_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    vendor.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    })
+  }
+
+  const formatPrice = (price?: number | null) => {
+    if (!price) return 'Not set'
+    return `$${price.toFixed(2)}/hr`
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Search */}
+      <div className="flex items-center space-x-2">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search vendors..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-8"
+          />
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Business</TableHead>
+              <TableHead>Contact</TableHead>
+              <TableHead>Rate</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Approval</TableHead>
+              <TableHead>Joined</TableHead>
+              <TableHead className="w-[50px]">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredVendors.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center text-muted-foreground">
+                  No vendors found
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredVendors.map((vendor) => (
+                <TableRow key={vendor.id}>
+                  <TableCell>
+                    <div>
+                      <div className="font-medium">
+                        {vendor.business_name || 'Unnamed Business'}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {vendor.profile_title || 'No title'}
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div>
+                      <div className="text-sm">
+                        {vendor.first_name} {vendor.last_name}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {vendor.email}
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>{formatPrice(vendor.hourly_rate)}</TableCell>
+                  <TableCell>
+                    <Badge variant={vendor.admin_approved ? "default" : "secondary"}>
+                      {vendor.admin_approved ? "Approved" : "Pending"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      {vendor.admin_approved ? (
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <XCircle className="h-4 w-4 text-yellow-500" />
+                      )}
+                      <span className="text-sm">
+                        {vendor.admin_approved ? "Approved" : "Needs Review"}
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell>{formatDate(vendor.created_at)}</TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Open menu</span>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem>
+                          <Eye className="mr-2 h-4 w-4" />
+                          View Details
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-red-600">
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Summary */}
+      <div className="text-sm text-muted-foreground">
+        Showing {filteredVendors.length} of {vendors.length} vendors
+      </div>
+    </div>
+  )
+}
+
+
