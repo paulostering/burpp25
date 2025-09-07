@@ -2,6 +2,7 @@ import { GalleryVerticalEnd } from "lucide-react"
 import { SignupForm } from "@/components/signup-form"
 import { createServerSupabase } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
+import Image from "next/image"
 
 export default async function SignupPage() {
   // Check if user is already logged in and redirect accordingly
@@ -31,10 +32,13 @@ export default async function SignupPage() {
       <div className="flex flex-col gap-4 p-6 md:p-10">
         <div className="flex justify-center gap-2 md:justify-start">
           <a href="/" className="flex items-center gap-2 font-medium">
-            <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
-              <GalleryVerticalEnd className="size-4" />
-            </div>
-            Burpp
+            <Image
+              src="/images/burpp_logo.webp"
+              alt="Burpp Logo"
+              width={120}
+              height={40}
+              className="h-8 w-auto"
+            />
           </a>
         </div>
         <div className="flex flex-1 items-center justify-center">
@@ -45,10 +49,19 @@ export default async function SignupPage() {
       </div>
       <div className="bg-muted relative hidden lg:block">
         <img
-          src="/placeholder.svg"
-          alt="Image"
+          src="/images/auth_client.webp"
+          alt="Burpp Client Signup"
           className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
         />
+        {/* Skydiving Pro Tag */}
+        <div className="absolute bottom-8 left-4 bg-black/80 backdrop-blur-sm px-4 py-2 rounded-lg border-l-4 border-primary">
+          <div className="text-sm font-semibold text-white">
+            Skydiving Pro
+          </div>
+          <div className="text-xs text-white/80">
+            Gerald From Scottsdale, AZ
+          </div>
+        </div>
       </div>
     </div>
   )
