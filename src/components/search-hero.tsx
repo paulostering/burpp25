@@ -199,7 +199,6 @@ export function SearchHero() {
           <p className="text-xl text-white">
             Burpp is your go-to source for finding highly rated independent contractors to assist you with anything. <strong>Fast. Local. Reliable</strong>
           </p>
-          test
         </div>
 
         {/* Search Form */}
