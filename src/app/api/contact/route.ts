@@ -7,6 +7,9 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY || '')
 export async function POST(request: NextRequest) {
   try {
     // Check if SendGrid API key is configured
+    console.log('SENDGRID_API_KEY exists:', !!process.env.SENDGRID_API_KEY)
+    console.log('SENDGRID_API_KEY length:', process.env.SENDGRID_API_KEY?.length || 0)
+    
     if (!process.env.SENDGRID_API_KEY) {
       console.error('SendGrid API key not configured')
       return NextResponse.json(
@@ -73,8 +76,9 @@ This message was sent from the Burpp contact form.
       console.log('Email sent successfully to contact@burpp.com')
     } catch (sendGridError) {
       console.error('SendGrid error:', sendGridError)
+      console.error('SendGrid error details:', JSON.stringify(sendGridError, null, 2))
       return NextResponse.json(
-        { error: 'Failed to send email' },
+        { error: 'Failed to send email', details: sendGridError.message },
         { status: 500 }
       )
     }
@@ -86,8 +90,9 @@ This message was sent from the Burpp contact form.
 
   } catch (error) {
     console.error('Contact form error:', error)
+    console.error('Error details:', JSON.stringify(error, null, 2))
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }
