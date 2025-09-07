@@ -1,23 +1,74 @@
+import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabase } from '@/lib/supabase/server'
-import { NextResponse } from 'next/server'
 
+// GET - Fetch all categories
 export async function GET() {
   try {
     const supabase = await createServerSupabase()
     
-    const { data, error } = await supabase
+    const { data: categories, error } = await supabase
       .from('categories')
-      .select('id, name')
-      .order('name')
+      .select('*')
+      .order('name', { ascending: true })
     
     if (error) {
       console.error('Error fetching categories:', error)
       return NextResponse.json({ error: 'Failed to fetch categories' }, { status: 500 })
     }
     
-    return NextResponse.json(data || [])
+    return NextResponse.json(categories)
   } catch (error) {
-    console.error('Error in categories API:', error)
+    console.error('Error in GET /api/categories:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+// POST - Create new category
+export async function POST(request: NextRequest) {
+  try {
+    const supabase = await createServerSupabase()
+    const body = await request.json()
+    
+    console.log('Creating category with data:', body)
+    
+    const { name, icon_url, is_active, is_featured } = body
+    
+    // Validate required fields
+    if (!name) {
+      return NextResponse.json({ error: 'Category name is required' }, { status: 400 })
+    }
+    
+    // Get current user
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    }
+    
+          // Create the category
+      const { data: category, error } = await supabase
+        .from('categories')
+        .insert([
+          {
+            name: name.trim(),
+            icon_url: icon_url || null,
+            is_active: is_active ?? true,
+            is_featured: is_featured ?? false,
+            created_by: user.id,
+            updated_by: user.id
+          }
+        ])
+        .select()
+        .single()
+    
+    if (error) {
+      console.error('Error creating category:', error)
+      return NextResponse.json({ error: error.message || 'Failed to create category' }, { status: 500 })
+    }
+    
+    console.log('Category created successfully:', category)
+    return NextResponse.json(category, { status: 201 })
+  } catch (error) {
+    console.error('Error in POST /api/categories:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

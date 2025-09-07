@@ -104,6 +104,7 @@ export interface Category {
   name: string
   icon_url?: string | null
   is_active: boolean
+  is_featured: boolean
   created_by?: string | null
   updated_by?: string | null
   created_at: string

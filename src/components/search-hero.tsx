@@ -191,7 +191,7 @@ export function SearchHero() {
         />
       </div>
       
-      <div className="relative z-10 mx-auto max-w-6xl pt-48 mx-6">
+      <div className="relative z-10 mx-auto max-w-6xl pt-48 px-6">
         <div className="text-left mb-8 max-w-3xl">
           <h1 className="text-5xl font-bold mb-4 text-white">
             Find Your Next Anything
@@ -343,7 +343,6 @@ export function SearchHero() {
             {/* Search Button */}
             <Button
               onClick={handleSearch}
-              disabled={!selectedCategory || !location}
               size="lg"
               className="ml-4 h-10 w-10 p-0 rounded-full bg-primary hover:bg-primary/90"
             >

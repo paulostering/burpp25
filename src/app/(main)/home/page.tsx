@@ -1,6 +1,8 @@
 "use client"
 
 import { SearchHero } from "@/components/search-hero"
+import { Footer } from "@/components/footer"
+import { FeaturedCategories } from "@/components/featured-categories"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
@@ -14,22 +16,13 @@ export default function Home() {
       <SearchHero />
 
       {/* Section 2: Popular services near you */}
-      <section className="mx-auto max-w-6xl px-4">
+      <section className="mx-auto max-w-6xl px-6">
         <h2 className="mb-4 text-2xl font-semibold">Popular services near you</h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div
-              key={i}
-              className="aspect-square rounded-lg border bg-card p-4 text-center text-sm flex items-center justify-center"
-            >
-              Featured
-            </div>
-          ))}
-        </div>
+        <FeaturedCategories />
       </section>
 
       {/* Section 3: How it works */}
-      <section className="mx-auto max-w-6xl">
+      <section className="mx-auto max-w-6xl px-6">
         <div className="grid gap-8 md:grid-cols-2 md:items-stretch">
           {/* Col 1: Image - Full height */}
           <div className="flex items-center justify-start relative">
@@ -95,7 +88,7 @@ export default function Home() {
       </section>
 
       {/* Section 4: Full-width CTA */}
-      <section className="mx-auto max-w-6xl px-4">
+      <section className="mx-auto max-w-6xl px-6">
         <div className="relative rounded-2xl overflow-hidden">
           {/* Background Image */}
           <div className="absolute inset-0">
@@ -122,6 +115,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Footer */}
+      <Footer />
     </div>
   )
 }

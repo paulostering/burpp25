@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Table,
   TableBody,
@@ -12,25 +12,100 @@ import {
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Search, MoreHorizontal, Eye, Edit, Trash2, Plus } from 'lucide-react'
+import { Search, MoreHorizontal, Edit, Plus, ArrowUpDown, CameraOff } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet'
+import { CategoryForm } from './category-form'
+import { toast } from 'sonner'
 import type { Category } from '@/types/db'
 
 interface EntitiesDataTableProps {
   entities: Category[]
 }
 
-export function EntitiesDataTable({ entities }: EntitiesDataTableProps) {
-  const [searchTerm, setSearchTerm] = useState('')
+type SortField = 'name' | 'created_at' | 'updated_at' | 'is_active' | 'is_featured' | 'icon_url'
+type SortDirection = 'asc' | 'desc'
 
-  const filteredEntities = entities.filter(entity =>
-    entity.name.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+export function EntitiesDataTable({ entities: initialEntities }: EntitiesDataTableProps) {
+  const [entities, setEntities] = useState<Category[]>(initialEntities)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [sortField, setSortField] = useState<SortField>('name')
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
+  const [isAddSheetOpen, setIsAddSheetOpen] = useState(false)
+  const [isEditSheetOpen, setIsEditSheetOpen] = useState(false)
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+
+  // Update entities when props change
+  useEffect(() => {
+    setEntities(initialEntities)
+  }, [initialEntities])
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortDirection('asc')
+    }
+  }
+
+  const sortedAndFilteredEntities = entities
+    .filter(entity =>
+      entity.name.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => {
+      let aValue: string | number
+      let bValue: string | number
+
+      switch (sortField) {
+        case 'name':
+          aValue = a.name.toLowerCase()
+          bValue = b.name.toLowerCase()
+          break
+        case 'created_at':
+          aValue = new Date(a.created_at).getTime()
+          bValue = new Date(b.created_at).getTime()
+          break
+        case 'updated_at':
+          aValue = new Date(a.updated_at).getTime()
+          bValue = new Date(b.updated_at).getTime()
+          break
+        case 'is_active':
+          aValue = a.is_active ? 1 : 0
+          bValue = b.is_active ? 1 : 0
+          break
+        case 'is_featured':
+          aValue = a.is_featured ? 1 : 0
+          bValue = b.is_featured ? 1 : 0
+          break
+        case 'icon_url':
+          aValue = a.icon_url ? 1 : 0
+          bValue = b.icon_url ? 1 : 0
+          break
+        default:
+          aValue = a.name.toLowerCase()
+          bValue = b.name.toLowerCase()
+      }
+
+      if (sortDirection === 'asc') {
+        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0
+      } else {
+        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0
+      }
+    })
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -38,6 +113,160 @@ export function EntitiesDataTable({ entities }: EntitiesDataTableProps) {
       month: 'short',
       day: 'numeric'
     })
+  }
+
+  const handleAddCategory = async (data: Partial<Category>) => {
+    setIsLoading(true)
+    try {
+      const response = await fetch('/api/categories', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      })
+
+      const responseData = await response.json()
+
+      if (!response.ok) {
+        throw new Error(responseData.error || 'Failed to create category')
+      }
+
+      // Add new category to local state
+      setEntities(prev => [...prev, responseData])
+      
+      // Close sheet and show success toast
+      setIsAddSheetOpen(false)
+      toast.success('Category created successfully!')
+      
+    } catch (error) {
+      console.error('Error adding category:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to create category')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleEditCategory = async (data: Partial<Category>) => {
+    if (!selectedCategory?.id) return
+
+    setIsLoading(true)
+    try {
+      const response = await fetch(`/api/categories/${selectedCategory.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      })
+
+      const responseData = await response.json()
+
+      if (!response.ok) {
+        throw new Error(responseData.error || 'Failed to update category')
+      }
+
+      // Update category in local state
+      setEntities(prev => 
+        prev.map(category => 
+          category.id === selectedCategory.id ? responseData : category
+        )
+      )
+      
+      // Close sheet and show success toast
+      setIsEditSheetOpen(false)
+      setSelectedCategory(null)
+      toast.success('Category updated successfully!')
+      
+    } catch (error) {
+      console.error('Error updating category:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to update category')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleEditClick = (category: Category) => {
+    setSelectedCategory(category)
+    setIsEditSheetOpen(true)
+  }
+
+  const handleToggleActive = async (category: Category) => {
+    setIsLoading(true)
+    try {
+      const response = await fetch(`/api/categories/${category.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: category.name,
+          icon_url: category.icon_url,
+          is_active: !category.is_active,
+          is_featured: category.is_featured,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to update category')
+      }
+
+      const updatedCategory = await response.json()
+      
+      // Update category in local state
+      setEntities(prev => 
+        prev.map(cat => 
+          cat.id === category.id ? updatedCategory : cat
+        )
+      )
+      
+      toast.success(`Category ${!category.is_active ? 'activated' : 'deactivated'} successfully!`)
+    } catch (error) {
+      console.error('Error updating category:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to update category')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleToggleFeatured = async (category: Category) => {
+    setIsLoading(true)
+    try {
+      const response = await fetch(`/api/categories/${category.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: category.name,
+          icon_url: category.icon_url,
+          is_active: category.is_active,
+          is_featured: !category.is_featured,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to update category')
+      }
+
+      const updatedCategory = await response.json()
+      
+      // Update category in local state
+      setEntities(prev => 
+        prev.map(cat => 
+          cat.id === category.id ? updatedCategory : cat
+        )
+      )
+      
+      toast.success(`Category ${!category.is_featured ? 'featured' : 'unfeatured'} successfully!`)
+    } catch (error) {
+      console.error('Error updating category:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to update category')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -55,10 +284,31 @@ export function EntitiesDataTable({ entities }: EntitiesDataTableProps) {
             />
           </div>
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Category
-        </Button>
+        
+        {/* Add Category Sheet */}
+        <Sheet open={isAddSheetOpen} onOpenChange={setIsAddSheetOpen}>
+          <SheetTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Category
+            </Button>
+          </SheetTrigger>
+          <SheetContent>
+            <SheetHeader>
+              <SheetTitle>Add New Category</SheetTitle>
+              <SheetDescription>
+                Create a new service category for your platform.
+              </SheetDescription>
+            </SheetHeader>
+            <div className="mt-6 px-4">
+              <CategoryForm
+                onSubmit={handleAddCategory}
+                onCancel={() => setIsAddSheetOpen(false)}
+                isLoading={isLoading}
+              />
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
 
       {/* Table */}
@@ -66,45 +316,123 @@ export function EntitiesDataTable({ entities }: EntitiesDataTableProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Category Name</TableHead>
-              <TableHead>Icon</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead>Updated</TableHead>
+              <TableHead>
+                <Button
+                  variant="ghost"
+                  onClick={() => handleSort('icon_url')}
+                  className="h-auto p-0 font-semibold pl-0 !px-0"
+                >
+                  Icon
+                  <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button
+                  variant="ghost"
+                  onClick={() => handleSort('name')}
+                  className="h-auto p-0 font-semibold pl-0 !px-0"
+                >
+                  Category Name
+                  <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button
+                  variant="ghost"
+                  onClick={() => handleSort('is_active')}
+                  className="h-auto p-0 font-semibold pl-0 !px-0"
+                >
+                  Status
+                  <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button
+                  variant="ghost"
+                  onClick={() => handleSort('is_featured')}
+                  className="h-auto p-0 font-semibold pl-0 !px-0"
+                >
+                  Featured
+                  <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button
+                  variant="ghost"
+                  onClick={() => handleSort('created_at')}
+                  className="h-auto p-0 font-semibold pl-0 !px-0"
+                >
+                  Created
+                  <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button
+                  variant="ghost"
+                  onClick={() => handleSort('updated_at')}
+                  className="h-auto p-0 font-semibold pl-0 !px-0"
+                >
+                  Updated
+                  <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
               <TableHead className="w-[50px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredEntities.length === 0 ? (
+            {sortedAndFilteredEntities.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
+                <TableCell colSpan={6} className="text-center text-muted-foreground pl-4">
                   No categories found
                 </TableCell>
               </TableRow>
             ) : (
-              filteredEntities.map((entity) => (
+              sortedAndFilteredEntities.map((entity) => (
                 <TableRow key={entity.id}>
+                  <TableCell>
+                    {entity.icon_url ? (
+                      <div className="relative">
+                        <img 
+                          src={entity.icon_url} 
+                          alt={`${entity.name} icon`}
+                          className="h-6 w-6 object-contain"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none'
+                            // Show fallback icon
+                            const parent = e.currentTarget.parentElement
+                            if (parent) {
+                              parent.innerHTML = '<div class="h-6 w-6 bg-gray-300 rounded-full flex items-center justify-center"><svg class="h-3 w-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg></div>'
+                            }
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <div className="h-6 w-6 bg-gray-300 rounded-full flex items-center justify-center">
+                        <CameraOff className="h-3 w-3 text-gray-500" />
+                      </div>
+                    )}
+                  </TableCell>
                   <TableCell>
                     <div className="font-medium">
                       {entity.name}
                     </div>
                   </TableCell>
                   <TableCell>
-                    {entity.icon_url ? (
-                      <img 
-                        src={entity.icon_url} 
-                        alt={`${entity.name} icon`}
-                        className="h-6 w-6 object-contain"
-                      />
-                    ) : (
-                      <div className="h-6 w-6 bg-gray-200 rounded flex items-center justify-center">
-                        <span className="text-xs text-gray-500">No icon</span>
-                      </div>
-                    )}
+                    <Badge 
+                      variant={entity.is_active ? "default" : "secondary"}
+                      className="cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => handleToggleActive(entity)}
+                    >
+                      {entity.is_active ? "Active" : "Inactive"}
+                    </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={entity.is_active ? "default" : "secondary"}>
-                      {entity.is_active ? "Active" : "Inactive"}
+                    <Badge 
+                      variant={entity.is_featured ? "default" : "secondary"}
+                      className="cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => handleToggleFeatured(entity)}
+                    >
+                      {entity.is_featured ? "Featured" : "Not Featured"}
                     </Badge>
                   </TableCell>
                   <TableCell>{formatDate(entity.created_at)}</TableCell>
@@ -118,17 +446,9 @@ export function EntitiesDataTable({ entities }: EntitiesDataTableProps) {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
-                          <Eye className="mr-2 h-4 w-4" />
-                          View Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleEditClick(entity)}>
                           <Edit className="mr-2 h-4 w-4" />
                           Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600">
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -142,8 +462,31 @@ export function EntitiesDataTable({ entities }: EntitiesDataTableProps) {
 
       {/* Summary */}
       <div className="text-sm text-muted-foreground">
-        Showing {filteredEntities.length} of {entities.length} categories
+        Showing {sortedAndFilteredEntities.length} of {entities.length} categories
       </div>
+
+      {/* Edit Category Sheet */}
+      <Sheet open={isEditSheetOpen} onOpenChange={setIsEditSheetOpen}>
+        <SheetContent>
+          <SheetHeader>
+            <SheetTitle>Edit Category</SheetTitle>
+            <SheetDescription>
+              Update the category information.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="mt-6 px-4">
+            <CategoryForm
+              category={selectedCategory}
+              onSubmit={handleEditCategory}
+              onCancel={() => {
+                setIsEditSheetOpen(false)
+                setSelectedCategory(null)
+              }}
+              isLoading={isLoading}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }

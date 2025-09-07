@@ -25,15 +25,9 @@ export default async function AdminEntitiesPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Manage Entities</h1>
-        <p className="text-gray-600 mt-1">
-          Manage service categories and settings
-        </p>
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Service Categories</CardTitle>
-        </CardHeader>
         <CardContent>
           <EntitiesDataTable entities={entities} />
         </CardContent>
