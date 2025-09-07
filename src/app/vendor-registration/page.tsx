@@ -166,7 +166,7 @@ export default function VendorRegisterPage() {
   const ensureImageDims = async (): Promise<HTMLImageElement | null> => {
     if (!photoUrl) return null
     return new Promise((resolve) => {
-      const img = new window.Image()
+      const img = document.createElement('img')
       img.onload = () => {
         resolve(img)
       }
@@ -217,15 +217,14 @@ export default function VendorRegisterPage() {
       }
 
       // Create account
-      const { error: signUpError } = await supabase.auth.signUp({
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: { 
           data: { 
             first_name: firstName, 
             last_name: lastName, 
-            role: 'vendor', 
-            phone_number: phone || undefined 
+            role: 'vendor'
           } 
         },
       })
@@ -235,9 +234,18 @@ export default function VendorRegisterPage() {
         return
       }
 
-      // Try sign-in (in case email confirmation disabled)
-      const { data: signInData } = await supabase.auth.signInWithPassword({ email, password })
-      const uid = signInData.user?.id
+      // Get user ID from signup or try sign-in
+      let uid = signUpData.user?.id
+      if (!uid) {
+        // Try sign-in (in case email confirmation disabled)
+        const { data: signInData } = await supabase.auth.signInWithPassword({ email, password })
+        uid = signInData.user?.id
+      }
+
+      if (!uid) {
+        toast.error('Failed to create user account')
+        return
+      }
 
       let profile_photo_url: string | undefined
       if (uid && photoFile) {
