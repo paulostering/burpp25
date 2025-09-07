@@ -10,6 +10,7 @@ import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import type { VendorProfile } from '@/types/db'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import {
   Command,
   CommandEmpty,
@@ -299,10 +300,24 @@ export default function VendorRegisterPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
-      <div className="mb-6 flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">Step {step} of 5</div>
-      </div>
+    <div className="grid min-h-svh lg:grid-cols-2">
+      <div className="flex flex-col gap-4 p-6 md:p-10">
+        <div className="flex justify-center gap-2 md:justify-start">
+          <a href="/" className="flex items-center gap-2 font-medium">
+            <Image
+              src="/images/burpp_logo.webp"
+              alt="Burpp Logo"
+              width={120}
+              height={40}
+              className="h-8 w-auto"
+            />
+          </a>
+        </div>
+        <div className="flex flex-1 items-center justify-center">
+          <div className="w-full max-w-md">
+            <div className="mb-6 flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">Step {step} of 5</div>
+            </div>
 
       {step === 1 && (
         <section className="space-y-6">
@@ -636,6 +651,25 @@ export default function VendorRegisterPage() {
           </div>
         </section>
       )}
+          </div>
+        </div>
+      </div>
+      <div className="bg-muted relative hidden lg:block">
+        <img
+          src="/images/auth_vendor.webp"
+          alt="Vendor Registration"
+          className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
+        />
+        {/* Dance Instructor Tag */}
+        <div className="absolute bottom-8 left-4 bg-black/80 backdrop-blur-sm px-4 py-2 rounded-lg border-l-4 border-primary">
+          <div className="text-sm font-semibold text-white">
+            Dance Instructor
+          </div>
+          <div className="text-xs text-white/80">
+            Kevin, Brooklyn NY
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
