@@ -166,7 +166,7 @@ export default function VendorRegisterPage() {
   const ensureImageDims = async (): Promise<HTMLImageElement | null> => {
     if (!photoUrl) return null
     return new Promise((resolve) => {
-      const img = new Image()
+      const img = new window.Image()
       img.onload = () => {
         resolve(img)
       }
@@ -220,10 +220,18 @@ export default function VendorRegisterPage() {
       const { error: signUpError } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { first_name: firstName, last_name: lastName, role: 'vendor', phone_number: phone } },
+        options: { 
+          data: { 
+            first_name: firstName, 
+            last_name: lastName, 
+            role: 'vendor', 
+            phone_number: phone || undefined 
+          } 
+        },
       })
       if (signUpError) {
-        toast.error(signUpError.message)
+        console.error('Signup error:', signUpError)
+        toast.error(`Signup failed: ${signUpError.message}`)
         return
       }
 
@@ -233,17 +241,23 @@ export default function VendorRegisterPage() {
 
       let profile_photo_url: string | undefined
       if (uid && photoFile) {
-        const blob = (await getCroppedBlob()) ?? photoFile
-        const path = `${uid}/profile/profile.jpg`
-        const { data: up, error: upErr } = await supabase.storage.from('vendor').upload(path, blob, {
-          upsert: true,
-          contentType: 'image/jpeg',
-        })
-        if (upErr) {
-          toast.error(upErr.message)
-        } else {
-          const { data: pub } = supabase.storage.from('vendor').getPublicUrl(up.path)
-          profile_photo_url = pub.publicUrl
+        try {
+          const blob = (await getCroppedBlob()) ?? photoFile
+          const path = `${uid}/profile/profile.jpg`
+          const { data: up, error: upErr } = await supabase.storage.from('vendor').upload(path, blob, {
+            upsert: true,
+            contentType: 'image/jpeg',
+          })
+          if (upErr) {
+            console.error('Upload error:', upErr)
+            toast.error(`Photo upload failed: ${upErr.message}`)
+          } else {
+            const { data: pub } = supabase.storage.from('vendor').getPublicUrl(up.path)
+            profile_photo_url = pub.publicUrl
+          }
+        } catch (imageError) {
+          console.error('Image processing error:', imageError)
+          toast.error('Photo processing failed, continuing without photo')
         }
       }
 
@@ -284,7 +298,8 @@ export default function VendorRegisterPage() {
         }
         const { error: insErr } = await supabase.from('vendor_profiles').insert(payload)
         if (insErr) {
-          toast.error(insErr.message)
+          console.error('Profile insertion error:', insErr)
+          toast.error(`Profile creation failed: ${insErr.message}`)
           return
         }
       }
