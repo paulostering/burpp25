@@ -34,7 +34,7 @@ export function Footer() {
           <div className="space-y-4">
             <h3 className="text-gray-300 font-semibold text-lg">Pros</h3>
             <div className="space-y-3">
-              <Link href="/for-pros" className="block text-gray-300 hover:text-white transition-colors">
+              <Link href="/burp-for-business" className="block text-gray-300 hover:text-white transition-colors">
                 Burpp For Pros
               </Link>
               <Link href="/join" className="block text-gray-300 hover:text-white transition-colors">

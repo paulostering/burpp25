@@ -111,7 +111,7 @@ export function TopNav() {
         
         <nav className="flex items-center gap-3">
           {!firstInitial && !isRegistrationPage && (
-            <Link href="/vendor/registration" className="text-sm hover:underline">
+            <Link href="/burp-for-business" className="text-sm hover:underline">
               Join as a Pro
             </Link>
           )}
