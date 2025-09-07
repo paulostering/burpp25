@@ -23,7 +23,7 @@ export default function BurppForBusiness() {
                 </p>
                 <div className="flex justify-start">
                   <Button 
-                    onClick={() => router.push('/vendor/registration')}
+                    onClick={() => router.push('/vendor-registration')}
                     className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-none tracking-wider transition-[color,box-shadow] disabled:pointer-events-none disabled:opacity-50 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] bg-primary shadow-xs hover:bg-primary/90 h-10 text-white px-8 py-3 text-lg font-semibold"
                   >
                     Get Started Today
@@ -98,7 +98,7 @@ export default function BurppForBusiness() {
                 </div>
                 <div className="mt-8">
                   <Button 
-                    onClick={() => router.push('/vendor/registration')}
+                    onClick={() => router.push('/vendor-registration')}
                     className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-none tracking-wider transition-[color,box-shadow] disabled:pointer-events-none disabled:opacity-50 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] shadow-xs h-10 bg-primary hover:bg-primary/90 text-white px-8 py-3 text-lg font-semibold"
                   >
                     Grow Your Business with Burpp
@@ -115,7 +115,7 @@ export default function BurppForBusiness() {
                 <h2 className="text-3xl font-bold text-black mb-4">Ready to meet your new customers?</h2>
                 <p className="text-xl text-black mb-8">It's free, easy, and only takes a few minutes.</p>
                 <Button 
-                  onClick={() => router.push('/vendor/registration')}
+                  onClick={() => router.push('/vendor-registration')}
                   className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-none tracking-wider transition-[color,box-shadow] disabled:pointer-events-none disabled:opacity-50 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] shadow-xs h-10 bg-primary hover:bg-primary/90 text-white px-8 py-3 text-lg font-semibold"
                 >
                   Meet Your Next Customer

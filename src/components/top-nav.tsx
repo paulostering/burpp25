@@ -26,7 +26,7 @@ export function TopNav() {
   const supabase = useMemo(() => createClient(), [])
 
   // Hide avatar on registration pages
-  const isRegistrationPage = pathname?.includes('/vendor/registration')
+  const isRegistrationPage = pathname?.includes('/vendor-registration')
   // Hide navigation on auth pages
   const isAuthPage = pathname?.includes('/login') || pathname?.includes('/signup')
   // Show condensed search on non-homepage pages

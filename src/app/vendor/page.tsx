@@ -59,7 +59,7 @@ export default function VendorDashboard() {
               It looks like your vendor profile hasn&apos;t been created yet.
             </p>
             <Button asChild>
-              <a href="/vendor/registration">Complete Your Profile</a>
+              <a href="/vendor-registration">Complete Your Profile</a>
             </Button>
           </CardContent>
         </Card>

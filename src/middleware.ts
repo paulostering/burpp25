@@ -84,8 +84,8 @@ export async function middleware(request: NextRequest) {
 
   // Protect vendor dashboard routes (but not public profile pages)
   if (request.nextUrl.pathname.startsWith('/vendor') && 
-      request.nextUrl.pathname !== '/vendor/registration' && 
-      request.nextUrl.pathname !== '/vendor/registration/thank-you' &&
+      request.nextUrl.pathname !== '/vendor-registration' && 
+      request.nextUrl.pathname !== '/vendor-registration/thank-you' &&
       !request.nextUrl.pathname.match(/^\/vendor\/[^\/]+$/)) { // Allow /vendor/[id] (public profiles)
     if (!user) {
       // Redirect to login if not authenticated

@@ -290,7 +290,7 @@ export default function VendorRegisterPage() {
       }
 
       toast.success('Vendor account created')
-      router.push('/vendor/registration/thank-you')
+      router.push('/vendor-registration/thank-you')
     } catch (error) {
       console.error('Error creating account:', error)
       toast.error('An error occurred while creating your account. Please try again.')
