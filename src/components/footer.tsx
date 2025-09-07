@@ -41,7 +41,7 @@ export function Footer() {
               <Link href="/burp-for-business" className="block text-primary-foreground/80 hover:text-primary-foreground transition-colors">
                 Burpp For Pros
               </Link>
-              <Link href="/join" className="block text-primary-foreground/80 hover:text-primary-foreground transition-colors">
+              <Link href="/signup" className="block text-primary-foreground/80 hover:text-primary-foreground transition-colors">
                 Join Burpp
               </Link>
             </div>
