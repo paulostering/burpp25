@@ -169,7 +169,7 @@ export function CondensedSearch() {
   return (
     <div className="relative w-full max-w-4xl" ref={locationContainerRef}>
       {/* Unified Search Field */}
-      <div className="flex items-center bg-white border border-gray-300 rounded-full shadow-sm hover:shadow-md transition-shadow duration-200 pl-4 pr-2 py-1 h-10">
+      <div className="flex items-center bg-white border border-gray-200 rounded-md hover:shadow-md transition-shadow duration-200 pl-4 pr-2 py-1 h-10">
         {/* Category Section */}
         <div className="flex-1 min-w-0 relative" ref={categoryContainerRef}>
           <Input

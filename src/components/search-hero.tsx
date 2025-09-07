@@ -199,11 +199,12 @@ export function SearchHero() {
           <p className="text-xl text-white">
             Burpp is your go-to source for finding highly rated independent contractors to assist you with anything. <strong>Fast. Local. Reliable</strong>
           </p>
+          test
         </div>
 
         {/* Search Form */}
         <div className="relative w-full max-w-4xl">
-          <div className="flex items-center bg-white border border-gray-300 rounded-full shadow-lg hover:shadow-xl transition-shadow duration-200 pl-6 pr-3 py-2 h-16">
+          <div className="flex items-center bg-white border border-gray-300 rounded-full pl-6 pr-3 py-2 h-16">
             {/* Category Section */}
             <div className="flex-1 min-w-0 relative" ref={categoryContainerRef}>
               <Input
@@ -218,7 +219,8 @@ export function SearchHero() {
                   }
                 }}
                 onFocus={() => setIsCategoryOpen(true)}
-                className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 text-xl font-semibold text-gray-700 placeholder:text-gray-500 pr-8"
+                className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 font-semibold text-gray-700 placeholder:text-gray-500 pr-8"
+                style={{ fontSize: '16px', fontFamily: 'Poppins, sans-serif' }}
               />
               {categorySearch && (
                 <button
@@ -254,7 +256,6 @@ export function SearchHero() {
 
             {/* Divider */}
             <div className="w-px h-8 bg-gray-300 mx-4" />
-
             {/* Location Section */}
             <div className="flex-1 min-w-0 relative" ref={locationContainerRef}>
               <div className="flex items-center">
@@ -299,7 +300,8 @@ export function SearchHero() {
                     handleLocationSearch(e.target.value)
                   }}
                   onFocus={() => setIsLocationOpen(true)}
-                  className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 text-xl font-semibold text-gray-700 placeholder:text-gray-500 pr-8"
+                  className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 font-semibold text-gray-700 placeholder:text-gray-500 pr-8"
+                  style={{ fontSize: '16px', fontFamily: 'Poppins, sans-serif' }}
                 />
                 {location && (
                   <button
