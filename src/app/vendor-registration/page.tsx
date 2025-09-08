@@ -366,7 +366,7 @@ export default function VendorRegisterPage() {
                   </span>
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px] max-h-[90vh] sm:max-h-[80vh] overflow-hidden flex flex-col">
+              <DialogContent className="w-full h-full max-w-none max-h-none sm:max-w-[425px] sm:max-h-[80vh] overflow-hidden flex flex-col m-0 sm:m-4 rounded-none sm:rounded-lg">
                 <DialogHeader>
                   <DialogTitle>Select categories</DialogTitle>
                 </DialogHeader>
@@ -636,7 +636,7 @@ export default function VendorRegisterPage() {
             <h2 className="text-2xl font-semibold">Create Account</h2>
             <p className="text-muted-foreground">Set up your account credentials to complete registration.</p>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="first">First name</Label>
               <Input id="first" value={firstName} onChange={(e) => setFirstName(e.target.value)} />

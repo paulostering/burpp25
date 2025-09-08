@@ -67,13 +67,13 @@ export function ConversationView({ conversationId, onBack }: ConversationViewPro
 
         setMessages(messagesData || [])
 
-        // Mark messages as read
+        // Mark messages as read (only incoming messages that are unread)
         const unreadMessages = messagesData?.filter(msg => 
           msg.sender_id !== user.id && !msg.is_read
         ) || []
 
         if (unreadMessages.length > 0) {
-          console.log('Marking messages as read:', unreadMessages.length)
+          console.log('Marking incoming messages as read:', unreadMessages.length)
           const { error: markReadError } = await supabase
             .from('messages')
             .update({ is_read: true })
@@ -82,7 +82,15 @@ export function ConversationView({ conversationId, onBack }: ConversationViewPro
           if (markReadError) {
             console.error('Error marking messages as read:', markReadError)
           } else {
-            console.log('Successfully marked messages as read')
+            console.log('Successfully marked incoming messages as read')
+            // Update local state to reflect the read status
+            setMessages(prev => 
+              prev.map(msg => 
+                unreadMessages.some(unread => unread.id === msg.id)
+                  ? { ...msg, is_read: true }
+                  : msg
+              )
+            )
           }
         }
 
@@ -124,9 +132,9 @@ export function ConversationView({ conversationId, onBack }: ConversationViewPro
             return [...prev, newMessage]
           })
           
-          // Mark as read if not from current user
+          // Only mark as read if this is an incoming message (not from current user)
           if (newMessage.sender_id !== currentUser.id) {
-            console.log('Marking incoming message as read:', newMessage.id)
+            console.log('Marking incoming message as read:', newMessage.id, 'from sender:', newMessage.sender_id, 'current user:', currentUser.id)
             supabase
               .from('messages')
               .update({ is_read: true })
@@ -135,7 +143,7 @@ export function ConversationView({ conversationId, onBack }: ConversationViewPro
                 if (error) {
                   console.error('Error marking message as read:', error)
                 } else {
-                  console.log('Message marked as read')
+                  console.log('Incoming message marked as read')
                   setMessages(prev => 
                     prev.map(msg => 
                       msg.id === newMessage.id 
@@ -145,6 +153,8 @@ export function ConversationView({ conversationId, onBack }: ConversationViewPro
                   )
                 }
               })
+          } else {
+            console.log('Message from current user, not marking as read:', newMessage.id)
           }
         }
       )

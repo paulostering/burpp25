@@ -43,7 +43,8 @@ export function MessageComposer({
           conversation_id: conversationId,
           sender_id: user.id,
           content: message.trim(),
-          message_type: 'text'
+          message_type: 'text',
+          is_read: false  // Explicitly set to false for sent messages
         })
         .select()
         .single()
