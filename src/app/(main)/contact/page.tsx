@@ -3,11 +3,9 @@
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { Mail, ArrowRight, Home, UserPlus } from "lucide-react"
 import { useState } from "react"
@@ -63,7 +61,7 @@ export default function ContactUs() {
           duration: 5000,
         })
       }
-    } catch (error) {
+    } catch {
       toast.error('Failed to send message', {
         description: 'Please check your connection and try again.',
         duration: 5000,

@@ -1,15 +1,11 @@
 "use client"
 
 import { Footer } from "@/components/footer"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import Image from "next/image"
-import { useRouter } from "next/navigation"
-import { Search, MessageCircle, CheckCircle, ArrowRight } from "lucide-react"
+import { Search, MessageCircle, CheckCircle } from "lucide-react"
 
 export default function HowToUse() {
-  const router = useRouter()
   
   return (
     <div className="space-y-24">

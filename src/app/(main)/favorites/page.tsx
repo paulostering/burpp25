@@ -6,9 +6,11 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, Heart, MapPin, Star } from 'lucide-react'
+import { ArrowLeft, Heart, MapPin } from 'lucide-react'
 import Link from 'next/link'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
+import type { User } from '@supabase/supabase-js'
+import type { Category } from '@/types/db'
 
 interface FavoriteVendor {
   id: string
@@ -27,8 +29,8 @@ interface FavoriteVendor {
 
 export default function FavoritesPage() {
   const [favorites, setFavorites] = useState<FavoriteVendor[]>([])
-  const [user, setUser] = useState<any>(null)
-  const [categories, setCategories] = useState<any[]>([])
+  const [user, setUser] = useState<User | null>(null)
+  const [categories, setCategories] = useState<Category[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const supabase = createClient()
   const router = useRouter()
@@ -68,7 +70,7 @@ export default function FavoritesPage() {
           .from('categories')
           .select('id, name, icon_url')
 
-        setCategories(categoriesData || [])
+        setCategories((categoriesData as Category[]) || [])
 
         // Load favorites with vendor data
         const { data, error } = await supabase
