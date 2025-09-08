@@ -139,7 +139,7 @@ export default async function SearchPage({
           )}
         </div>
 
-        {/* Vendor Results */}
+        {/* Vendor Results - Fixed TypeScript types */}
         <InfiniteScrollVendors 
           initialVendors={vendors}
           searchParams={{ category: category || undefined, q: q || undefined }}
