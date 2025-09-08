@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Search, MapPin, X } from 'lucide-react'
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { cn } from '@/lib/utils'
 
 interface Category {
   id: string
@@ -29,8 +31,21 @@ export function CondensedSearch() {
   const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([])
   const [isLocationOpen, setIsLocationOpen] = useState(false)
   const [userLocation, setUserLocation] = useState<string>('')
+  const [isMobile, setIsMobile] = useState(false)
+  const [isSheetOpen, setIsSheetOpen] = useState(false)
   const locationContainerRef = useRef<HTMLDivElement>(null)
   const categoryContainerRef = useRef<HTMLDivElement>(null)
+
+  // Check if mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   // Handle clicking outside to close dropdowns
   useEffect(() => {
@@ -166,8 +181,25 @@ export function CondensedSearch() {
     setIsLocationOpen(false)
   }
 
-  return (
-    <div className="relative w-full max-w-4xl" ref={locationContainerRef}>
+  // Handle search submission
+  const handleSearchSubmit = () => {
+    if (!selectedCategory || !location) return
+
+    const params = new URLSearchParams()
+    params.set('category', selectedCategory)
+    params.set('q', location)
+
+    router.push(`/search?${params.toString()}`)
+    
+    // Close sheet on mobile after search
+    if (isMobile) {
+      setIsSheetOpen(false)
+    }
+  }
+
+  // Search form component (reusable for both desktop and mobile)
+  const SearchForm = () => (
+    <div className="relative w-full" ref={locationContainerRef}>
       {/* Unified Search Field */}
       <div className="flex items-center bg-white border border-gray-200 rounded-md hover:shadow-md transition-shadow duration-200 pl-4 pr-2 py-1 h-10">
         {/* Category Section */}
@@ -202,7 +234,10 @@ export function CondensedSearch() {
           
           {/* Category Suggestions Dropdown */}
           {isCategoryOpen && filteredCategories.length > 0 && (
-            <div className="absolute top-full left-0 w-96 z-50 mt-2 bg-white border border-gray-200 rounded-2xl shadow-lg max-h-60 overflow-y-auto">
+            <div className={cn(
+              "absolute top-full left-0 z-50 mt-2 bg-white border border-gray-200 rounded-2xl shadow-lg max-h-60 overflow-y-auto",
+              isMobile ? "w-full" : "w-96"
+            )}>
               {filteredCategories.map((category) => (
                 <button
                   key={category.id}
@@ -279,7 +314,7 @@ export function CondensedSearch() {
 
         {/* Search Button */}
         <Button
-          onClick={handleSearch}
+          onClick={handleSearchSubmit}
           disabled={!selectedCategory || !location}
           size="sm"
           className="ml-3 h-6 w-6 p-0 rounded-full bg-primary hover:bg-primary/90"
@@ -288,32 +323,61 @@ export function CondensedSearch() {
         </Button>
       </div>
 
-      {/* Location Suggestions Dropdown */}
-      {isLocationOpen && locationSuggestions.length > 0 && (
-        <div className="absolute top-full right-0 w-96 z-50 mt-2 bg-white border border-gray-200 rounded-2xl shadow-lg max-h-60 overflow-y-auto">
-          {locationSuggestions.map((suggestion, index) => (
-            <button
-              key={index}
-              onClick={() => {
-                setLocation(suggestion.place_name)
-                setIsLocationOpen(false)
-              }}
-              className="w-full px-4 py-3 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none flex items-start gap-3 first:rounded-t-2xl last:rounded-b-2xl"
-            >
-              <MapPin className="mt-0.5 h-4 w-4 text-gray-400 flex-shrink-0" />
-              <div>
-                <div className="font-medium text-sm">
-                  {highlightText(suggestion.place_name, location)}
-                </div>
-                {suggestion.context && suggestion.context.length > 0 && (
-                  <div className="text-xs text-gray-500">
-                    {suggestion.context.map((c, i) => c.text).join(', ')}
+        {/* Location Suggestions Dropdown */}
+        {isLocationOpen && locationSuggestions.length > 0 && (
+          <div className={cn(
+            "absolute top-full right-0 z-50 mt-2 bg-white border border-gray-200 rounded-2xl shadow-lg max-h-60 overflow-y-auto",
+            isMobile ? "w-full" : "w-96"
+          )}>
+            {locationSuggestions.map((suggestion, index) => (
+              <button
+                key={index}
+                onClick={() => {
+                  setLocation(suggestion.place_name)
+                  setIsLocationOpen(false)
+                }}
+                className="w-full px-4 py-3 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none flex items-start gap-3 first:rounded-t-2xl last:rounded-b-2xl"
+              >
+                <MapPin className="mt-0.5 h-4 w-4 text-gray-400 flex-shrink-0" />
+                <div>
+                  <div className="font-medium text-sm">
+                    {highlightText(suggestion.place_name, location)}
                   </div>
-                )}
+                  {suggestion.context && suggestion.context.length > 0 && (
+                    <div className="text-xs text-gray-500">
+                      {suggestion.context.map((c, i) => c.text).join(', ')}
+                    </div>
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+  )
+
+  return (
+    <div className="relative w-full max-w-4xl">
+      {isMobile ? (
+        <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+          <SheetTrigger asChild>
+            <div className="cursor-pointer p-2 hover:bg-gray-100 rounded-md transition-colors">
+              <Search className="h-5 w-5 text-gray-600" />
+            </div>
+          </SheetTrigger>
+          <SheetContent side="top" className="h-full p-6">
+            <div className="flex flex-col h-full">
+              <div className="mb-6">
+                <h2 className="text-lg font-semibold">Search Services</h2>
               </div>
-            </button>
-          ))}
-        </div>
+              <div className="flex-1">
+                <SearchForm />
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
+      ) : (
+        <SearchForm />
       )}
     </div>
   )

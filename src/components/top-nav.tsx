@@ -101,15 +101,21 @@ export function TopNav() {
             />
           </Link>
           
-          {/* Condensed Search */}
+          {/* Condensed Search - Desktop only */}
           {showCondensedSearch && (
-            <div className="max-w-lg">
+            <div className="max-w-lg hidden md:block">
               <CondensedSearch />
             </div>
           )}
         </div>
         
         <nav className="flex items-center gap-3">
+          {/* Condensed Search Icon - Mobile only */}
+          {showCondensedSearch && (
+            <div className="md:hidden">
+              <CondensedSearch />
+            </div>
+          )}
           {!firstInitial && !isRegistrationPage && (
             <Link href="/burp-for-business" className="text-sm hover:underline">
               Join as a Pro
