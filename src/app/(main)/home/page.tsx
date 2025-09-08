@@ -1,5 +1,6 @@
 "use client"
 
+import { Suspense } from "react"
 import { SearchHero } from "@/components/search-hero"
 import { Footer } from "@/components/footer"
 import { FeaturedCategories } from "@/components/featured-categories"
@@ -7,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 
-export default function Home() {
+function HomeContent() {
   const router = useRouter()
   
   return (
@@ -119,5 +120,13 @@ export default function Home() {
       {/* Footer */}
       <Footer />
     </div>
+  )
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <HomeContent />
+    </Suspense>
   )
 }

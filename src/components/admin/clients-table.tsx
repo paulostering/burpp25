@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminSupabase } from '@/lib/supabase/server'
 import { validatePageParams, calculatePagination } from '@/lib/admin'
 import { ClientsDataTable } from './clients-data-table'
 import type { ClientWithProfile } from '@/types/db'
@@ -8,7 +8,7 @@ interface ClientsTableProps {
 }
 
 async function getClients(page: number, perPage: number, search?: string) {
-  const supabase = createClient()
+  const supabase = createAdminSupabase()
   
   let query = supabase
     .from('user_profiles')
@@ -36,7 +36,7 @@ async function getClients(page: number, perPage: number, search?: string) {
   }
   
   // Get additional stats for each client
-  const clientsWithStats = await Promise.all((data || []).map(async (client) => {
+  const clientsWithStats = await Promise.all((data || []).map(async (client: any) => {
     // Get favorites count
     const { count: favoritesCount } = await supabase
       .from('user_vendor_favorites')

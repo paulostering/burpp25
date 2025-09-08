@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminSupabase } from '@/lib/supabase/server'
 import { validatePageParams, calculatePagination } from '@/lib/admin'
 import { VendorsDataTable } from './vendors-data-table'
 import type { VendorWithProfile } from '@/types/db'
@@ -8,7 +8,7 @@ interface VendorsTableProps {
 }
 
 async function getVendors(page: number, perPage: number, search?: string) {
-  const supabase = createClient()
+  const supabase = createAdminSupabase()
   
   let query = supabase
     .from('vendor_profiles')
@@ -45,15 +45,15 @@ async function getVendors(page: number, perPage: number, search?: string) {
   }
   
   // Get review counts and ratings for each vendor
-  const vendorsWithStats = await Promise.all((data || []).map(async (vendor) => {
+  const vendorsWithStats = await Promise.all((data || []).map(async (vendor: any) => {
     const { data: reviews } = await supabase
       .from('reviews')
       .select('rating')
       .eq('vendor_id', vendor.id)
     
     const totalReviews = reviews?.length || 0
-    const averageRating = totalReviews > 0 
-      ? reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews
+    const averageRating = totalReviews > 0 && reviews
+      ? reviews.reduce((sum: number, review: any) => sum + review.rating, 0) / totalReviews
       : 0
     
     return {

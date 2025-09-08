@@ -23,9 +23,18 @@ import type { UserProfile } from '@/types/db'
 
 interface ClientsDataTableProps {
   clients: UserProfile[]
+  pagination?: {
+    page: number
+    per_page: number
+    total: number
+    total_pages: number
+    offset: number
+    limit: number
+  }
+  currentSearch?: string
 }
 
-export function ClientsDataTable({ clients }: ClientsDataTableProps) {
+export function ClientsDataTable({ clients, pagination, currentSearch }: ClientsDataTableProps) {
   const [searchTerm, setSearchTerm] = useState('')
 
   const filteredClients = clients.filter(client =>

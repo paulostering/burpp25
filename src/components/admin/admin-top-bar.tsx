@@ -44,7 +44,7 @@ export function AdminTopBar() {
                   index === breadcrumbs.length - 1 && "text-foreground font-medium"
                 )}
               >
-                {breadcrumb.icon && <breadcrumb.icon className="h-4 w-4" />}
+                {/* Icon support can be added later if needed */}
                 {breadcrumb.name}
               </a>
             </div>

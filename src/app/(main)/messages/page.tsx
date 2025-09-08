@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { ConversationsList } from '@/components/messaging/conversations-list'
 import { ConversationView } from '@/components/messaging/conversation-view'
 import { Button } from '@/components/ui/button'
@@ -8,7 +8,7 @@ import { MessageSquare, ArrowLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, useSearchParams } from 'next/navigation'
 
-export default function MessagesPage() {
+function MessagesPageContent() {
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null)
   const [user, setUser] = useState<any>(null)
   const [isMobile, setIsMobile] = useState(false)
@@ -137,5 +137,13 @@ export default function MessagesPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function MessagesPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <MessagesPageContent />
+    </Suspense>
   )
 }

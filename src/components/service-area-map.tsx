@@ -129,9 +129,9 @@ export function ServiceAreaMap({ address, serviceRadius, mapboxToken }: ServiceA
             })
           }
           
-          if (map.current.isStyleLoaded()) {
+          if (map.current?.isStyleLoaded()) {
             addServiceArea()
-          } else {
+          } else if (map.current) {
             map.current.on('load', addServiceArea)
           }
         }

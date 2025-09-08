@@ -23,9 +23,18 @@ import type { VendorProfile } from '@/types/db'
 
 interface VendorsDataTableProps {
   vendors: VendorProfile[]
+  pagination?: {
+    page: number
+    per_page: number
+    total: number
+    total_pages: number
+    offset: number
+    limit: number
+  }
+  currentSearch?: string
 }
 
-export function VendorsDataTable({ vendors }: VendorsDataTableProps) {
+export function VendorsDataTable({ vendors, pagination, currentSearch }: VendorsDataTableProps) {
   const [searchTerm, setSearchTerm] = useState('')
 
   const filteredVendors = vendors.filter(vendor =>
@@ -124,7 +133,7 @@ export function VendorsDataTable({ vendors }: VendorsDataTableProps) {
                       </span>
                     </div>
                   </TableCell>
-                  <TableCell>{formatDate(vendor.created_at)}</TableCell>
+                  <TableCell>{vendor.created_at ? formatDate(vendor.created_at) : 'N/A'}</TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

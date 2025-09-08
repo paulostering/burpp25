@@ -138,7 +138,8 @@ export function VendorEditSheet({ vendor, isOpen, onClose, onSave }: VendorEditS
 
       if (isEditing && vendor) {
         if (formData.admin_approved && !vendor.admin_approved) {
-          updateData.approved_at = new Date().toISOString()
+          // TODO: Add approved_at field to database schema and update accordingly
+          // updateData.approved_at = new Date().toISOString()
           // TODO: Set approved_by to current admin user ID
         }
 
