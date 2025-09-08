@@ -11,6 +11,7 @@ import { toast } from 'sonner'
 import type { VendorProfile } from '@/types/db'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import Link from 'next/link'
 import {
   Command,
   CommandEmpty,
@@ -326,7 +327,7 @@ export default function VendorRegisterPage() {
     <div className="grid min-h-svh lg:grid-cols-2">
       <div className="flex flex-col gap-4 p-6 md:p-10">
         <div className="flex justify-center gap-2 md:justify-start">
-          <a href="/" className="flex items-center gap-2 font-medium">
+          <Link href="/" className="flex items-center gap-2 font-medium">
             <Image
               src="/images/burpp_logo.webp"
               alt="Burpp Logo"
@@ -334,7 +335,7 @@ export default function VendorRegisterPage() {
               height={40}
               className="h-8 w-auto"
             />
-          </a>
+          </Link>
         </div>
         <div className="flex flex-1 items-center justify-center">
           <div className="w-full max-w-md">

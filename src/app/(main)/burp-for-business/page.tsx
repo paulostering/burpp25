@@ -19,7 +19,7 @@ export default function BurppForBusiness() {
               <div className="text-left">
                 <h1 className="text-2xl md:text-4xl font-bold mb-4">Share your skills. Grow your business.</h1>
                 <p className="text-lg font-normal md:text-lg max-w-3xl mb-8">
-                  Join a community of local pros offering services in person or online. With Burpp, it's free to connect, chat, and get booked.
+                  Join a community of local pros offering services in person or online. With Burpp, it&apos;s free to connect, chat, and get booked.
                 </p>
                 <div className="flex justify-start">
                   <Button 
@@ -117,7 +117,7 @@ export default function BurppForBusiness() {
             <div className="relative min-h-[500px] bg-cover bg-center bg-no-repeat rounded-lg" style={{ backgroundImage: "url('/images/burpp-for-business-3.jpg')" }}>
               <div className="absolute left-8 top-1/2 -translate-y-1/2 bg-white rounded-lg p-8 max-w-md">
                 <h2 className="text-3xl font-bold text-black mb-4">Ready to meet your new customers?</h2>
-                <p className="text-xl text-black mb-8">It's free, easy, and only takes a few minutes.</p>
+                <p className="text-xl text-black mb-8">It&apos;s free, easy, and only takes a few minutes.</p>
                 <Button 
                   onClick={() => router.push('/vendor-registration')}
                   className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-none tracking-wider transition-[color,box-shadow] disabled:pointer-events-none disabled:opacity-50 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] shadow-xs h-10 bg-primary hover:bg-primary/90 text-white px-8 py-3 text-lg font-semibold"
