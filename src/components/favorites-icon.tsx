@@ -75,7 +75,13 @@ export function FavoritesIcon() {
             return
           }
           
-          console.error('Error loading favorites count:', error)
+          console.error('Error loading favorites count:', {
+            message: error.message,
+            code: error.code,
+            details: error.details,
+            hint: error.hint,
+            fullError: error
+          })
           // Set count to 0 on error to prevent UI issues
           setFavoritesCount(0)
           return
@@ -85,7 +91,11 @@ export function FavoritesIcon() {
         console.log('Favorites count:', count)
         setFavoritesCount(count)
       } catch (error) {
-        console.error('Unexpected error loading favorites count:', error)
+        console.error('Unexpected error loading favorites count:', {
+          error: error,
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        })
         // Set count to 0 on error to prevent UI issues
         setFavoritesCount(0)
       }
