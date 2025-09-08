@@ -12,34 +12,49 @@ export default function BurppForBusiness() {
     <div className="space-y-24">
         <div className="min-h-screen bg-white">
           {/* Hero Section */}
-          <div className="relative bg-black text-white min-h-[700px] flex items-center rounded-bl-[80px] rounded-br-[80px] overflow-hidden">
-            <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url('/images/burpp-for-business.jpg')" }}></div>
-            <div className="absolute inset-0 bg-black opacity-20"></div>
-            <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 w-full">
-              <div className="text-left">
-                <h1 className="text-2xl md:text-4xl font-bold mb-4">Share your skills. Grow your business.</h1>
-                <p className="text-lg font-normal md:text-lg max-w-3xl mb-8">
+          <div className="relative bg-gray-100 rounded-bl-3xl overflow-hidden">
+            {/* Background Image */}
+            <div className="absolute inset-0 z-0">
+              <Image
+                src="/images/burpp-for-business.jpg"
+                alt="Hero Background"
+                fill
+                className="object-cover"
+                priority
+              />
+            </div>
+            
+            <div className="relative z-10 mx-auto max-w-6xl pt-24 md:pt-48 px-6">
+              <div className="text-left mb-8 max-w-3xl">
+                <h1 className="text-5xl font-bold mb-4 text-white">
+                  Share your skills. Grow your business.
+                </h1>
+                <p className="text-xl text-white">
                   Join a community of local pros offering services in person or online. With Burpp, it&apos;s free to connect, chat, and get booked.
                 </p>
-                <div className="flex justify-start">
-                  <Button 
-                    onClick={() => router.push('/vendor-registration')}
-                    className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-none tracking-wider transition-[color,box-shadow] disabled:pointer-events-none disabled:opacity-50 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] bg-primary shadow-xs hover:bg-primary/90 h-10 text-white px-8 py-3 text-lg font-semibold"
-                  >
-                    Get Started Today
-                  </Button>
+              </div>
+
+              <div className="mt-6">
+                <Button 
+                  onClick={() => router.push('/vendor-registration')}
+                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-none tracking-wider transition-[color,box-shadow] disabled:pointer-events-none disabled:opacity-50 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] bg-primary shadow-xs hover:bg-primary/90 h-10 text-white px-8 py-3 text-lg font-semibold"
+                >
+                  Get Started Today
+                </Button>
+              </div>
+              
+              {/* Dog Walker Tag - Inline */}
+              <div className="mt-4 flex items-center mt-16 md:mt-36 mb-12">
+                <div className="bg-black/50 backdrop-blur-sm pl-4 pr-8 py-4 shadow-lg border-l-4 border-primary">
+                  <div className="text-lg font-medium text-white">
+                    Dog Walker Extraordinaire
+                  </div>
+                  <div className="text-xs text-white/80">
+                    Claire From Los Angeles, California
+                  </div>
                 </div>
               </div>
             </div>
-            <div className="absolute bottom-8 left-4 bg-black/80 backdrop-blur-sm px-4 py-2 rounded-lg border-l-4 border-primary">
-              <div className="text-sm font-semibold text-white">
-                Dog Walker Extraordinaire
-              </div>
-              <div className="text-xs text-white/80">
-                Claire From Los Angeles, California
-              </div>
-            </div>
-            <div className="absolute bottom-0 left-8 md:left-16 right-0 h-2 bg-primary"></div>
           </div>
 
           {/* Section 2: Claim Your Profile */}
