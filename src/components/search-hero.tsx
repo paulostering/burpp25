@@ -191,7 +191,7 @@ export function SearchHero() {
         />
       </div>
       
-      <div className="relative z-10 mx-auto max-w-6xl pt-48 px-6">
+      <div className="relative z-10 mx-auto max-w-6xl pt-24 md:pt-48 px-6">
         <div className="text-left mb-8 max-w-3xl">
           <h1 className="text-5xl font-bold mb-4 text-white">
             Find Your Next Anything
@@ -353,7 +353,7 @@ export function SearchHero() {
         </div>
         
         {/* Scuba Instructor Tag - Inline */}
-        <div className="mt-4 flex items-center mt-36 mb-12">
+        <div className="mt-4 flex items-center mt-16 md:mt-36 mb-12">
           <div className="bg-black/50 backdrop-blur-sm pl-4 pr-8 py-4 shadow-lg border-l-4 border-primary">
             <div className="text-lg font-medium text-white">
               Scuba Instructor

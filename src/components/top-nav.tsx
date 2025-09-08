@@ -117,7 +117,7 @@ export function TopNav() {
             </div>
           )}
           {!firstInitial && !isRegistrationPage && (
-            <Link href="/burp-for-business" className="text-sm hover:underline">
+            <Link href="/burp-for-business" className="hidden md:block text-sm hover:underline">
               Join as a Pro
             </Link>
           )}

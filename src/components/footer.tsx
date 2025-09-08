@@ -9,9 +9,9 @@ export function Footer() {
     <footer className="bg-gradient-to-br from-primary via-primary/95 to-primary/85 text-primary-foreground">
       {/* Top Section */}
       <div className="mx-auto max-w-6xl px-6 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center md:text-left">
           {/* Column 1: Logo */}
-          <div className="space-y-4">
+          <div className="space-y-4 flex justify-center md:justify-start">
             <Image
               src="/images/burpp_logo_white.webp"
               alt="Burpp Logo"
