@@ -142,7 +142,7 @@ export default async function SearchPage({
         {/* Vendor Results */}
         <InfiniteScrollVendors 
           initialVendors={vendors}
-          searchParams={{ category, q }}
+          searchParams={{ category: category || undefined, q: q || undefined }}
         />
       </div>
     </div>
