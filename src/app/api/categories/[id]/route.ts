@@ -4,15 +4,16 @@ import { createAdminSupabase } from '@/lib/supabase/server'
 // GET - Fetch single category by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const supabase = createAdminSupabase()
     
     const { data: category, error } = await supabase
       .from('categories')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .single()
     
     if (error) {
@@ -33,9 +34,10 @@ export async function GET(
 // PUT - Update category by ID
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const supabase = createAdminSupabase()
     const body = await request.json()
     
@@ -56,7 +58,7 @@ export async function PUT(
         is_featured: is_featured ?? false,
         updated_at: new Date().toISOString()
       })
-      .eq('id', params.id)
+      .eq('id', id)
       .select()
       .single()
     
@@ -78,16 +80,17 @@ export async function PUT(
 // DELETE - Delete category by ID
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const supabase = createAdminSupabase()
     
     // Delete the category
     const { error } = await supabase
       .from('categories')
       .delete()
-      .eq('id', params.id)
+      .eq('id', id)
     
     if (error) {
       if (error.code === 'PGRST116') {
