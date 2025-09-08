@@ -22,7 +22,7 @@ interface FavoriteVendor {
     zip_code: string
     hourly_rate: number
     service_categories: string[]
-  }
+  } | null
 }
 
 export default function FavoritesPage() {
@@ -95,7 +95,7 @@ export default function FavoritesPage() {
           return
         }
 
-        setFavorites(data || [])
+        setFavorites((data as FavoriteVendor[]) || [])
       } catch (error) {
         console.error('Error loading favorites:', error)
       } finally {
