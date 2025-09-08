@@ -31,9 +31,13 @@ export default function BurppForBusiness() {
                 </div>
               </div>
             </div>
-            <div className="absolute bottom-8 left-65 text-white border-l-4 border-primary pl-4 pr-4 py-2 bg-black/30">
-              <div className="text-lg font-semibold">Dog Walker Extraordinaire</div>
-              <div className="text-sm font-bold">Claire From Los Angeles,California</div>
+            <div className="absolute bottom-8 left-4 bg-black/80 backdrop-blur-sm px-4 py-2 rounded-lg border-l-4 border-primary">
+              <div className="text-sm font-semibold text-white">
+                Dog Walker Extraordinaire
+              </div>
+              <div className="text-xs text-white/80">
+                Claire From Los Angeles, California
+              </div>
             </div>
             <div className="absolute bottom-0 left-8 md:left-16 right-0 h-2 bg-primary"></div>
           </div>

@@ -1,8 +1,8 @@
-import { GalleryVerticalEnd } from "lucide-react"
 import { SignupForm } from "@/components/signup-form"
 import { createServerSupabase } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import Image from "next/image"
+import Link from "next/link"
 
 export default async function SignupPage() {
   // Check if user is already logged in and redirect accordingly
@@ -31,7 +31,7 @@ export default async function SignupPage() {
     <div className="grid min-h-svh lg:grid-cols-2">
       <div className="flex flex-col gap-4 p-6 md:p-10">
         <div className="flex justify-center gap-2 md:justify-start">
-          <a href="/" className="flex items-center gap-2 font-medium">
+          <Link href="/" className="flex items-center gap-2 font-medium">
             <Image
               src="/images/burpp_logo.webp"
               alt="Burpp Logo"
@@ -39,7 +39,7 @@ export default async function SignupPage() {
               height={40}
               className="h-8 w-auto"
             />
-          </a>
+          </Link>
         </div>
         <div className="flex flex-1 items-center justify-center">
           <div className="w-full max-w-xs">
@@ -48,10 +48,11 @@ export default async function SignupPage() {
         </div>
       </div>
       <div className="bg-muted relative hidden lg:block">
-        <img
+        <Image
           src="/images/auth_client.webp"
           alt="Burpp Client Signup"
-          className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
+          fill
+          className="object-cover dark:brightness-[0.2] dark:grayscale"
         />
         {/* Skydiving Pro Tag */}
         <div className="absolute bottom-8 left-4 bg-black/80 backdrop-blur-sm px-4 py-2 rounded-lg border-l-4 border-primary">

@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
-import { CheckCircle, Users, MapPin, Clock } from "lucide-react"
+import { CheckCircle, MapPin, Clock } from "lucide-react"
 
 export default function AboutUs() {
   const router = useRouter()
@@ -24,7 +24,7 @@ export default function AboutUs() {
           </h1>
           <div className="max-w-4xl mx-auto">
             <p className="text-xl text-gray-600 leading-relaxed">
-              At Burpp, we believe in the power of people helping people. Whether you're looking for a trusted massage therapist, a reliable dog sitter, or a top-notch tattoo artist—our goal is to make it easy to find the right pro for the job.
+              At Burpp, we believe in the power of people helping people. Whether you&apos;re looking for a trusted massage therapist, a reliable dog sitter, or a top-notch tattoo artist—our goal is to make it easy to find the right pro for the job.
             </p>
           </div>
         </div>
@@ -41,13 +41,13 @@ export default function AboutUs() {
             
             <div className="space-y-4">
               <p className="text-lg text-gray-600 leading-relaxed">
-                We're not an agency. We're not a middleman.
+                We&apos;re not an agency. We&apos;re not a middleman.
               </p>
               <p className="text-lg text-gray-600 leading-relaxed">
                 Just a simple, no-fluff platform that connects you directly with independent service providers in your area—fast, reliable, and hassle-free.
               </p>
               <p className="text-lg text-gray-600 leading-relaxed">
-                Burpp was born from a simple observation: finding reliable local service providers shouldn't be complicated.
+                Burpp was born from a simple observation: finding reliable local service providers shouldn&apos;t be complicated.
               </p>
               <p className="text-lg text-gray-600 leading-relaxed">
                 We cut through the noise of traditional service platforms to create something better—a direct connection between you and the professionals who can help make your life easier.
@@ -86,7 +86,7 @@ export default function AboutUs() {
               Why Choose Burpp?
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              We've built our platform around three core principles that make finding and connecting with local pros effortless.
+              We&apos;ve built our platform around three core principles that make finding and connecting with local pros effortless.
             </p>
           </div>
 
