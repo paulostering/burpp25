@@ -69,29 +69,41 @@ export function FeaturedCategories() {
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      {categories.map((category) => (
-        <div
-          key={category.id}
-          className="aspect-square rounded-lg border bg-card p-4 text-center text-sm flex items-center justify-center cursor-pointer hover:bg-accent transition-colors"
-          onClick={() => handleCategoryClick(category)}
-        >
-          <div className="flex flex-col items-center justify-center gap-2">
-            {category.icon_url && (
-              <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
-                <img
-                  src={category.icon_url}
-                  alt={`${category.name} icon`}
-                  className="h-8 w-8 object-contain filter brightness-0 invert"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none'
-                  }}
-                />
-              </div>
-            )}
-            <span className="font-medium">{category.name}</span>
+      {categories.map((category) => {
+        // Clean the icon URL - remove any emoji characters and ensure it's a valid URL
+        const cleanIconUrl = category.icon_url ? 
+          category.icon_url.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '').trim() : 
+          null
+        
+        // Only use the URL if it starts with http or https
+        const validIconUrl = cleanIconUrl && (cleanIconUrl.startsWith('http://') || cleanIconUrl.startsWith('https://')) ? 
+          cleanIconUrl : 
+          null
+
+        return (
+          <div
+            key={category.id}
+            className="aspect-square rounded-lg border bg-card p-4 text-center text-sm flex items-center justify-center cursor-pointer hover:bg-accent transition-colors"
+            onClick={() => handleCategoryClick(category)}
+          >
+            <div className="flex flex-col items-center justify-center gap-2">
+              {validIconUrl && (
+                <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
+                  <img
+                    src={validIconUrl}
+                    alt={`${category.name} icon`}
+                    className="h-8 w-8 object-contain filter brightness-0 invert"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none'
+                    }}
+                  />
+                </div>
+              )}
+              <span className="font-medium">{category.name}</span>
+            </div>
           </div>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }

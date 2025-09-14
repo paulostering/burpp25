@@ -6,10 +6,11 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, Heart, MapPin } from 'lucide-react'
+import { ArrowLeft, Heart } from 'lucide-react'
 import Link from 'next/link'
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
-import type { User } from '@supabase/supabase-js'
+import Image from 'next/image'
+import { toast } from 'sonner'
+import { useAuth } from '@/contexts/auth-context'
 import type { Category } from '@/types/db'
 
 interface FavoriteVendor {
@@ -24,83 +25,107 @@ interface FavoriteVendor {
     zip_code: string
     hourly_rate: number
     service_categories: string[]
-  }[] | null
+  } | null
 }
 
 export default function FavoritesPage() {
   const [favorites, setFavorites] = useState<FavoriteVendor[]>([])
-  const [user, setUser] = useState<User | null>(null)
   const [categories, setCategories] = useState<Category[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [hasError, setHasError] = useState(false)
+  const { user, loading: authLoading } = useAuth()
   const supabase = createClient()
   const router = useRouter()
 
+  // Redirect if not authenticated
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.push('/login')
-        return
-      }
-      setUser(user)
+    if (!authLoading && !user) {
+      router.push('/login')
+    }
+  }, [user, authLoading, router])
+
+  useEffect(() => {
+    console.log('useEffect triggered - user:', user?.id, 'isLoading:', isLoading)
+    if (!user) {
+      console.log('No user, skipping favorites load')
+      return
     }
 
-    checkAuth()
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!session) {
-        router.push('/login')
-      } else {
-        setUser(session.user)
-      }
-    })
-
-    return () => subscription.unsubscribe()
-  }, [supabase, router])
-
-  useEffect(() => {
-    if (!user) return
-
     const loadFavorites = async () => {
+      console.log('Loading favorites for user:', user.id)
       setIsLoading(true)
+      
+      // Add timeout to prevent infinite loading
+      const timeoutId = setTimeout(() => {
+        console.warn('Favorites loading timeout - setting loading to false')
+        setIsLoading(false)
+        setHasError(true)
+      }, 10000) // 10 second timeout
       
       try {
         // Load categories first
-        const { data: categoriesData } = await supabase
+        const { data: categoriesData, error: catError } = await supabase
           .from('categories')
           .select('id, name, icon_url')
 
+        if (catError) {
+          console.error('Error loading categories:', catError)
+        }
+
         setCategories((categoriesData as Category[]) || [])
+        console.log('Categories loaded:', categoriesData?.length || 0)
 
-        // Load favorites with vendor data
-        const { data, error } = await supabase
-          .from('user_vendor_favorites')
-          .select(`
-            id,
-            vendor_id,
-            created_at,
-            vendor_profiles (
-              id,
-              business_name,
-              profile_title,
-              profile_photo_url,
-              zip_code,
-              hourly_rate,
-              service_categories
-            )
-          `)
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
+        // Fetch favorites via API endpoint to handle RLS issues
+        console.log('Fetching favorites via API for user:', user.id)
+        
+        const response = await fetch('/api/favorites', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
 
-        if (error) {
-          console.error('Error loading favorites:', error)
+        if (!response.ok) {
+          console.error('API request failed:', response.status, response.statusText)
+          setFavorites([])
+          setHasError(true)
           return
         }
 
+        const data = await response.json()
+        const error = null
+
+        console.log('API response data:', data)
+
+        console.log('Final favorites data:', { data, error })
+        console.log('Query completed, data length:', data?.length || 0)
+
+        console.log('Setting favorites:', data)
+        console.log('Favorites data structure:', JSON.stringify(data, null, 2))
+        
+        // Debug: Check if vendor_profiles data is missing
+        if (data && data.length > 0) {
+          data.forEach((fav, index) => {
+            console.log(`Favorite ${index}:`, {
+              id: fav.id,
+              vendor_id: fav.vendor_id,
+              vendor_profiles: fav.vendor_profiles
+            })
+            if (!fav.vendor_profiles) {
+              console.warn(`Missing vendor_profiles for favorite ${fav.id}, vendor_id: ${fav.vendor_id}`)
+            }
+          })
+        }
+        
         setFavorites(data || [])
       } catch (error) {
-        console.error('Error loading favorites:', error)
+        console.error('Error in loadFavorites:', error)
+        setFavorites([])
+        setHasError(true)
+        toast.error('Failed to load favorites')
       } finally {
+        clearTimeout(timeoutId)
+        console.log('Setting loading to false')
         setIsLoading(false)
       }
     }
@@ -116,6 +141,13 @@ export default function FavoritesPage() {
         .eq('id', favoriteId)
 
       if (error) {
+        // Check if the error is due to table not existing
+        if (error.message?.includes('Could not find the table') ||
+            error.code === 'PGRST205') {
+          console.warn('user_vendor_favorites table does not exist. Favorites feature not available.')
+          toast.error('Favorites feature is not available')
+          return
+        }
         console.error('Error removing favorite:', error)
         return
       }
@@ -126,23 +158,17 @@ export default function FavoritesPage() {
     }
   }
 
-  const getInitials = (name?: string) => {
-    if (!name) return '??'
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-  }
 
-  const getVendorCategories = (categoryIds: string[]) => {
-    return categoryIds?.map(id => 
-      categories.find(cat => cat.id === id)?.name
-    ).filter(Boolean).slice(0, 3) || []
-  }
-
-  if (!user) {
+  if (authLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
       </div>
     )
+  }
+
+  if (!user) {
+    return null // Will redirect to login
   }
 
   return (
@@ -159,10 +185,20 @@ export default function FavoritesPage() {
           </div>
         </div>
 
+
         {/* Content */}
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          </div>
+        ) : hasError ? (
+          <div className="text-center py-12">
+            <div className="h-12 w-12 mx-auto mb-4 text-red-500">⚠️</div>
+            <h2 className="text-lg font-medium mb-2">Failed to load favorites</h2>
+            <p className="text-gray-600 mb-4">There was an error loading your favorites. Please try again.</p>
+            <Button onClick={() => window.location.reload()}>
+              Retry
+            </Button>
           </div>
         ) : favorites.length === 0 ? (
           <div className="text-center py-12">
@@ -174,71 +210,95 @@ export default function FavoritesPage() {
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {favorites.map((favorite) => {
-              const vendor = favorite.vendor_profiles?.[0]
-              if (!vendor) return null
-
-              const vendorCategories = getVendorCategories(vendor.service_categories || [])
+              const vendor = favorite.vendor_profiles
+              console.log('Processing favorite:', favorite.id, 'vendor:', vendor)
+              if (!vendor) {
+                console.log('Vendor is null for favorite:', favorite.id)
+                // Show a placeholder card for debugging
+                return (
+                  <Card key={favorite.id} className="border-red-200 bg-red-50">
+                    <CardContent className="p-6">
+                      <div className="text-center">
+                        <h3 className="font-semibold text-lg text-red-600">Missing Vendor Data</h3>
+                        <p className="text-sm text-red-500">Favorite ID: {favorite.id}</p>
+                        <p className="text-sm text-red-500">Vendor ID: {favorite.vendor_id}</p>
+                        <p className="text-xs text-gray-500 mt-2">This vendor profile may have been deleted or is blocked by access policies.</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              }
 
               return (
-                <Card key={favorite.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <Avatar className="h-12 w-12">
-                        <AvatarImage src={vendor.profile_photo_url || undefined} />
-                        <AvatarFallback>
-                          {getInitials(vendor.business_name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleRemoveFavorite(favorite.id)}
-                        className="text-red-500 hover:text-red-600"
-                      >
-                        <Heart className="h-4 w-4 fill-current" />
-                      </Button>
-                    </div>
+                <div key={favorite.id} className="relative">
+                  {/* Remove from favorites button */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRemoveFavorite(favorite.id)}
+                    className="absolute top-2 right-2 z-10 text-red-500 hover:text-red-600 bg-white/80 hover:bg-white/90 rounded-full shadow-sm"
+                  >
+                    <Heart className="h-4 w-4 fill-current" />
+                  </Button>
 
-                    <div className="space-y-3">
-                      <div>
-                        <h3 className="font-semibold text-lg">{vendor.business_name}</h3>
-                        <p className="text-sm text-gray-600">{vendor.profile_title}</p>
+                  <Link href={`/vendor/${vendor.id}`}>
+                    <Card className="overflow-hidden hover:shadow-md transition-shadow duration-200 border-0 shadow-sm cursor-pointer h-full">
+                      {/* Image */}
+                      <div className="aspect-square relative bg-muted rounded-lg overflow-hidden">
+                        {vendor.profile_photo_url ? (
+                          <Image
+                            src={vendor.profile_photo_url}
+                            alt={vendor.business_name || "Vendor"}
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="flex items-center justify-center h-full text-4xl font-semibold text-muted-foreground">
+                            {vendor.business_name?.[0] ?? "V"}
+                          </div>
+                        )}
                       </div>
 
-                      {vendor.zip_code && (
-                        <div className="flex items-center gap-1 text-sm text-gray-600">
-                          <MapPin className="h-3 w-3" />
-                          {vendor.zip_code}
-                        </div>
-                      )}
+                      {/* Content */}
+                      <div className="p-4 space-y-2">
+                        {/* Business Name */}
+                        <h3 className="font-semibold text-base leading-tight line-clamp-1 text-gray-900">
+                          {vendor.business_name}
+                        </h3>
 
-                      {vendor.hourly_rate && (
-                        <div className="text-lg font-bold">
-                          ${vendor.hourly_rate.toFixed(2)}/hr
-                        </div>
-                      )}
+                        {/* Rate */}
+                        {typeof vendor.hourly_rate === "number" && (
+                          <div className="text-sm text-primary font-medium">
+                            From ${vendor.hourly_rate} / hour
+                          </div>
+                        )}
 
-                      {vendorCategories.length > 0 && (
-                        <div className="flex flex-wrap gap-1">
-                          {vendorCategories.map((category, index) => (
-                            <Badge key={index} variant="secondary" className="text-xs">
-                              {category}
+                        {/* Service Type Badge */}
+                        <div>
+                          {vendor.offers_virtual_services && !vendor.offers_in_person_services && (
+                            <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700 hover:bg-purple-100">
+                              🔮 Virtual
                             </Badge>
-                          ))}
+                          )}
+                          {vendor.offers_in_person_services && !vendor.offers_virtual_services && (
+                            <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700 hover:bg-purple-100">
+                              👤 In-Person
+                            </Badge>
+                          )}
+                          {vendor.offers_virtual_services && vendor.offers_in_person_services && (
+                            <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700 hover:bg-purple-100">
+                              🔮 Virtual
+                            </Badge>
+                          )}
                         </div>
-                      )}
-
-                      <Button asChild className="w-full mt-4">
-                        <Link href={`/vendor/${vendor.id}`}>
-                          View Profile
-                        </Link>
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                      </div>
+                    </Card>
+                  </Link>
+                </div>
               )
             })}
           </div>

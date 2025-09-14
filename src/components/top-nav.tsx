@@ -2,9 +2,7 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { createClient } from "@/lib/supabase/client"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -12,18 +10,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useRouter, usePathname } from "next/navigation"
-import { toast } from "sonner"
+import { usePathname } from "next/navigation"
 import { CondensedSearch } from "@/components/condensed-search"
 import { InboxIcon } from "@/components/inbox-icon"
 import { FavoritesIcon } from "@/components/favorites-icon"
+import { useAuth } from "@/contexts/auth-context"
 
 export function TopNav() {
-  const router = useRouter()
   const pathname = usePathname()
-  const [firstInitial, setFirstInitial] = useState<string | null>(null)
-  const [isAdmin, setIsAdmin] = useState(false)
-  const supabase = useMemo(() => createClient(), [])
+  const { user, loading, signOut } = useAuth()
 
   // Hide avatar on registration pages
   const isRegistrationPage = pathname?.includes('/vendor-registration')
@@ -33,53 +28,13 @@ export function TopNav() {
   const isHomePage = pathname === '/' || pathname === '/home'
   const showCondensedSearch = !isHomePage && !isAuthPage && !isRegistrationPage
 
-  const computeInitial = (user: { user_metadata?: { first_name?: string }; email?: string } | null | undefined) => {
-    if (!user) return null
-    const first = (user.user_metadata?.first_name as string | undefined) || ""
-    const initial = first.trim().charAt(0).toUpperCase() || (user.email?.charAt(0).toUpperCase() ?? null)
-    setFirstInitial(initial)
+  // Get user initial from email
+  const getUserInitial = () => {
+    if (!user?.email) return null
+    return user.email.charAt(0).toUpperCase()
   }
 
-  useEffect(() => {
-    const load = async () => {
-      const { data } = await supabase.auth.getUser()
-      computeInitial(data.user)
-      
-      // Check if user is admin
-      if (data.user) {
-        const { data: profile } = await supabase
-          .from('user_profiles')
-          .select('role, is_active')
-          .eq('id', data.user.id)
-          .single()
-        
-        const isAdminUser = (profile?.role === 'administrator' && profile?.is_active) ||
-                           data.user.user_metadata?.role === 'administrator'
-        setIsAdmin(isAdminUser)
-      }
-    }
-    load()
-    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      computeInitial(session?.user)
-      
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from('user_profiles')
-          .select('role, is_active')
-          .eq('id', session.user.id)
-          .single()
-        
-        const isAdminUser = (profile?.role === 'administrator' && profile?.is_active) ||
-                           session.user.user_metadata?.role === 'administrator'
-        setIsAdmin(isAdminUser)
-      } else {
-        setIsAdmin(false)
-      }
-    })
-    return () => {
-      listener.subscription.unsubscribe()
-    }
-  }, [supabase])
+  const firstInitial = getUserInitial()
 
   // Hide entire top nav on auth pages
   if (isAuthPage) {
@@ -116,19 +71,13 @@ export function TopNav() {
               <CondensedSearch />
             </div>
           )}
-          {!firstInitial && !isRegistrationPage && (
-            <Link href="/burp-for-business" className="hidden md:block text-sm hover:underline">
-              Join as a Pro
-            </Link>
-          )}
-          {firstInitial && !isRegistrationPage ? (
+          
+          {loading ? (
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          ) : user && firstInitial && !isRegistrationPage ? (
             <>
-              {!isAdmin && (
-                <>
-                  <InboxIcon />
-                  <FavoritesIcon />
-                </>
-              )}
+              <InboxIcon />
+              <FavoritesIcon />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full p-0">
@@ -137,24 +86,18 @@ export function TopNav() {
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onClick={async () => {
-                    const supabase = createClient()
-                    const { error } = await supabase.auth.signOut()
-                    if (error) return toast.error(error.message)
-                    setFirstInitial(null)
-                    toast.success("Signed out")
-                    router.push("/login")
-                  }}
-                >
-                  Logout
-                </DropdownMenuItem>
-              </DropdownMenuContent>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={signOut}>
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
               </DropdownMenu>
             </>
           ) : !isRegistrationPage ? (
             <>
+              <Link href="/burp-for-business" className="hidden md:block text-sm hover:underline">
+                Join as a Pro
+              </Link>
               <Link href="/login" className="text-sm hover:underline">
                 Login
               </Link>
@@ -168,5 +111,3 @@ export function TopNav() {
     </header>
   )
 }
-
-

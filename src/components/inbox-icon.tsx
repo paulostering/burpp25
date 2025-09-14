@@ -6,26 +6,12 @@ import { Badge } from '@/components/ui/badge'
 import { Mail } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
+import { useAuth } from '@/contexts/auth-context'
 
 export function InboxIcon() {
   const [unreadCount, setUnreadCount] = useState(0)
-  const [user, setUser] = useState<any>(null)
+  const { user } = useAuth()
   const supabase = createClient()
-
-  useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      setUser(user)
-    }
-
-    getUser()
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user || null)
-    })
-
-    return () => subscription.unsubscribe()
-  }, [supabase])
 
   useEffect(() => {
     if (!user) {

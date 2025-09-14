@@ -70,12 +70,16 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
       
       if (user) {
         // Check if vendor is favorited
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('user_vendor_favorites')
           .select('id')
           .eq('user_id', user.id)
           .eq('vendor_id', vendor.id)
           .single()
+        
+        if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+          console.error('Error checking favorite status:', error)
+        }
         
         setIsFavorited(!!data)
       }
@@ -216,26 +220,44 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
 
     try {
       if (isFavorited) {
-        await supabase
+        const { error } = await supabase
           .from('user_vendor_favorites')
           .delete()
           .eq('user_id', user.id)
           .eq('vendor_id', vendor.id)
         
+        if (error) {
+          console.error('Error removing favorite:', error)
+          toast.error('Failed to remove from favorites')
+          return
+        }
+        
         setIsFavorited(false)
         toast.success('Removed from favorites')
       } else {
-        await supabase
+        const { error } = await supabase
           .from('user_vendor_favorites')
           .insert({
             user_id: user.id,
             vendor_id: vendor.id
           })
         
+        if (error) {
+          console.error('Error adding favorite:', error)
+          if (error.code === '23505') {
+            toast.error('Already in favorites')
+            setIsFavorited(true)
+          } else {
+            toast.error('Failed to add to favorites')
+          }
+          return
+        }
+        
         setIsFavorited(true)
         toast.success('Added to favorites')
       }
     } catch (error) {
+      console.error('Unexpected error:', error)
       toast.error('Something went wrong')
     }
   }

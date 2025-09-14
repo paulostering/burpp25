@@ -6,19 +6,22 @@ import { Badge } from '@/components/ui/badge'
 import { Heart } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
+import { useAuth } from '@/contexts/auth-context'
 
 export function FavoritesIcon() {
   const [favoritesCount, setFavoritesCount] = useState(0)
-  const [user, setUser] = useState<any>(null)
   const [isVendor, setIsVendor] = useState(false)
+  const { user } = useAuth()
   const supabase = createClient()
 
   useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      setUser(user)
-      
-      if (user) {
+    const checkIfVendor = async () => {
+      if (!user) {
+        setIsVendor(false)
+        return
+      }
+
+      try {
         // Check if user is a vendor
         const { data: vendorProfile } = await supabase
           .from('vendor_profiles')
@@ -27,21 +30,14 @@ export function FavoritesIcon() {
           .single()
         
         setIsVendor(!!vendorProfile)
+      } catch (error) {
+        console.error('Error checking vendor status:', error)
+        setIsVendor(false)
       }
     }
 
-    getUser()
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user || null)
-      if (!session?.user) {
-        setIsVendor(false)
-        setFavoritesCount(0)
-      }
-    })
-
-    return () => subscription.unsubscribe()
-  }, [supabase])
+    checkIfVendor()
+  }, [user, supabase])
 
   useEffect(() => {
     if (!user || isVendor) {
@@ -69,17 +65,19 @@ export function FavoritesIcon() {
           // Check if the error is due to table not existing
           if (error.message?.includes('relation "user_vendor_favorites" does not exist') || 
               error.message?.includes('does not exist') ||
-              error.code === '42P01') {
+              error.message?.includes('Could not find the table') ||
+              error.code === '42P01' ||
+              error.code === 'PGRST205') {
             console.warn('user_vendor_favorites table does not exist. Favorites feature not available.')
             setFavoritesCount(0)
             return
           }
           
           console.error('Error loading favorites count:', {
-            message: error.message,
-            code: error.code,
-            details: error.details,
-            hint: error.hint,
+            message: error?.message || 'Unknown error',
+            code: error?.code || 'Unknown code',
+            details: error?.details || 'No details',
+            hint: error?.hint || 'No hint',
             fullError: error
           })
           // Set count to 0 on error to prevent UI issues
@@ -93,8 +91,9 @@ export function FavoritesIcon() {
       } catch (error) {
         console.error('Unexpected error loading favorites count:', {
           error: error,
-          message: error instanceof Error ? error.message : 'Unknown error',
-          stack: error instanceof Error ? error.stack : undefined
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+          type: typeof error
         })
         // Set count to 0 on error to prevent UI issues
         setFavoritesCount(0)

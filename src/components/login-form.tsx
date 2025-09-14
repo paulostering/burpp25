@@ -31,17 +31,33 @@ export function LoginForm({
 
   const onSubmit = async (values: z.infer<typeof schema>) => {
     setIsLoading(true)
+    console.log('=== LOGIN ATTEMPT START ===')
+    console.log('Email:', values.email)
+    
     try {
       const supabase = createClient()
+      
+      // Check session before login
+      const { data: { session: sessionBefore } } = await supabase.auth.getSession()
+      console.log('Session before login:', sessionBefore)
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email: values.email,
         password: values.password,
       })
       
+      console.log('Login response:', { data, error })
+      
       if (error) {
+        console.error('Login error:', error)
         toast.error(error.message)
         return
       }
+      
+      // Check session after login
+      const { data: { session: sessionAfter } } = await supabase.auth.getSession()
+      console.log('Session after login:', sessionAfter)
+      console.log('Cookies after login:', document.cookie)
       
               // Check user role after successful login
         if (data.user) {
@@ -56,16 +72,24 @@ export function LoginForm({
                          data.user.user_metadata?.role === 'administrator'
           
           if (isAdmin) {
+            console.log('User is admin, redirecting to /admin')
             toast.success('Welcome back, Administrator!')
             router.push('/admin')
           } else {
+            console.log('User is not admin, redirecting to /')
             toast.success('Signed in successfully')
             router.push('/')
           }
         } else {
+          console.log('No user data, redirecting to /')
           toast.success('Signed in successfully')
           router.push('/')
         }
+        
+        console.log('=== LOGIN ATTEMPT END ===')
+        
+        // Force refresh to ensure session is recognized
+        router.refresh()
     } catch (error) {
       console.error('Login error:', error)
       toast.error('An error occurred during login')
