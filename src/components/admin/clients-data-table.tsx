@@ -40,7 +40,9 @@ export function ClientsDataTable({ clients, pagination, currentSearch }: Clients
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const filteredClients = clients.filter(client =>
+  // When pagination is provided, show all clients (already paginated server-side)
+  // When no pagination, use client-side filtering
+  const filteredClients = pagination ? clients : clients.filter(client =>
     client.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.email.toLowerCase().includes(searchTerm.toLowerCase())
