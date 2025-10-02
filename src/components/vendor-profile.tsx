@@ -598,7 +598,7 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
                         <img 
                           src={category.icon_url} 
                           alt={`${category.name} icon`}
-                          className="h-4 w-4 object-contain filter brightness-0 invert"
+                          className="h-4 w-4 object-contain filter brightness-0 invert"git 
                         />
                       )}
                       {category.name}

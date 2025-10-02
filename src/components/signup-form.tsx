@@ -18,6 +18,10 @@ const schema = z.object({
   lastName: z.string().min(1, 'Last name is required'),
   email: z.string().email('Please enter a valid email'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
+  confirmPassword: z.string().min(6, 'Please confirm your password'),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
 })
 
 export function SignupForm({
@@ -28,8 +32,33 @@ export function SignupForm({
   const router = useRouter()
   const form = useForm({
     resolver: zodResolver(schema),
-    defaultValues: { firstName: '', lastName: '', email: '', password: '' },
+    defaultValues: { firstName: '', lastName: '', email: '', password: '', confirmPassword: '' },
   })
+
+  // Password strength calculation
+  const getPasswordStrength = (password: string) => {
+    let score = 0
+    const checks = {
+      length: password.length >= 8,
+      lowercase: /[a-z]/.test(password),
+      uppercase: /[A-Z]/.test(password),
+      numbers: /\d/.test(password),
+      symbols: /[^A-Za-z0-9]/.test(password)
+    }
+    
+    score += checks.length ? 1 : 0
+    score += checks.lowercase ? 1 : 0
+    score += checks.uppercase ? 1 : 0
+    score += checks.numbers ? 1 : 0
+    score += checks.symbols ? 1 : 0
+    
+    if (score <= 2) return { strength: 'weak', color: 'bg-red-500', text: 'Weak' }
+    if (score <= 3) return { strength: 'medium', color: 'bg-yellow-500', text: 'Medium' }
+    if (score <= 4) return { strength: 'strong', color: 'bg-blue-500', text: 'Strong' }
+    return { strength: 'very-strong', color: 'bg-green-500', text: 'Very Strong' }
+  }
+
+  const passwordStrength = getPasswordStrength(form.watch('password'))
 
   const onSubmit = async (values: z.infer<typeof schema>) => {
     setIsLoading(true)
@@ -154,8 +183,45 @@ export function SignupForm({
             {...form.register('password')}
             disabled={isLoading}
           />
+          {form.watch('password') && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-gray-600">Password strength:</span>
+                <span className={`font-medium ${
+                  passwordStrength.strength === 'weak' ? 'text-red-600' :
+                  passwordStrength.strength === 'medium' ? 'text-yellow-600' :
+                  passwordStrength.strength === 'strong' ? 'text-blue-600' :
+                  'text-green-600'
+                }`}>
+                  {passwordStrength.text}
+                </span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className={`h-2 rounded-full transition-all duration-300 ${passwordStrength.color}`}
+                  style={{ 
+                    width: passwordStrength.strength === 'weak' ? '25%' :
+                           passwordStrength.strength === 'medium' ? '50%' :
+                           passwordStrength.strength === 'strong' ? '75%' : '100%'
+                  }}
+                ></div>
+              </div>
+            </div>
+          )}
           {form.formState.errors.password && (
             <p className="text-sm text-red-500">{form.formState.errors.password.message}</p>
+          )}
+        </div>
+        <div className="grid gap-3">
+          <Label htmlFor="confirmPassword">Confirm Password</Label>
+          <Input 
+            id="confirmPassword" 
+            type="password" 
+            {...form.register('confirmPassword')}
+            disabled={isLoading}
+          />
+          {form.formState.errors.confirmPassword && (
+            <p className="text-sm text-red-500">{form.formState.errors.confirmPassword.message}</p>
           )}
         </div>
         <Button type="submit" className="w-full" disabled={isLoading}>

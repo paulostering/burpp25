@@ -49,6 +49,31 @@ export function VendorAuthForm({ mode, onModeChange, onAuthSuccess, className }:
     defaultValues: { firstName: '', lastName: '', email: '', password: '', confirmPassword: '' },
   })
 
+  // Password strength calculation
+  const getPasswordStrength = (password: string) => {
+    let score = 0
+    const checks = {
+      length: password.length >= 8,
+      lowercase: /[a-z]/.test(password),
+      uppercase: /[A-Z]/.test(password),
+      numbers: /\d/.test(password),
+      symbols: /[^A-Za-z0-9]/.test(password)
+    }
+    
+    score += checks.length ? 1 : 0
+    score += checks.lowercase ? 1 : 0
+    score += checks.uppercase ? 1 : 0
+    score += checks.numbers ? 1 : 0
+    score += checks.symbols ? 1 : 0
+    
+    if (score <= 2) return { strength: 'weak', color: 'bg-red-500', text: 'Weak' }
+    if (score <= 3) return { strength: 'medium', color: 'bg-yellow-500', text: 'Medium' }
+    if (score <= 4) return { strength: 'strong', color: 'bg-blue-500', text: 'Strong' }
+    return { strength: 'very-strong', color: 'bg-green-500', text: 'Very Strong' }
+  }
+
+  const passwordStrength = getPasswordStrength(signupForm.watch('password'))
+
   const onLoginSubmit = async (values: z.infer<typeof loginSchema>) => {
     setIsLoading(true)
     
@@ -279,6 +304,31 @@ export function VendorAuthForm({ mode, onModeChange, onAuthSuccess, className }:
             {...signupForm.register('password')}
             disabled={isLoading}
           />
+          {signupForm.watch('password') && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-gray-600">Password strength:</span>
+                <span className={`font-medium ${
+                  passwordStrength.strength === 'weak' ? 'text-red-600' :
+                  passwordStrength.strength === 'medium' ? 'text-yellow-600' :
+                  passwordStrength.strength === 'strong' ? 'text-blue-600' :
+                  'text-green-600'
+                }`}>
+                  {passwordStrength.text}
+                </span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className={`h-2 rounded-full transition-all duration-300 ${passwordStrength.color}`}
+                  style={{ 
+                    width: passwordStrength.strength === 'weak' ? '25%' :
+                           passwordStrength.strength === 'medium' ? '50%' :
+                           passwordStrength.strength === 'strong' ? '75%' : '100%'
+                  }}
+                ></div>
+              </div>
+            </div>
+          )}
           {signupForm.formState.errors.password && (
             <p className="text-sm text-red-500">{signupForm.formState.errors.password.message}</p>
           )}
