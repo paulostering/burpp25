@@ -12,7 +12,8 @@ import {
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Search, MoreHorizontal, Eye, Edit, Trash2 } from 'lucide-react'
+import { Search, MoreHorizontal, Eye, Edit, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,6 +37,8 @@ interface ClientsDataTableProps {
 
 export function ClientsDataTable({ clients, pagination, currentSearch }: ClientsDataTableProps) {
   const [searchTerm, setSearchTerm] = useState('')
+  const router = useRouter()
+  const searchParams = useSearchParams()
 
   const filteredClients = clients.filter(client =>
     client.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -49,6 +52,12 @@ export function ClientsDataTable({ clients, pagination, currentSearch }: Clients
       month: 'short',
       day: 'numeric'
     })
+  }
+
+  const handlePageChange = (newPage: number) => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('page', newPage.toString())
+    router.push(`/admin/clients?${params.toString()}`)
   }
 
   return (
@@ -133,9 +142,56 @@ export function ClientsDataTable({ clients, pagination, currentSearch }: Clients
         </Table>
       </div>
 
-      {/* Summary */}
-      <div className="text-sm text-muted-foreground">
-        Showing {filteredClients.length} of {clients.length} clients
+      {/* Pagination and Summary */}
+      <div className="flex items-center justify-between">
+        <div className="text-sm text-muted-foreground">
+          {pagination ? (
+            <>Showing {pagination.offset + 1} to {Math.min(pagination.offset + pagination.per_page, pagination.total)} of {pagination.total} clients</>
+          ) : (
+            <>Showing {filteredClients.length} of {clients.length} clients</>
+          )}
+        </div>
+        
+        {pagination && pagination.total_pages > 1 && (
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(pagination.page - 1)}
+              disabled={pagination.page <= 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Previous
+            </Button>
+            
+            <div className="flex items-center space-x-1">
+              {Array.from({ length: Math.min(5, pagination.total_pages) }, (_, i) => {
+                const pageNum = i + 1
+                return (
+                  <Button
+                    key={pageNum}
+                    variant={pagination.page === pageNum ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handlePageChange(pageNum)}
+                    className="w-8 h-8 p-0"
+                  >
+                    {pageNum}
+                  </Button>
+                )
+              })}
+            </div>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(pagination.page + 1)}
+              disabled={pagination.page >= pagination.total_pages}
+            >
+              Next
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   )

@@ -1,26 +1,86 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ClientsDataTable } from '@/components/admin/clients-data-table'
-import { createServerSupabase } from '@/lib/supabase/server'
+import { createAdminSupabase } from '@/lib/supabase/server'
 
-async function getClients() {
-  const supabase = await createServerSupabase()
+async function getClients(page: number = 1, perPage: number = 20) {
+  const supabase = createAdminSupabase()
   
-  const { data: clients, error } = await supabase
-    .from('user_profiles')
-    .select('*')
-    .eq('role', 'customer')
-    .order('created_at', { ascending: false })
+  // Get all auth users and their profiles (if they exist)
+  const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers()
   
-  if (error) {
-    console.error('Error fetching clients:', error)
-    return []
+  if (authError) {
+    console.error('Error fetching auth users:', authError)
+    return { clients: [], pagination: null }
   }
   
-  return clients || []
+  // Get all user profiles
+  const { data: profiles, error: profilesError } = await supabase
+    .from('user_profiles')
+    .select('*')
+  
+  if (profilesError) {
+    console.error('Error fetching user profiles:', profilesError)
+    return { clients: [], pagination: null }
+  }
+  
+  // Create a map of profiles by user ID
+  const profilesMap = new Map(profiles?.map(p => [p.id, p]) || [])
+  
+  // Filter and transform users to show only customers
+  const allClients = authUsers.users
+    .map(user => {
+      const profile = profilesMap.get(user.id)
+      
+      // If user has a profile, use the profile data
+      if (profile) {
+        return profile
+      }
+      
+      // If no profile exists, create a virtual profile for display
+      // (users without profiles are considered customers by default)
+      return {
+        id: user.id,
+        email: user.email || '',
+        first_name: user.user_metadata?.first_name || null,
+        last_name: user.user_metadata?.last_name || null,
+        role: 'customer' as const,
+        is_active: true,
+        created_at: user.created_at,
+        updated_at: user.updated_at
+      }
+    })
+    .filter(client => 
+      // Only show customers (either explicit role or no profile)
+      client.role === 'customer'
+    )
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  
+  // Implement pagination
+  const total = allClients.length
+  const totalPages = Math.ceil(total / perPage)
+  const offset = (page - 1) * perPage
+  const clients = allClients.slice(offset, offset + perPage)
+  
+  const pagination = {
+    page,
+    per_page: perPage,
+    total,
+    total_pages: totalPages,
+    offset,
+    limit: perPage
+  }
+  
+  return { clients, pagination }
 }
 
-export default async function AdminClientsPage() {
-  const clients = await getClients()
+interface AdminClientsPageProps {
+  searchParams: Promise<{ page?: string }>
+}
+
+export default async function AdminClientsPage({ searchParams }: AdminClientsPageProps) {
+  const { page } = await searchParams
+  const currentPage = parseInt(page || '1', 10)
+  const { clients, pagination } = await getClients(currentPage)
 
   return (
     <div className="space-y-6">
@@ -36,7 +96,7 @@ export default async function AdminClientsPage() {
           <CardTitle>Customer Accounts</CardTitle>
         </CardHeader>
         <CardContent>
-          <ClientsDataTable clients={clients} />
+          <ClientsDataTable clients={clients} pagination={pagination} />
         </CardContent>
       </Card>
     </div>
