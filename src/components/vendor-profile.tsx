@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Star, Heart, Share, MessageCircle, Phone, MapPin, CheckCircle, Globe, Send } from 'lucide-react'
+import { Star, Heart, Share, MessageCircle, Phone, MapPin, CheckCircle, Globe, Send, MessageSquare } from 'lucide-react'
 import Image from 'next/image'
 import type { VendorProfile, Review } from '@/types/db'
 import { createClient } from '@/lib/supabase/client'
@@ -48,7 +48,6 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
   const [showModal, setShowModal] = useState(false)
   const [modalStep, setModalStep] = useState<'auth' | 'message'>('auth')
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('signup')
-  const [locationName, setLocationName] = useState<string>('')
   const [conversationId, setConversationId] = useState<string | null>(null)
   const [message, setMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -194,68 +193,6 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
     return () => subscription.unsubscribe()
   }, [supabase, vendor.id])
 
-  useEffect(() => {
-    const getLocationName = async () => {
-      if (!vendor.zip_code || !process.env.NEXT_PUBLIC_MAPBOX_TOKEN) return
-      
-      try {
-        const response = await fetch(
-          `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(vendor.zip_code)}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}&types=postcode`
-        )
-        const data = await response.json()
-        
-        if (data.features && data.features.length > 0) {
-          const place = data.features[0]
-          const placeName = place.place_name || ''
-          console.log('Mapbox place_name:', placeName) // Debug log
-          
-          // Parse the place name to extract components
-          const parts = placeName.split(', ')
-          console.log('Parsed parts:', parts) // Debug log
-          
-          let city = ''
-          let state = ''
-          
-          // Different parsing strategies based on response format
-          if (parts.length >= 3) {
-            // Find the city (usually the first non-postal code part)
-            for (let i = 1; i < parts.length - 1; i++) {
-              if (!/^\d+$/.test(parts[i])) { // Not just numbers
-                city = parts[i]
-                break
-              }
-            }
-            
-            // Find the state (usually second to last, before country)
-            if (parts.length >= 3) {
-              state = parts[parts.length - 2] // Second to last part
-            }
-          }
-          
-          // Fallback: try context array for more structured data
-          if (!city && place.context) {
-            const cityContext = place.context.find((c: any) => c.id?.startsWith('place.'))
-            const stateContext = place.context.find((c: any) => c.id?.startsWith('region.'))
-            
-            city = cityContext?.text || ''
-            state = stateContext?.text || ''
-          }
-          
-          if (city && state) {
-            setLocationName(`${city}, ${state} ${vendor.zip_code}`)
-          } else if (state) {
-            setLocationName(`${state} ${vendor.zip_code}`)
-          } else {
-            setLocationName(vendor.zip_code || '')
-          }
-        }
-      } catch (error) {
-        console.error('Error geocoding zip code:', error)
-      }
-    }
-
-    getLocationName()
-  }, [vendor.zip_code])
 
   useEffect(() => {
     const loadReviews = async () => {
@@ -619,21 +556,21 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
               <div className="space-y-4">
                 <div className="flex gap-2">
                   {vendor.offers_in_person_services && (
-                    <Badge variant="outline" className="flex items-center gap-1">
-                      <CheckCircle className="h-3 w-3" />
+                    <Badge className="bg-primary text-white px-4 py-2 text-sm font-medium rounded-full flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4" />
                       In Person
                     </Badge>
                   )}
                   {vendor.offers_virtual_services && (
-                    <Badge variant="outline" className="flex items-center gap-1">
-                      <Globe className="h-3 w-3" />
+                    <Badge className="bg-primary text-white px-4 py-2 text-sm font-medium rounded-full flex items-center gap-2">
+                      <Globe className="h-4 w-4" />
                       Virtual
                     </Badge>
                   )}
                 </div>
               {/* Location */}
                 <p className="text-gray-700 mb-4">
-                  I service all areas within {vendor.service_radius || 0} miles of {locationName || vendor.zip_code || 'Unknown location'}.
+                  I service all areas within {vendor.service_radius || 0} miles of the zip code {vendor.zip_code || 'Unknown location'}.
                 </p>
                 
                 {/* Service Area Map */}
@@ -661,7 +598,7 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
                         <img 
                           src={category.icon_url} 
                           alt={`${category.name} icon`}
-                          className="h-4 w-4 object-contain"
+                          className="h-4 w-4 object-contain filter brightness-0 invert"
                         />
                       )}
                       {category.name}
@@ -713,7 +650,13 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
                     </div>
                   ))
                 ) : reviews.length === 0 ? (
-                  <p className="text-gray-500 text-center py-8">No reviews yet.</p>
+                  <div className="border border-gray-200 rounded-lg p-8 text-center">
+                    <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
+                      <MessageSquare className="h-6 w-6 text-white" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No reviews yet</h3>
+                    <p className="text-gray-500">Be the first to share your experience with this vendor!</p>
+                  </div>
                 ) : (
                   reviews.map((review) => (
                     <div key={review.id} className="border-b border-gray-200 pb-4 last:border-b-0">
