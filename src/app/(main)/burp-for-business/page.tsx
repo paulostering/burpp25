@@ -37,7 +37,8 @@ export default function BurppForBusiness() {
               <div className="mt-6">
                 <Button 
                   onClick={() => router.push('/vendor-registration')}
-                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-none tracking-wider transition-[color,box-shadow] disabled:pointer-events-none disabled:opacity-50 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] bg-primary shadow-xs hover:bg-primary/90 h-10 text-white px-8 py-3 text-lg font-semibold"
+                  size="lg"
+                  className="text-lg px-8 py-3"
                 >
                   Get Started Today
                 </Button>
@@ -118,7 +119,8 @@ export default function BurppForBusiness() {
                 <div className="mt-8">
                   <Button 
                     onClick={() => router.push('/vendor-registration')}
-                    className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-none tracking-wider transition-[color,box-shadow] disabled:pointer-events-none disabled:opacity-50 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] shadow-xs h-10 bg-primary hover:bg-primary/90 text-white px-8 py-3 text-lg font-semibold"
+                    size="lg"
+                    className="text-lg px-8 py-3"
                   >
                     Grow Your Business with Burpp
                   </Button>
@@ -135,7 +137,8 @@ export default function BurppForBusiness() {
                 <p className="text-xl text-black mb-8">It&apos;s free, easy, and only takes a few minutes.</p>
                 <Button 
                   onClick={() => router.push('/vendor-registration')}
-                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-none tracking-wider transition-[color,box-shadow] disabled:pointer-events-none disabled:opacity-50 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] shadow-xs h-10 bg-primary hover:bg-primary/90 text-white px-8 py-3 text-lg font-semibold"
+                  size="lg"
+                  className="text-lg px-8 py-3"
                 >
                   Meet Your Next Customer
                 </Button>

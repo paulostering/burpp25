@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Star, Heart, Share, MessageCircle, Phone, MapPin, CheckCircle, Globe } from 'lucide-react'
+import { Star, Heart, Share, MessageCircle, Phone, MapPin, CheckCircle, Globe, Send } from 'lucide-react'
 import Image from 'next/image'
 import type { VendorProfile, Review } from '@/types/db'
 import { createClient } from '@/lib/supabase/client'
@@ -21,9 +21,8 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
-import { LoginForm } from '@/components/login-form'
 import { ServiceAreaMap } from '@/components/service-area-map'
-import { SignupForm } from '@/components/signup-form'
+import { VendorAuthForm } from '@/components/vendor-auth-form'
 import { createOrGetConversation } from '@/lib/messaging'
 import { useRouter } from 'next/navigation'
 
@@ -46,9 +45,14 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
   const [averageRating, setAverageRating] = useState(0)
   const [totalReviews, setTotalReviews] = useState(0)
   const [isLoadingReviews, setIsLoadingReviews] = useState(true)
-  const [showAuthModal, setShowAuthModal] = useState(false)
+  const [showModal, setShowModal] = useState(false)
+  const [modalStep, setModalStep] = useState<'auth' | 'message'>('auth')
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('signup')
   const [locationName, setLocationName] = useState<string>('')
+  const [conversationId, setConversationId] = useState<string | null>(null)
+  const [message, setMessage] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [modalTrigger, setModalTrigger] = useState<'message' | 'phone' | 'favorite' | 'other'>('message')
 
   const [reviewRating, setReviewRating] = useState(5)
   const [reviewTitle, setReviewTitle] = useState('')
@@ -62,6 +66,102 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
   const vendorCategories = vendor.service_categories?.map(catId => 
     categories.find(cat => cat.id === catId)
   ).filter(Boolean) || []
+
+  // Step 1: After successful auth, handle based on trigger
+  const handleAuthSuccess = async () => {
+    setIsLoading(true)
+    
+    try {
+      // If triggered by phone icon, just close modal and return to profile
+      if (modalTrigger === 'phone') {
+        handleModalClose()
+        return
+      }
+
+      // If triggered by favorite button, perform the favorite action
+      if (modalTrigger === 'favorite') {
+        handleModalClose()
+        // Perform the favorite action after successful auth
+        setTimeout(() => {
+          handleFavoriteAction()
+        }, 100)
+        return
+      }
+
+      // If triggered by review, just close modal and return to profile
+      if (modalTrigger === 'other') {
+        handleModalClose()
+        return
+      }
+
+      // For message triggers, create conversation and go to step 2
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        toast.error('Authentication failed')
+        return
+      }
+
+      const { data: conversation, error } = await createOrGetConversation(
+        user.id,
+        vendor.user_id || vendor.id
+      )
+      
+      if (error || !conversation) {
+        toast.error('Failed to start conversation')
+        return
+      }
+
+      setConversationId(conversation.id)
+      setModalStep('message')
+    } catch (error) {
+      toast.error('Failed to start conversation')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Step 2: Send message and go to step 3 (redirect to inbox)
+  const handleSendMessage = async () => {
+    if (!message.trim() || !conversationId) return
+    
+    setIsLoading(true)
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { error } = await supabase
+        .from('messages')
+        .insert({
+          conversation_id: conversationId,
+          sender_id: user.id,
+          content: message.trim(),
+          message_type: 'text',
+          is_read: false
+        })
+
+      if (error) {
+        toast.error('Failed to send message')
+        return
+      }
+
+      // Step 3: Redirect to inbox
+      router.push(`/messages?conversation=${conversationId}`)
+      handleModalClose()
+    } catch (error) {
+      toast.error('Failed to send message')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleModalClose = () => {
+    setShowModal(false)
+    setModalStep('auth')
+    setConversationId(null)
+    setMessage('')
+    setModalTrigger('message') // Reset to default
+  }
 
   useEffect(() => {
     const getUser = async () => {
@@ -89,9 +189,6 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user || null)
-      if (event === 'SIGNED_IN') {
-        setShowAuthModal(false)
-      }
     })
 
     return () => subscription.unsubscribe()
@@ -211,19 +308,17 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
     loadReviews()
   }, [supabase, vendor.id])
 
-  const handleFavorite = async () => {
-    if (!user) {
-      setAuthMode('signup')
-      setShowAuthModal(true)
-      return
-    }
+  // Separate function for the actual favorite action (used after auth)
+  const handleFavoriteAction = async () => {
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    if (!currentUser) return
 
     try {
       if (isFavorited) {
         const { error } = await supabase
           .from('user_vendor_favorites')
           .delete()
-          .eq('user_id', user.id)
+          .eq('user_id', currentUser.id)
           .eq('vendor_id', vendor.id)
         
         if (error) {
@@ -238,7 +333,7 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
         const { error } = await supabase
           .from('user_vendor_favorites')
           .insert({
-            user_id: user.id,
+            user_id: currentUser.id,
             vendor_id: vendor.id
           })
         
@@ -262,6 +357,18 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
     }
   }
 
+  const handleFavorite = async () => {
+    if (!user) {
+      setAuthMode('signup')
+      setModalTrigger('favorite')
+      setShowModal(true)
+      return
+    }
+
+    // If user is logged in, perform the action directly
+    await handleFavoriteAction()
+  }
+
   const handleShare = async () => {
     const url = window.location.href
     
@@ -279,7 +386,8 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
   const handleSubmitReview = async () => {
     if (!user) {
       setAuthMode('signup')
-      setShowAuthModal(true)
+      setModalTrigger('other')
+      setShowModal(true)
       return
     }
 
@@ -352,8 +460,6 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
     const last = lastName?.charAt(0)?.toUpperCase() || ''
     return `${first}${last}` || '??'
   }
-
-
 
   return (
     <div className="min-h-screen">
@@ -442,7 +548,8 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
                       onClick={async () => {
                         if (!user) {
                           setAuthMode('signup')
-                          setShowAuthModal(true)
+                          setModalTrigger('message')
+                          setShowModal(true)
                           return
                         }
                         
@@ -473,11 +580,16 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
                         onClick={() => {
                           if (!user) {
                             setAuthMode('signup')
-                            setShowAuthModal(true)
+                            setModalTrigger('phone')
+                            setShowModal(true)
                             return
                           }
-                          // TODO: Implement calling functionality
-                          toast.info('Calling feature coming soon!')
+                          // Open tel link with vendor's phone number
+                          if (vendor.phone_number) {
+                            window.location.href = `tel:${vendor.phone_number}`
+                          } else {
+                            toast.error('Phone number not available')
+                          }
                         }}
                       >
                         <Phone className="h-5 w-5" />
@@ -650,7 +762,7 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
                     variant="outline"
                     onClick={() => {
                       setAuthMode('signup')
-                      setShowAuthModal(true)
+                      setShowModal(true)
                     }}
                     className="w-full"
                   >
@@ -726,33 +838,57 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
         </div>
       </div>
 
-      {/* Auth Modal */}
-      <Dialog open={showAuthModal} onOpenChange={setShowAuthModal}>
+      {/* Simple Step Modal */}
+      <Dialog open={showModal} onOpenChange={handleModalClose}>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              Join the Burpp Community
+          <DialogHeader className="text-center">
+            <DialogTitle className="text-2xl font-bold text-center">
+              {modalStep === 'auth' ? 'Join the Burpp Community' : `Send a message to ${vendor.business_name}`}
             </DialogTitle>
-            <DialogDescription>
-              Create an account to message vendors and manage your service requests.
+            <DialogDescription className="text-muted-foreground text-sm text-balance text-center">
+              {modalStep === 'auth' 
+                ? 'Create an account to message vendors and manage your service requests.'
+                : 'Ask questions or describe what you need. You don\'t need to include contact info yet.'
+              }
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4">
-            {authMode === 'login' ? <LoginForm /> : <SignupForm />}
-            
-            <div className="text-center">
-              <button
-                onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
-                className="text-sm text-blue-600 hover:underline"
+          {modalStep === 'auth' ? (
+            <VendorAuthForm 
+              mode={authMode} 
+              onModeChange={setAuthMode}
+              onAuthSuccess={handleAuthSuccess}
+            />
+          ) : (
+            <div className="space-y-4">
+              <Textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="What services are you looking for? Include any details that might help the vendor understand your needs."
+                disabled={isLoading}
+                className="min-h-[120px] resize-none"
+                rows={5}
+              />
+              
+              <Button
+                onClick={handleSendMessage}
+                disabled={!message.trim() || isLoading}
+                className="w-full"
               >
-                {authMode === 'login' 
-                  ? "Don't have an account? Sign up" 
-                  : 'Already have an account? Login'
-                }
-              </button>
+                {isLoading ? (
+                  <>
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent mr-2" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4 mr-2" />
+                    Send Message
+                  </>
+                )}
+              </Button>
             </div>
-          </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
