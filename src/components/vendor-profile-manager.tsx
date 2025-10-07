@@ -28,6 +28,7 @@ import {
 import { toast } from 'sonner'
 import Image from 'next/image'
 import type { VendorProfile, Category } from '@/types/db'
+import { ImageCropModal } from '@/components/image-crop-modal'
 
 interface VendorProfileManagerProps {
   vendor: VendorProfile
@@ -55,6 +56,11 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
     cover_photo_url: vendor.cover_photo_url || '',
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
+  
+  // Image crop modal state
+  const [cropModalOpen, setCropModalOpen] = useState(false)
+  const [imageToCrop, setImageToCrop] = useState<string>('')
+  const [cropType, setCropType] = useState<'profile' | 'cover'>('profile')
   
   const profilePhotoInputRef = useRef<HTMLInputElement>(null)
   const coverPhotoInputRef = useRef<HTMLInputElement>(null)
@@ -198,15 +204,32 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
     return null
   }
 
-  const handlePhotoUpload = async (file: File, type: 'profile' | 'cover') => {
-    // Validate image
-    const validationError = validateImage(file)
-    if (validationError) {
-      toast.error(validationError)
-      return
-    }
+  const handlePhotoInputChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'profile' | 'cover') => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Validate image
+      const validationError = validateImage(file)
+      if (validationError) {
+        toast.error(validationError)
+        e.target.value = ''
+        return
+      }
 
-    setUploadingPhoto(type)
+      // Create preview URL and open crop modal
+      const reader = new FileReader()
+      reader.onload = () => {
+        setImageToCrop(reader.result as string)
+        setCropType(type)
+        setCropModalOpen(true)
+      }
+      reader.readAsDataURL(file)
+    }
+    // Reset input value to allow uploading the same file again
+    e.target.value = ''
+  }
+
+  const handleCroppedImageUpload = async (croppedBlob: Blob) => {
+    setUploadingPhoto(cropType)
 
     try {
       // Get current user ID
@@ -216,10 +239,12 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
         return
       }
 
+      // Convert blob to file
+      const fileName = cropType === 'profile' ? 'profile.jpg' : 'cover.jpg'
+      const file = new File([croppedBlob], fileName, { type: 'image/jpeg' })
+
       // Create file path following vendor registration pattern: {userId}/{type}/{filename}
-      const fileExt = file.name.split('.').pop()
-      const fileName = type === 'profile' ? 'profile.jpg' : 'cover.jpg'
-      const filePath = `${user.id}/${type}/${fileName}`
+      const filePath = `${user.id}/${cropType}/${fileName}`
 
       // Upload to Supabase Storage with upsert to replace existing
       console.log('Uploading to path:', filePath)
@@ -228,7 +253,7 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: true,
-          contentType: file.type
+          contentType: 'image/jpeg'
         })
 
       if (uploadError) {
@@ -256,7 +281,7 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
       console.log('Public URL:', cacheBustedUrl)
 
       // Update vendor profile in database
-      const updateField = type === 'profile' ? 'profile_photo_url' : 'cover_photo_url'
+      const updateField = cropType === 'profile' ? 'profile_photo_url' : 'cover_photo_url'
       console.log('Updating vendor profile:', { [updateField]: cacheBustedUrl })
       
       const { data: updatedVendor, error: updateError } = await supabase
@@ -292,23 +317,14 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
       // Notify parent component
       onProfileUpdate(updatedVendor)
 
-      toast.success(`${type === 'profile' ? 'Profile' : 'Cover'} photo updated successfully!`)
+      toast.success(`${cropType === 'profile' ? 'Profile' : 'Cover'} photo updated successfully!`)
     } catch (error) {
       console.error('Error uploading photo:', error)
       console.error('Error details:', JSON.stringify(error, null, 2))
-      toast.error(`Failed to upload ${type} photo. Please try again.`)
+      toast.error(`Failed to upload ${cropType} photo. Please try again.`)
     } finally {
       setUploadingPhoto(null)
     }
-  }
-
-  const handlePhotoInputChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'profile' | 'cover') => {
-    const file = e.target.files?.[0]
-    if (file) {
-      handlePhotoUpload(file, type)
-    }
-    // Reset input value to allow uploading the same file again
-    e.target.value = ''
   }
 
   const triggerPhotoUpload = (type: 'profile' | 'cover') => {
@@ -389,8 +405,8 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
         {/* Left Column - Profile Overview */}
         <div className="lg:col-span-1 space-y-6">
           {/* Profile Photo Section - Matching Public View */}
-          <Card>
-            <CardContent className="p-0">
+          <Card className="shadow-none pt-0">
+            <CardContent className="p-0 pt-0">
               <div className="overflow-hidden">
                 <div className="relative">
                   {/* Cover Photo */}
@@ -848,6 +864,21 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
           </Card>
         </div>
       </div>
+
+      {/* Image Crop Modal */}
+      <ImageCropModal
+        open={cropModalOpen}
+        onOpenChange={setCropModalOpen}
+        imageSrc={imageToCrop}
+        onCropComplete={handleCroppedImageUpload}
+        aspectRatio={cropType === 'profile' ? 1 : 16 / 9}
+        title={cropType === 'profile' ? 'Crop Profile Photo' : 'Crop Cover Photo'}
+        description={
+          cropType === 'profile'
+            ? 'Adjust your profile photo. Try to center your face or logo.'
+            : 'Adjust your cover photo. This will be displayed at the top of your profile.'
+        }
+      />
     </div>
   )
 }

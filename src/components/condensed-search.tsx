@@ -127,7 +127,18 @@ export function CondensedSearch() {
           }
         },
         (error) => {
-          console.error('Error getting location:', error)
+          // Log detailed error information
+          const errorMessages = {
+            1: 'User denied location permission',
+            2: 'Location unavailable',
+            3: 'Location request timeout'
+          }
+          console.log('Geolocation error:', {
+            code: error.code,
+            message: error.message,
+            reason: errorMessages[error.code as keyof typeof errorMessages] || 'Unknown error'
+          })
+          // Silently fail - user can still manually enter location
         }
       )
     }
@@ -295,7 +306,18 @@ export function CondensedSearch() {
                       }
                     },
                     (error) => {
-                      console.error('Error getting location:', error)
+                      // Log detailed error information
+                      const errorMessages = {
+                        1: 'User denied location permission',
+                        2: 'Location unavailable',
+                        3: 'Location request timeout'
+                      }
+                      console.log('Geolocation error:', {
+                        code: error.code,
+                        message: error.message,
+                        reason: errorMessages[error.code as keyof typeof errorMessages] || 'Unknown error'
+                      })
+                      // Silently fail - user can still manually enter location
                     }
                   )
                 }
