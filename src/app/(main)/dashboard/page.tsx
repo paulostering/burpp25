@@ -1,55 +1,243 @@
-import { AppSidebar } from "@/components/app-sidebar"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
-import { Separator } from "@/components/ui/separator"
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar"
+'use client'
 
-export default function Page() {
-  return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator
-              orientation="vertical"
-              className="mr-2 data-[orientation=vertical]:h-4"
-            />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="#">
-                    Building Your Application
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator className="hidden md:block" />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Data Fetching</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+import { VendorDashboardWrapper } from '@/components/vendor-dashboard-wrapper'
+import { useAuth } from '@/contexts/auth-context'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import type { VendorProfile as VendorProfileType, Category } from '@/types/db'
+
+export default function VendorDashboardPage() {
+  const [vendor, setVendor] = useState<VendorProfileType | null>(null)
+  const [stats, setStats] = useState({
+    conversations: 0,
+    messages: 0,
+    reviews: 0,
+  })
+  const [categories, setCategories] = useState<Category[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  
+  const { user, loading: authLoading } = useAuth()
+  const router = useRouter()
+  const supabase = createClient()
+
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      // Wait for auth to finish loading
+      if (authLoading) return
+      
+      if (!user) {
+        router.push('/login')
+        return
+      }
+
+      try {
+        setLoading(true)
+        setError(null)
+
+        // Get vendor profile by user_id (the logged-in user)
+        const vendorResult = await supabase
+          .from('vendor_profiles')
+          .select('*')
+          .eq('user_id', user.id)
+          .single()
+
+        if (vendorResult.error || !vendorResult.data) {
+          setError('No vendor profile found for this user. Please complete vendor registration.')
+          setLoading(false)
+          return
+        }
+
+        const vendorId = vendorResult.data.id
+
+        // Fetch stats and categories in parallel
+        const [statsResult, categoriesResult] = await Promise.all([
+          // Get vendor stats
+          Promise.all([
+            supabase
+              .from('conversations')
+              .select('*', { count: 'exact', head: true })
+              .eq('vendor_id', vendorId),
+            supabase
+              .from('messages')
+              .select('*', { count: 'exact', head: true })
+              .eq('vendor_id', vendorId),
+            supabase
+              .from('reviews')
+              .select('*', { count: 'exact', head: true })
+              .eq('vendor_id', vendorId)
+          ]),
+          
+          // Get categories
+          supabase
+            .from('categories')
+            .select('*')
+            .eq('is_active', true)
+            .order('name')
+        ])
+
+        // Check for errors
+        if (categoriesResult.error) {
+          console.error('Error fetching categories:', categoriesResult.error)
+        }
+
+        // Process stats
+        const [conversationsCount, messagesCount, reviewsCount] = statsResult
+        const processedStats = {
+          conversations: conversationsCount.count || 0,
+          messages: messagesCount.count || 0,
+          reviews: reviewsCount.count || 0,
+        }
+
+        // Set data
+        setVendor(vendorResult.data)
+        setStats(processedStats)
+        setCategories(categoriesResult.data || [])
+
+      } catch (err) {
+        console.error('Error loading dashboard data:', err)
+        setError('Failed to load dashboard data')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadDashboardData()
+  }, [user, authLoading, router, supabase])
+
+  if (loading || authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Header Skeleton */}
+          <div className="mb-8">
+            <Skeleton className="h-9 w-64 mb-2" />
+            <Skeleton className="h-5 w-96" />
           </div>
-        </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-            <div className="bg-muted/50 aspect-video rounded-xl" />
-            <div className="bg-muted/50 aspect-video rounded-xl" />
-            <div className="bg-muted/50 aspect-video rounded-xl" />
+
+          {/* Navigation Tabs Skeleton */}
+          <div className="mb-8">
+            <div className="border-b border-gray-200">
+              <nav className="-mb-px flex space-x-8">
+                <Skeleton className="h-12 w-24" />
+                <Skeleton className="h-12 w-40" />
+                <Skeleton className="h-12 w-24" />
+              </nav>
+            </div>
           </div>
-          <div className="bg-muted/50 min-h-[100vh] flex-1 rounded-xl md:min-h-min" />
+
+          {/* Profile Content Skeleton */}
+          <div className="space-y-6">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <Skeleton className="h-7 w-48" />
+                <Skeleton className="h-4 w-64" />
+              </div>
+              <div className="flex space-x-2">
+                <Skeleton className="h-10 w-24" />
+                <Skeleton className="h-10 w-32" />
+              </div>
+            </div>
+
+            {/* Main Content Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Left Column */}
+              <div className="lg:col-span-1 space-y-6">
+                <Card>
+                  <CardHeader>
+                    <Skeleton className="h-5 w-32 mb-2" />
+                    <Skeleton className="h-4 w-40" />
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="relative">
+                      <Skeleton className="h-32 w-full rounded-lg" />
+                    </div>
+                    <div className="flex items-center space-x-4">
+                      <Skeleton className="h-16 w-16 rounded-full" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-3 w-32" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <Skeleton className="h-5 w-24" />
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className="flex items-center space-x-3">
+                        <Skeleton className="h-5 w-5" />
+                        <div className="flex-1 space-y-2">
+                          <Skeleton className="h-4 w-24" />
+                          <Skeleton className="h-4 w-32" />
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Right Column */}
+              <div className="lg:col-span-2 space-y-6">
+                {[...Array(4)].map((_, i) => (
+                  <Card key={i}>
+                    <CardHeader>
+                      <Skeleton className="h-6 w-40 mb-2" />
+                      <Skeleton className="h-4 w-56" />
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
-      </SidebarInset>
-    </SidebarProvider>
+      </div>
+    )
+  }
+
+  if (error || !vendor) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-6">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Vendor Dashboard</h1>
+          <p className="text-gray-600 mb-6">{error || 'Vendor profile not found'}</p>
+          <div className="flex gap-4 justify-center">
+            <button
+              onClick={() => router.push('/vendor-registration')}
+              className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90"
+            >
+              Register as Vendor
+            </button>
+            <button
+              onClick={() => router.push('/')}
+              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+            >
+              Go Home
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <VendorDashboardWrapper 
+      vendor={vendor} 
+      stats={stats} 
+      categories={categories}
+    />
   )
 }

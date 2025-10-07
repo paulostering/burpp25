@@ -44,7 +44,15 @@ export async function middleware(request: NextRequest) {
   // Check if user is admin (either from profile or user metadata)
   const isAdmin = user && (
     (userProfile?.role === 'administrator' && userProfile?.is_active) ||
-    user.user_metadata?.role === 'administrator'
+    user.user_metadata?.role === 'administrator' ||
+    (user as any).raw_user_meta_data?.role === 'administrator'
+  )
+
+  // Check if user is vendor (either from profile or user metadata)
+  const isVendor = user && (
+    (userProfile?.role === 'vendor' && userProfile?.is_active) ||
+    user.user_metadata?.role === 'vendor' ||
+    (user as any).raw_user_meta_data?.role === 'vendor'
   )
 
   // Admin routing logic
@@ -66,6 +74,28 @@ export async function middleware(request: NextRequest) {
     if (isPublicRoute && !isAllowedRoute) {
       // Redirect admin users to admin dashboard when they try to access public routes
       return NextResponse.redirect(new URL('/admin', request.url))
+    }
+  }
+
+  // Vendor routing logic
+  if (isVendor) {
+    // Vendors should be redirected to their dashboard when accessing public routes
+    const publicRoutes = ['/', '/search', '/vendor', '/favorites', '/messages']
+    const isPublicRoute = publicRoutes.some(route => 
+      request.nextUrl.pathname === route || 
+      request.nextUrl.pathname.startsWith(route + '/')
+    )
+    
+    // Allow access to login/logout and vendor dashboard routes
+    const allowedRoutes = ['/login', '/signup', '/logout', `/vendor/${user.id}/dashboard`]
+    const isAllowedRoute = allowedRoutes.some(route => 
+      request.nextUrl.pathname === route || 
+      request.nextUrl.pathname.startsWith(route + '/')
+    )
+    
+    if (isPublicRoute && !isAllowedRoute) {
+      // Redirect vendor users to their dashboard when they try to access public routes
+      return NextResponse.redirect(new URL(`/vendor/${user.id}/dashboard`, request.url))
     }
   }
 

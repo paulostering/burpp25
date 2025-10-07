@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Search, MapPin, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { getCategories } from '@/lib/categories-cache'
 
 interface Category {
   id: string
@@ -55,20 +56,33 @@ export function SearchHero() {
     }
   }, [])
 
-  // Load categories
+  // Load categories using cache
   useEffect(() => {
+    // Only load categories if we don't have them already
+    if (categories.length > 0) return
+    
+    let isMounted = true
+    
     const loadCategories = async () => {
       try {
-        const response = await fetch('/api/categories')
-        const data = await response.json()
-        setCategories(data)
-        setFilteredCategories(data)
+        const data = await getCategories()
+        
+        // Only update state if component is still mounted
+        if (isMounted) {
+          setCategories(data)
+          setFilteredCategories(data)
+        }
       } catch (error) {
         console.error('Error loading categories:', error)
       }
     }
+    
     loadCategories()
-  }, [])
+    
+    return () => {
+      isMounted = false
+    }
+  }, [categories.length])
 
   // Filter categories based on search
   useEffect(() => {

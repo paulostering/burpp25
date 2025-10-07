@@ -103,9 +103,17 @@ export function VendorAuthForm({ mode, onModeChange, onAuthSuccess, className }:
         const isAdmin = (profile?.role === 'administrator' && profile?.is_active) ||
                        data.user.user_metadata?.role === 'administrator'
         
+        // Check if user is vendor (check both user_metadata and raw_user_meta_data)
+        const isVendor = (profile?.role === 'vendor' && profile?.is_active) ||
+                        data.user.user_metadata?.role === 'vendor' ||
+                        (data.user as any).raw_user_meta_data?.role === 'vendor'
+        
         if (isAdmin) {
           toast.success('Welcome back, Administrator!')
           router.push('/admin')
+        } else if (isVendor) {
+          toast.success('Welcome back!')
+          router.push(`/vendor/${data.user.id}/dashboard`)
         } else {
           // Smooth transition to messaging - no toast
           onAuthSuccess?.()
@@ -179,6 +187,8 @@ export function VendorAuthForm({ mode, onModeChange, onAuthSuccess, className }:
         return
       }
       
+      // Check if this is a vendor signup (from vendor registration context)
+      // For now, redirect to home page as this is used in vendor profile modal
       // Smooth transition to messaging - no toast
       onAuthSuccess?.()
       router.refresh()

@@ -61,22 +61,40 @@ export function LoginForm({
       
               // Check user role after successful login
         if (data.user) {
+          console.log('User data:', data.user)
+          console.log('User metadata:', data.user.user_metadata)
+          console.log('Raw user metadata:', (data.user as any).raw_user_meta_data)
+          
           const { data: profile } = await supabase
             .from('user_profiles')
             .select('role, is_active')
             .eq('id', data.user.id)
             .single()
           
+          console.log('User profile from DB:', profile)
+          
           // Check if user is admin (either from profile or user metadata)
           const isAdmin = (profile?.role === 'administrator' && profile?.is_active) ||
                          data.user.user_metadata?.role === 'administrator'
+          
+          // Check if user is vendor (check both user_metadata and raw_user_meta_data)
+          const isVendor = (profile?.role === 'vendor' && profile?.is_active) ||
+                          data.user.user_metadata?.role === 'vendor' ||
+                          (data.user as any).raw_user_meta_data?.role === 'vendor'
+          
+          console.log('Is admin:', isAdmin)
+          console.log('Is vendor:', isVendor)
           
           if (isAdmin) {
             console.log('User is admin, redirecting to /admin')
             toast.success('Welcome back, Administrator!')
             router.push('/admin')
+          } else if (isVendor) {
+            console.log('User is vendor, redirecting to vendor dashboard')
+            toast.success('Welcome back!')
+            router.push(`/vendor/${data.user.id}/dashboard`)
           } else {
-            console.log('User is not admin, redirecting to /')
+            console.log('User is customer, redirecting to /')
             toast.success('Signed in successfully')
             router.push('/')
           }

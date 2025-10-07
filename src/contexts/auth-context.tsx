@@ -69,56 +69,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    // Try to get session with timeout, fallback to cookie parsing
+    // Simplified auth initialization to prevent infinite loops
     const getInitialSession = async () => {
       try {
         console.log('AuthProvider: Getting initial session...')
         
-        // First try to refresh the session if we have a refresh token
-        try {
-          console.log('AuthProvider: Attempting to refresh session...')
-          const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession()
-          
-          if (refreshedSession?.user && !refreshError) {
-            console.log('AuthProvider: Session refreshed successfully:', refreshedSession.user.email)
-            setUser(refreshedSession.user)
-            return
-          }
-        } catch (refreshErr) {
-          console.log('AuthProvider: Session refresh failed:', refreshErr)
-        }
-        
-        // Try regular session get with timeout
-        const sessionPromise = supabase.auth.getSession()
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Session timeout')), 2000)
-        )
-        
-        const { data: { session }, error } = await Promise.race([
-          sessionPromise,
-          timeoutPromise
-        ]) as any
+        const { data: { session }, error } = await supabase.auth.getSession()
         
         if (error) {
           console.error('AuthProvider: Session error:', error)
-          throw error
-        }
-        
-        console.log('AuthProvider: Session loaded:', session?.user?.email || 'No user')
-        setUser(session?.user ?? null)
-        
-      } catch (error) {
-        console.warn('AuthProvider: Session failed, trying cookie fallback:', error)
-        
-        // Fallback: parse user from cookie
-        const cookieUser = parseUserFromCookie()
-        if (cookieUser) {
-          console.log('AuthProvider: Using cookie user:', cookieUser.email)
-          setUser(cookieUser)
-        } else {
-          console.log('AuthProvider: No valid auth found')
           setUser(null)
+        } else {
+          console.log('AuthProvider: Session loaded:', session?.user?.email || 'No user')
+          setUser(session?.user ?? null)
         }
+      } catch (error) {
+        console.warn('AuthProvider: Session failed:', error)
+        setUser(null)
       } finally {
         setLoading(false)
       }
@@ -126,19 +93,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     getInitialSession()
 
-    // Listen for auth changes (but don't rely on it)
+    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         console.log('AuthProvider: Auth state change:', event, session?.user?.email || 'No user')
-        if (session?.user) {
-          setUser(session.user)
-        }
+        setUser(session?.user ?? null)
         setLoading(false)
       }
     )
 
     return () => subscription.unsubscribe()
-  }, [supabase])
+  }, [])
 
   const signOut = async () => {
     try {

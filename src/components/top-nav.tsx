@@ -24,9 +24,11 @@ export function TopNav() {
   const isRegistrationPage = pathname?.includes('/vendor-registration')
   // Hide navigation on auth pages
   const isAuthPage = pathname?.includes('/login') || pathname?.includes('/signup')
+  // Hide condensed search on vendor dashboard pages to prevent API call issues
+  const isVendorDashboard = pathname?.includes('/vendor/') && pathname?.includes('/dashboard')
   // Show condensed search on non-homepage pages
   const isHomePage = pathname === '/' || pathname === '/home'
-  const showCondensedSearch = !isHomePage && !isAuthPage && !isRegistrationPage
+  const showCondensedSearch = !isHomePage && !isAuthPage && !isRegistrationPage && !isVendorDashboard
 
   // Get user initial from email
   const getUserInitial = () => {
