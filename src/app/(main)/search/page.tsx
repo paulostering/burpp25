@@ -35,8 +35,8 @@ export default async function SearchPage({
   searchParams: Promise<Record<string, string>>
 }) {
   const sp = await searchParams
-  const category = sp.category || null
-  const q = sp.q || ""
+  const category = sp.category || undefined
+  const q = sp.q || undefined
   const searchCoords = q ? await geocode(q) : null
 
   console.log('Search params:', { category, q })
@@ -142,7 +142,7 @@ export default async function SearchPage({
         {/* Vendor Results - Fixed TypeScript types */}
         <InfiniteScrollVendors 
           initialVendors={vendors}
-          searchParams={{ category: category || undefined, q: q || undefined }}
+          searchParams={{ category, q }}
         />
       </div>
     </div>

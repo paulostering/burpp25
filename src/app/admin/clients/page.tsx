@@ -10,7 +10,7 @@ async function getClients(page: number = 1, perPage: number = 20) {
   
   if (authError) {
     console.error('Error fetching auth users:', authError)
-    return { clients: [], pagination: null }
+    return { clients: [], pagination: undefined }
   }
   
   // Get all user profiles
@@ -20,7 +20,7 @@ async function getClients(page: number = 1, perPage: number = 20) {
   
   if (profilesError) {
     console.error('Error fetching user profiles:', profilesError)
-    return { clients: [], pagination: null }
+    return { clients: [], pagination: undefined }
   }
   
   // Create a map of profiles by user ID

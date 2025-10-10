@@ -23,12 +23,28 @@ import {
   AlertCircle,
   Loader2,
   Camera,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Check,
+  ChevronsUpDown
 } from 'lucide-react'
 import { toast } from 'sonner'
 import Image from 'next/image'
 import type { VendorProfile, Category } from '@/types/db'
 import { ImageCropModal } from '@/components/image-crop-modal'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import { cn } from '@/lib/utils'
 
 interface VendorProfileManagerProps {
   vendor: VendorProfile
@@ -61,6 +77,9 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
   const [cropModalOpen, setCropModalOpen] = useState(false)
   const [imageToCrop, setImageToCrop] = useState<string>('')
   const [cropType, setCropType] = useState<'profile' | 'cover'>('profile')
+  
+  // Multi-select popover state
+  const [categoryPopoverOpen, setCategoryPopoverOpen] = useState(false)
   
   const profilePhotoInputRef = useRef<HTMLInputElement>(null)
   const coverPhotoInputRef = useRef<HTMLInputElement>(null)
@@ -348,7 +367,7 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Hidden File Inputs */}
       <input
         ref={profilePhotoInputRef}
@@ -368,10 +387,9 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
       {/* Header with Edit Toggle */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Profile Management</h2>
-          <p className="text-gray-600">Manage your business profile information</p>
+          <h1 className="text-3xl font-semibold text-gray-900">Manage My Profile</h1>
         </div>
-        <div className="flex space-x-2">
+        <div className="flex space-x-3">
           {isEditing ? (
             <>
               <Button variant="outline" onClick={handleCancel} disabled={isLoading}>
@@ -401,28 +419,27 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
         {/* Left Column - Profile Overview */}
         <div className="lg:col-span-1 space-y-6">
           {/* Profile Photo Section - Matching Public View */}
-          <Card className="shadow-none pt-0">
-            <CardContent className="p-0 pt-0">
-              <div className="overflow-hidden">
-                <div className="relative">
-                  {/* Cover Photo */}
-                  <div className="h-48 bg-gradient-to-r from-primary to-primary/60 relative rounded-t-lg">
+          <Card className="border border-gray-200 shadow-none overflow-hidden pt-0">
+            <CardContent className="p-0">
+              <div className="relative">
+                {/* Cover Photo */}
+                <div className="h-48 bg-gradient-to-r from-primary to-primary/60 relative">
                     {formData.cover_photo_url ? (
                       <Image
                         src={formData.cover_photo_url}
                         alt="Cover"
                         fill
-                        className="object-cover rounded-t-lg"
+                        className="object-cover"
                       />
                     ) : null}
                     <Button
                       variant="secondary"
                       size="sm"
-                      className="absolute top-2 right-2 bg-white/90 hover:bg-white"
+                      className="absolute top-4 right-4 bg-white/95 hover:bg-white shadow-md"
                       onClick={() => triggerPhotoUpload('cover')}
                       disabled={uploadingPhoto === 'cover'}
                     >
@@ -438,103 +455,61 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
                         </>
                       )}
                     </Button>
-                  </div>
-                  
-                  {/* Profile Photo */}
-                  <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2">
-                    <div className="relative">
-                      <Avatar className="h-24 w-24 border-4 border-white shadow-lg">
-                        <AvatarImage src={formData.profile_photo_url || ''} />
-                        <AvatarFallback className="text-lg font-semibold">
-                          {getInitials(formData.business_name || 'Business')}
-                        </AvatarFallback>
-                      </Avatar>
-                      <Button
-                        variant="secondary"
-                        size="icon"
-                        className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-white shadow-md hover:bg-gray-50"
-                        onClick={() => triggerPhotoUpload('profile')}
-                        disabled={uploadingPhoto === 'profile'}
-                        title={formData.profile_photo_url ? 'Change profile photo' : 'Add profile photo'}
-                      >
-                        {uploadingPhoto === 'profile' ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Camera className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
                 </div>
                 
-                <div className="pt-16 pb-6 text-center space-y-4">
-                  {/* Business Name */}
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900">
-                      {formData.business_name || 'Business Name'}
-                    </h2>
-                    <p className="text-gray-600 mt-1">
-                      {formData.profile_title || 'Professional Service Provider'}
-                    </p>
+                {/* Profile Photo */}
+                <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2">
+                  <div className="relative">
+                    <Avatar className="h-24 w-24 border-4 border-white shadow-lg">
+                      <AvatarImage src={formData.profile_photo_url || ''} />
+                      <AvatarFallback className="text-lg font-semibold">
+                        {getInitials(formData.business_name || 'Business')}
+                      </AvatarFallback>
+                    </Avatar>
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-white shadow-md hover:bg-gray-50"
+                      onClick={() => triggerPhotoUpload('profile')}
+                      disabled={uploadingPhoto === 'profile'}
+                      title={formData.profile_photo_url ? 'Change profile photo' : 'Add profile photo'}
+                    >
+                      {uploadingPhoto === 'profile' ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Camera className="h-4 w-4" />
+                      )}
+                    </Button>
                   </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Quick Stats */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Info</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center space-x-3">
-                <MapPin className="h-5 w-5 text-gray-400" />
+              
+              <div className="pt-16 pb-6 px-6 text-center space-y-2">
+                {/* Business Name */}
                 <div>
-                  <p className="text-sm font-medium">Service Area</p>
-                  <p className="text-sm text-gray-600">
-                    {formData.zip_code ? (
-                      <>Within {formData.service_radius || 25} miles of {formData.zip_code}</>
-                    ) : (
-                      'Virtual services only'
-                    )}
+                  <h2 className="text-2xl font-semibold text-gray-900">
+                    {formData.business_name || 'Business Name'}
+                  </h2>
+                  <p className="text-gray-500 mt-2">
+                    {formData.profile_title || 'Professional Service Provider'}
                   </p>
                 </div>
               </div>
-              
-              {formData.hourly_rate && (
-                <div className="flex items-center space-x-3">
-                  <DollarSign className="h-5 w-5 text-gray-400" />
-                  <div>
-                    <p className="text-sm font-medium">Hourly Rate</p>
-                    <p className="text-sm text-gray-600">${formData.hourly_rate}/hour</p>
-                  </div>
-                </div>
-              )}
-              
-              {formData.phone_number && (
-                <div className="flex items-center space-x-3">
-                  <Phone className="h-5 w-5 text-gray-400" />
-                  <div>
-                    <p className="text-sm font-medium">Phone</p>
-                    <p className="text-sm text-gray-600">{formData.phone_number}</p>
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
         </div>
 
         {/* Right Column - Editable Content */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-8">
           {/* Basic Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Basic Information</CardTitle>
-              <CardDescription>Your business details and contact information</CardDescription>
+          <Card className="border border-gray-200 shadow-none">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-xl">Basic Information</CardTitle>
+              <CardDescription className="text-gray-500">Your business details and contact information</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <CardContent className="space-y-6">
+              {/* Row 1: Business Name, Profile Title, Hourly Rate */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="business_name">Business Name *</Label>
                   {isEditing ? (
@@ -570,26 +545,7 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
                     <p className="text-gray-600">{formData.profile_title || 'No title set'}</p>
                   )}
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="about">About Your Business</Label>
-                {isEditing ? (
-                  <Textarea
-                    id="about"
-                    value={formData.about}
-                    onChange={(e) => handleInputChange('about', e.target.value)}
-                    placeholder="Describe your services, experience, and what makes you unique..."
-                    rows={4}
-                  />
-                ) : (
-                  <p className="text-gray-700 leading-relaxed">
-                    {formData.about || 'No description provided'}
-                  </p>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="hourly_rate">Hourly Rate ($)</Label>
                   {isEditing ? (
@@ -615,7 +571,10 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
                     </p>
                   )}
                 </div>
+              </div>
 
+              {/* Row 2: Phone Number, Allow Phone Contact */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="phone_number">Phone Number</Label>
                   {isEditing ? (
@@ -641,7 +600,7 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
                 <div className="space-y-2">
                   <Label htmlFor="allow_phone_contact">Allow Phone Contact</Label>
                   {isEditing ? (
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2 pt-2">
                       <Switch
                         id="allow_phone_contact"
                         checked={formData.allow_phone_contact}
@@ -658,16 +617,34 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
                   )}
                 </div>
               </div>
+
+              {/* Row 3: About Your Business */}
+              <div className="space-y-2">
+                <Label htmlFor="about">About Your Business</Label>
+                {isEditing ? (
+                  <Textarea
+                    id="about"
+                    value={formData.about}
+                    onChange={(e) => handleInputChange('about', e.target.value)}
+                    placeholder="Describe your services, experience, and what makes you unique..."
+                    rows={4}
+                  />
+                ) : (
+                  <p className="text-gray-700 leading-relaxed">
+                    {formData.about || 'No description provided'}
+                  </p>
+                )}
+              </div>
             </CardContent>
           </Card>
 
           {/* Service Area */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Service Area</CardTitle>
-              <CardDescription>Where you provide your services</CardDescription>
+          <Card className="border border-gray-200 shadow-none">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-xl">Service Area</CardTitle>
+              <CardDescription className="text-gray-500">Where you provide your services</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="zip_code">ZIP Code</Label>
@@ -770,36 +747,77 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
           </Card>
 
           {/* Service Categories */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Service Categories</CardTitle>
-              <CardDescription>What types of services you offer</CardDescription>
+          <Card className="border border-gray-200 shadow-none">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-xl">Service Categories</CardTitle>
+              <CardDescription className="text-gray-500">What types of services you offer</CardDescription>
             </CardHeader>
             <CardContent>
               {isEditing ? (
                 <div className="space-y-3">
-                  <div className="flex flex-wrap gap-2">
-                    {categories.map((category) => (
-                      <Badge
-                        key={category.id}
-                        variant={formData.service_categories.includes(category.id) ? 'default' : 'outline'}
-                        className="cursor-pointer hover:bg-primary/10 transition-colors"
-                        onClick={() => handleCategoryToggle(category.id)}
+                  <Popover open={categoryPopoverOpen} onOpenChange={setCategoryPopoverOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={categoryPopoverOpen}
+                        className="w-full justify-between h-auto min-h-[40px] py-2"
                       >
-                        {category.icon_url && (
-                          <img 
-                            src={category.icon_url} 
-                            alt={`${category.name} icon`}
-                            className="h-4 w-4 object-contain mr-2 filter brightness-0 invert"
-                          />
-                        )}
-                        {category.name}
-                        {formData.service_categories.includes(category.id) && (
-                          <X className="ml-1 h-3 w-3" />
-                        )}
-                      </Badge>
-                    ))}
-                  </div>
+                        <div className="flex flex-wrap gap-1">
+                          {formData.service_categories.length > 0 ? (
+                            formData.service_categories.map((catId) => {
+                              const category = categories.find(c => c.id === catId)
+                              return category ? (
+                                <Badge key={catId} variant="secondary" className="mr-1">
+                                  {category.name}
+                                </Badge>
+                              ) : null
+                            })
+                          ) : (
+                            <span className="text-gray-500">Select service categories...</span>
+                          )}
+                        </div>
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search categories..." />
+                        <CommandList>
+                          <CommandEmpty>No categories found.</CommandEmpty>
+                          <CommandGroup>
+                            {categories.map((category) => (
+                              <CommandItem
+                                key={category.id}
+                                value={category.name}
+                                onSelect={() => {
+                                  handleCategoryToggle(category.id)
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    formData.service_categories.includes(category.id)
+                                      ? "opacity-100"
+                                      : "opacity-0"
+                                  )}
+                                />
+                                {category.icon_url && (
+                                  <img 
+                                    src={category.icon_url} 
+                                    alt={`${category.name} icon`}
+                                    className="h-4 w-4 object-contain mr-2"
+                                  />
+                                )}
+                                {category.name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  
                   {errors.service_categories && (
                     <p className="text-sm text-red-600 flex items-center">
                       <AlertCircle className="h-4 w-4 mr-1" />
@@ -829,37 +847,6 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
                   )}
                 </div>
               )}
-            </CardContent>
-          </Card>
-
-          {/* Profile Status */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Profile Status</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Profile Status</span>
-                  <Badge variant={vendor.admin_approved ? 'default' : 'secondary'}>
-                    {vendor.admin_approved ? 'Approved' : 'Pending Approval'}
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Member Since</span>
-                  <span className="text-sm text-gray-600">
-                    {vendor.created_at ? formatDate(vendor.created_at) : 'Unknown'}
-                  </span>
-                </div>
-                {vendor.updated_at && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Last Updated</span>
-                    <span className="text-sm text-gray-600">
-                      {formatDate(vendor.updated_at)}
-                    </span>
-                  </div>
-                )}
-              </div>
             </CardContent>
           </Card>
         </div>

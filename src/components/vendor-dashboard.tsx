@@ -47,6 +47,16 @@ interface RecentReview {
   client_name: string
 }
 
+interface MessageWithConversation {
+  id: string
+  content: string
+  created_at: string
+  conversations: {
+    client_name: string
+    client_email: string
+  }
+}
+
 export function VendorDashboard({ vendor, stats }: VendorDashboardProps) {
   const [recentMessages, setRecentMessages] = useState<RecentMessage[]>([])
   const [recentReviews, setRecentReviews] = useState<RecentReview[]>([])
@@ -73,7 +83,7 @@ export function VendorDashboard({ vendor, stats }: VendorDashboardProps) {
         .limit(5)
 
       if (messages) {
-        setRecentMessages(messages.map(msg => ({
+        setRecentMessages((messages as unknown as MessageWithConversation[]).map(msg => ({
           id: msg.id,
           content: msg.content,
           created_at: msg.created_at,
@@ -110,7 +120,8 @@ export function VendorDashboard({ vendor, stats }: VendorDashboardProps) {
     return name.split(' ').map(n => n[0]).join('').toUpperCase()
   }
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return 'N/A'
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',

@@ -10,7 +10,7 @@ async function getVendors(page: number = 1, perPage: number = 20) {
   
   if (authError) {
     console.error('Error fetching auth users:', authError)
-    return { vendors: [], pagination: null }
+    return { vendors: [], pagination: undefined }
   }
   
   // Get all user profiles

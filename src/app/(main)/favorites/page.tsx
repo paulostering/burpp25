@@ -25,6 +25,8 @@ interface FavoriteVendor {
     zip_code: string
     hourly_rate: number
     service_categories: string[]
+    offers_virtual_services: boolean
+    offers_in_person_services: boolean
   } | null
 }
 
@@ -92,7 +94,7 @@ export default function FavoritesPage() {
           return
         }
 
-        const data = await response.json()
+        const data: FavoriteVendor[] = await response.json()
         const error = null
 
         console.log('API response data:', data)
