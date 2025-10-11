@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { VendorProfileManager } from './vendor-profile-manager'
+import { VendorSettings } from './vendor-settings'
 import { Settings, User, Package } from 'lucide-react'
 import type { VendorProfile, Category } from '@/types/db'
 
@@ -98,16 +99,7 @@ export function VendorDashboardWrapper({ vendor: initialVendor, stats, categorie
         )}
         
         {currentView === 'settings' && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-            <div className="text-center py-12">
-              <Settings className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Settings</h3>
-              <p className="text-gray-600 mb-6">
-                Configure your account preferences, notifications, and privacy settings
-              </p>
-              <p className="text-sm text-gray-500">Coming soon...</p>
-            </div>
-          </div>
+          <VendorSettings vendor={vendor} />
         )}
       </div>
     </div>

@@ -35,8 +35,8 @@ export default async function SearchPage({
   searchParams: Promise<Record<string, string>>
 }) {
   const sp = await searchParams
-  const category = sp.category || undefined
-  const q = sp.q || undefined
+  const category: string | undefined = sp.category || undefined
+  const q: string | undefined = sp.q || undefined
   const searchCoords = q ? await geocode(q) : null
 
   console.log('Search params:', { category, q })
