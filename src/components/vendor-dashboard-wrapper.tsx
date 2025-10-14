@@ -1,8 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { VendorProfileManager } from './vendor-profile-manager'
 import { VendorSettings } from './vendor-settings'
+import { VendorProductsManager } from './vendor-products-manager'
 import { Settings, User, Package } from 'lucide-react'
 import type { VendorProfile, Category } from '@/types/db'
 
@@ -21,6 +23,24 @@ type DashboardView = 'profile' | 'products' | 'settings'
 export function VendorDashboardWrapper({ vendor: initialVendor, stats, categories }: VendorDashboardWrapperProps) {
   const [vendor, setVendor] = useState<VendorProfile>(initialVendor)
   const [currentView, setCurrentView] = useState<DashboardView>('profile')
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
+  // Initialize current view from URL params
+  useEffect(() => {
+    const tab = searchParams.get('tab') as DashboardView
+    if (tab && ['profile', 'products', 'settings'].includes(tab)) {
+      setCurrentView(tab)
+    }
+  }, [searchParams])
+
+  const handleTabChange = (newView: DashboardView) => {
+    setCurrentView(newView)
+    // Update URL without causing a page refresh
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('tab', newView)
+    router.replace(`/dashboard?${params.toString()}`, { scroll: false })
+  }
 
   const handleProfileUpdate = (updatedVendor: VendorProfile) => {
     setVendor(updatedVendor)
@@ -34,7 +54,7 @@ export function VendorDashboardWrapper({ vendor: initialVendor, stats, categorie
           <div className="border-b border-gray-200">
             <nav className="-mb-px flex space-x-8">
               <button
-                onClick={() => setCurrentView('profile')}
+                onClick={() => handleTabChange('profile')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                   currentView === 'profile'
                     ? 'border-primary text-primary'
@@ -47,7 +67,7 @@ export function VendorDashboardWrapper({ vendor: initialVendor, stats, categorie
                 </div>
               </button>
               <button
-                onClick={() => setCurrentView('products')}
+                onClick={() => handleTabChange('products')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                   currentView === 'products'
                     ? 'border-primary text-primary'
@@ -60,7 +80,7 @@ export function VendorDashboardWrapper({ vendor: initialVendor, stats, categorie
                 </div>
               </button>
               <button
-                onClick={() => setCurrentView('settings')}
+                onClick={() => handleTabChange('settings')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                   currentView === 'settings'
                     ? 'border-primary text-primary'
@@ -86,16 +106,7 @@ export function VendorDashboardWrapper({ vendor: initialVendor, stats, categorie
         )}
         
         {currentView === 'products' && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-            <div className="text-center py-12">
-              <Package className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Product Offering</h3>
-              <p className="text-gray-600 mb-6">
-                Manage your services, packages, and pricing options
-              </p>
-              <p className="text-sm text-gray-500">Coming soon...</p>
-            </div>
-          </div>
+          <VendorProductsManager vendorId={vendor.id} />
         )}
         
         {currentView === 'settings' && (

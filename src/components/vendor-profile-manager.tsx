@@ -511,7 +511,7 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
               {/* Row 1: Business Name, Profile Title, Hourly Rate */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="business_name">Business Name *</Label>
+                  <Label htmlFor="business_name">Business Name</Label>
                   {isEditing ? (
                     <>
                       <Input

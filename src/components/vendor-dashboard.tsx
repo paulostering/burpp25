@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import type { VendorProfile } from '@/types/db'
+import { VendorProductsManager } from '@/components/vendor-products-manager'
 
 interface VendorDashboardProps {
   vendor: VendorProfile
@@ -322,6 +323,11 @@ export function VendorDashboard({ vendor, stats }: VendorDashboardProps) {
               )}
             </CardContent>
           </Card>
+        </div>
+
+        {/* Products & Services */}
+        <div className="mt-8">
+          <VendorProductsManager vendorId={vendor.id} />
         </div>
 
         {/* Business Info */}

@@ -25,6 +25,7 @@ import { ServiceAreaMap } from '@/components/service-area-map'
 import { VendorAuthForm } from '@/components/vendor-auth-form'
 import { createOrGetConversation } from '@/lib/messaging'
 import { useRouter } from 'next/navigation'
+import { VendorProductsDisplay } from '@/components/vendor-products-display'
 
 interface VendorProfileProps {
   vendor: VendorProfile
@@ -60,6 +61,24 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
 
   const supabase = createClient()
   const router = useRouter()
+
+  // Generate service area message based on vendor's service types
+  const getServiceAreaMessage = () => {
+    const hasVirtual = vendor.offers_virtual_services
+    const hasPhysical = vendor.service_radius && vendor.service_radius > 0
+    const zipCode = vendor.zip_code || 'my location'
+    const radius = vendor.service_radius || 100
+
+    if (hasVirtual && hasPhysical) {
+      return `I offer virtual services worldwide and can travel up to ${radius} miles from ZIP code ${zipCode} for in-person sessions. Have questions? Feel free to send me a message.`
+    } else if (hasVirtual && !hasPhysical) {
+      return "I work with clients all over the world through virtual sessions — send me a message to learn more!"
+    } else if (!hasVirtual && hasPhysical) {
+      return `I'll travel to within ${radius} miles of the zip code ${zipCode}. To book in a different location, you can message me.`
+    } else {
+      return `I service all areas within ${radius} miles of the zip code ${zipCode}.`
+    }
+  }
 
   // Get vendor categories with full objects
   const vendorCategories = vendor.service_categories?.map(catId => 
@@ -402,8 +421,8 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
     <div className="min-h-screen">
       <div className="max-w-7xl mx-auto p-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column */}
-          <div className="lg:col-span-1 space-y-6">
+          {/* Left Column - Sticky on large screens */}
+          <div className="lg:col-span-1 space-y-6 lg:sticky lg:top-6 lg:self-start lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto lg:pb-6">
             {/* Cover Photo with Profile Photo */}
             <div className="overflow-hidden">
               <div className="relative">
@@ -554,23 +573,9 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
 
               {/* Service Offerings */}
               <div className="space-y-4">
-                <div className="flex gap-2">
-                  {vendor.offers_in_person_services && (
-                    <Badge className="bg-primary text-white px-4 py-2 text-sm font-medium rounded-full flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4" />
-                      In Person
-                    </Badge>
-                  )}
-                  {vendor.offers_virtual_services && (
-                    <Badge className="bg-primary text-white px-4 py-2 text-sm font-medium rounded-full flex items-center gap-2">
-                      <Globe className="h-4 w-4" />
-                      Virtual
-                    </Badge>
-                  )}
-                </div>
               {/* Location */}
                 <p className="text-gray-700 mb-4">
-                  I service all areas within {vendor.service_radius || 0} miles of the zip code {vendor.zip_code || 'Unknown location'}.
+                  {getServiceAreaMessage()}
                 </p>
                 
                 {/* Service Area Map */}
@@ -607,6 +612,9 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
                 ))}
               </div>
             </div>
+
+            {/* Products & Services */}
+            <VendorProductsDisplay vendorId={vendor.id} />
 
             {/* Reviews */}
             <div>
