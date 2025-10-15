@@ -1,26 +1,22 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Users, Store, Tag } from 'lucide-react'
-import { createServerSupabase } from '@/lib/supabase/server'
+import { createAdminSupabase } from '@/lib/supabase/server'
 import Link from 'next/link'
 
 async function getDashboardStats() {
-  const supabase = await createServerSupabase()
+  const supabase = createAdminSupabase()
   
   // Get counts for dashboard
-  const [
-    { count: vendorCount },
-    { count: clientCount },
-    { count: categoryCount }
-  ] = await Promise.all([
+  const [vendorsResult, customersResult, categoriesResult] = await Promise.all([
     supabase.from('vendor_profiles').select('*', { count: 'exact', head: true }),
     supabase.from('user_profiles').select('*', { count: 'exact', head: true }).eq('role', 'customer'),
     supabase.from('categories').select('*', { count: 'exact', head: true })
   ])
   
   return {
-    vendors: vendorCount || 0,
-    customers: clientCount || 0,
-    entities: categoryCount || 0
+    vendors: vendorsResult.count || 0,
+    customers: customersResult.count || 0,
+    entities: categoriesResult.count || 0
   }
 }
 
