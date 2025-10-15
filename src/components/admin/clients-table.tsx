@@ -1,97 +1,56 @@
 import { createAdminSupabase } from '@/lib/supabase/server'
-import { validatePageParams, calculatePagination } from '@/lib/admin'
 import { ClientsDataTable } from './clients-data-table'
-import type { ClientWithProfile } from '@/types/db'
 
-interface ClientsTableProps {
-  searchParams: { [key: string]: string | string[] | undefined }
-}
-
-async function getClients(page: number, perPage: number, search?: string) {
+export async function ClientsTable() {
   const supabase = createAdminSupabase()
   
-  let query = supabase
+  // Get all auth users and their profiles
+  const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers()
+  
+  if (authError) {
+    console.error('Error fetching auth users:', authError)
+    return <ClientsDataTable clients={[]} />
+  }
+  
+  // Get all user profiles
+  const { data: profiles, error: profilesError } = await supabase
     .from('user_profiles')
-    .select('*', { count: 'exact' })
-    .eq('role', 'customer')
+    .select('*')
   
-  // Add search filter
-  if (search) {
-    query = query.or(`email.ilike.%${search}%,first_name.ilike.%${search}%,last_name.ilike.%${search}%`)
+  if (profilesError) {
+    console.error('Error fetching user profiles:', profilesError)
+    return <ClientsDataTable clients={[]} />
   }
   
-  // Calculate offset for pagination
-  const { offset, limit } = calculatePagination(page, 0, perPage)
+  // Create a map of profiles by user ID
+  const profilesMap = new Map(profiles?.map(p => [p.id, p]) || [])
   
-  // Apply pagination
-  query = query
-    .range(offset, offset + limit - 1)
-    .order('created_at', { ascending: false })
+  // Filter and transform users to show only customers
+  const clients = authUsers.users
+    .map(user => {
+      const profile = profilesMap.get(user.id)
+      
+      // If user has a profile, use the profile data
+      if (profile) {
+        return profile
+      }
+      
+      // If no profile exists, create a virtual profile for display
+      return {
+        id: user.id,
+        email: user.email || '',
+        first_name: user.user_metadata?.first_name || null,
+        last_name: user.user_metadata?.last_name || null,
+        role: 'customer' as const,
+        is_active: true,
+        created_at: user.created_at,
+        updated_at: user.updated_at
+      }
+    })
+    .filter(client => client.role === 'customer')
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
   
-  const { data, error, count } = await query
-  
-  if (error) {
-    console.error('Error fetching clients:', error)
-    return { clients: [], total: 0 }
-  }
-  
-  // Get additional stats for each client
-  const clientsWithStats = await Promise.all((data || []).map(async (client: any) => {
-    // Get favorites count
-    const { count: favoritesCount } = await supabase
-      .from('user_vendor_favorites')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', client.id)
-    
-    // Get reviews count
-    const { count: reviewsCount } = await supabase
-      .from('reviews')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', client.id)
-    
-    // Get last activity from conversations or reviews
-    const { data: lastActivity } = await supabase
-      .from('conversations')
-      .select('last_message_at')
-      .or(`customer_id.eq.${client.id},vendor_id.eq.${client.id}`)
-      .order('last_message_at', { ascending: false })
-      .limit(1)
-    
-    return {
-      ...client,
-      total_favorites: favoritesCount || 0,
-      total_reviews: reviewsCount || 0,
-      last_activity: lastActivity?.[0]?.last_message_at || client.created_at
-    } as ClientWithProfile
-  }))
-  
-  return {
-    clients: clientsWithStats,
-    total: count || 0
-  }
-}
-
-export async function ClientsTable({ searchParams }: ClientsTableProps) {
-  const searchParamsObj = new URLSearchParams()
-  Object.entries(searchParams).forEach(([key, value]) => {
-    if (typeof value === 'string') {
-      searchParamsObj.set(key, value)
-    }
-  })
-  
-  const { page, perPage } = validatePageParams(searchParamsObj)
-  const search = searchParamsObj.get('search') || undefined
-  
-  const { clients, total } = await getClients(page, perPage, search)
-  const pagination = calculatePagination(page, total, perPage)
-  
-  return (
-    <ClientsDataTable 
-      clients={clients}
-      pagination={pagination}
-      currentSearch={search}
-    />
-  )
+  return <ClientsDataTable clients={clients} />
 }
 
 
