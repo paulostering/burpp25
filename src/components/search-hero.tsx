@@ -193,11 +193,11 @@ export function SearchHero() {
   }
 
   return (
-    <div className="relative bg-gray-100 rounded-bl-3xl overflow-hidden">
+    <div className="relative bg-gray-100 rounded-br-[4rem] overflow-hidden">
       {/* Background Image */}
       <div className="absolute inset-0 z-0">
         <Image
-          src="/images/home-hero.jpeg"
+          src="/images/home-hero2.jpeg"
           alt="Hero Background"
           fill
           className="object-cover"
@@ -370,10 +370,10 @@ export function SearchHero() {
         <div className="mt-4 flex items-center mt-16 md:mt-36 mb-12">
           <div className="bg-black/50 backdrop-blur-sm pl-4 pr-8 py-4 shadow-lg border-l-4 border-primary">
             <div className="text-lg font-medium text-white">
-              Scuba Instructor
+              Fitness Instructor
             </div>
             <div className="text-xs text-white/80">
-              Claire From Haleiwa, HI
+              Dave From Haleiwa, HI
             </div>
           </div>
         </div>
