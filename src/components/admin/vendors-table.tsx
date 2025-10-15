@@ -1,95 +1,81 @@
 import { createAdminSupabase } from '@/lib/supabase/server'
-import { validatePageParams, calculatePagination } from '@/lib/admin'
 import { VendorsDataTable } from './vendors-data-table'
-import type { VendorWithProfile } from '@/types/db'
 
-interface VendorsTableProps {
-  searchParams: { [key: string]: string | string[] | undefined }
-}
-
-async function getVendors(page: number, perPage: number, search?: string) {
+export async function VendorsTable() {
   const supabase = createAdminSupabase()
   
-  let query = supabase
+  // Get all auth users and their profiles
+  const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers()
+  
+  if (authError) {
+    console.error('Error fetching auth users:', authError)
+    return <VendorsDataTable vendors={[]} />
+  }
+  
+  // Get all user profiles
+  const { data: userProfiles, error: userProfilesError } = await supabase
+    .from('user_profiles')
+    .select('*')
+  
+  if (userProfilesError) {
+    console.error('Error fetching user profiles:', userProfilesError)
+  }
+  
+  // Get all vendor profiles
+  const { data: vendorProfiles, error: vendorProfilesError } = await supabase
     .from('vendor_profiles')
-    .select(`
-      *,
-      user_profile:user_id (
-        email,
-        first_name,
-        last_name,
-        role,
-        is_active,
-        created_at
-      )
-    `, { count: 'exact' })
+    .select('*')
   
-  // Add search filter
-  if (search) {
-    query = query.or(`business_name.ilike.%${search}%,profile_title.ilike.%${search}%,user_profile.email.ilike.%${search}%`)
+  if (vendorProfilesError) {
+    console.error('Error fetching vendor profiles:', vendorProfilesError)
   }
   
-  // Calculate offset for pagination
-  const { offset, limit } = calculatePagination(page, 0, perPage)
+  // Create maps for quick lookup
+  const userProfilesMap = new Map(userProfiles?.map(p => [p.id, p]) || [])
+  const vendorProfilesMap = new Map(vendorProfiles?.map(p => [p.user_id || p.id, p]) || [])
   
-  // Apply pagination
-  query = query
-    .range(offset, offset + limit - 1)
-    .order('created_at', { ascending: false })
+  // Filter and transform users to show only vendors
+  const vendors = authUsers.users
+    .filter(user => {
+      const userProfile = userProfilesMap.get(user.id)
+      const hasVendorRole = userProfile?.role === 'vendor' || user.user_metadata?.role === 'vendor'
+      return hasVendorRole
+    })
+    .map(user => {
+      const userProfile = userProfilesMap.get(user.id)
+      const vendorProfile = vendorProfilesMap.get(user.id)
+      
+      // Combine data from auth, user_profiles, and vendor_profiles
+      return {
+        id: vendorProfile?.id || user.id,
+        user_id: user.id,
+        business_name: vendorProfile?.business_name || null,
+        profile_title: vendorProfile?.profile_title || null,
+        about: vendorProfile?.about || null,
+        profile_photo_url: vendorProfile?.profile_photo_url || null,
+        cover_photo_url: vendorProfile?.cover_photo_url || null,
+        offers_virtual_services: vendorProfile?.offers_virtual_services || null,
+        offers_in_person_services: vendorProfile?.offers_in_person_services || null,
+        hourly_rate: vendorProfile?.hourly_rate || null,
+        zip_code: vendorProfile?.zip_code || null,
+        service_radius: vendorProfile?.service_radius || null,
+        service_categories: vendorProfile?.service_categories || null,
+        first_name: userProfile?.first_name || user.user_metadata?.first_name || null,
+        last_name: userProfile?.last_name || user.user_metadata?.last_name || null,
+        email: user.email || '',
+        phone_number: vendorProfile?.phone_number || user.user_metadata?.phone_number || null,
+        allow_phone_contact: vendorProfile?.allow_phone_contact || null,
+        admin_approved: vendorProfile?.admin_approved || false,
+        admin_notes: vendorProfile?.admin_notes || null,
+        approved_at: vendorProfile?.approved_at || null,
+        approved_by: vendorProfile?.approved_by || null,
+        created_at: vendorProfile?.created_at || user.created_at,
+        updated_at: vendorProfile?.updated_at || user.updated_at,
+      }
+    })
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
   
-  const { data, error, count } = await query
-  
-  if (error) {
-    console.error('Error fetching vendors:', error)
-    return { vendors: [], total: 0 }
-  }
-  
-  // Get review counts and ratings for each vendor
-  const vendorsWithStats = await Promise.all((data || []).map(async (vendor: any) => {
-    const { data: reviews } = await supabase
-      .from('reviews')
-      .select('rating')
-      .eq('vendor_id', vendor.id)
-    
-    const totalReviews = reviews?.length || 0
-    const averageRating = totalReviews > 0 && reviews
-      ? reviews.reduce((sum: number, review: any) => sum + review.rating, 0) / totalReviews
-      : 0
-    
-    return {
-      ...vendor,
-      total_reviews: totalReviews,
-      average_rating: Math.round(averageRating * 10) / 10
-    } as VendorWithProfile
-  }))
-  
-  return {
-    vendors: vendorsWithStats,
-    total: count || 0
-  }
-}
-
-export async function VendorsTable({ searchParams }: VendorsTableProps) {
-  const searchParamsObj = new URLSearchParams()
-  Object.entries(searchParams).forEach(([key, value]) => {
-    if (typeof value === 'string') {
-      searchParamsObj.set(key, value)
-    }
-  })
-  
-  const { page, perPage } = validatePageParams(searchParamsObj)
-  const search = searchParamsObj.get('search') || undefined
-  
-  const { vendors, total } = await getVendors(page, perPage, search)
-  const pagination = calculatePagination(page, total, perPage)
-  
-  return (
-    <VendorsDataTable 
-      vendors={vendors}
-      pagination={pagination}
-      currentSearch={search}
-    />
-  )
+  return <VendorsDataTable vendors={vendors} />
 }
 
 
