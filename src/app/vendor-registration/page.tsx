@@ -622,6 +622,29 @@ export default function VendorRegisterPage() {
           toast.error(`Profile creation failed: ${insErr.message}`)
           return
         }
+
+        // Send vendor welcome email (non-blocking)
+        console.log('🎉 Vendor profile created - triggering welcome email...')
+        fetch('/api/send-vendor-welcome-email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email,
+            firstName,
+            lastName,
+            businessName,
+          }),
+        })
+          .then(async (response) => {
+            const result = await response.json()
+            console.log('Vendor welcome email API response:', result)
+          })
+          .catch(error => {
+            console.error('Failed to send vendor welcome email:', error)
+            // Don't show error to user - email is non-critical
+          })
       }
 
       toast.success('Vendor account created')
