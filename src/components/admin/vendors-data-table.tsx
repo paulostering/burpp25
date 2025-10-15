@@ -85,7 +85,9 @@ export function VendorsDataTable({ vendors }: VendorsDataTableProps) {
     if (!sortKey || !sortOrder) return filteredVendors
 
     return [...filteredVendors].sort((a, b) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let aVal: any = a[sortKey]
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let bVal: any = b[sortKey]
 
       // Handle null/undefined values

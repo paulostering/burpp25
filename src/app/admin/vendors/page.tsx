@@ -92,9 +92,6 @@ export default async function AdminVendorsPage() {
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Vendor Profiles</CardTitle>
-        </CardHeader>
         <CardContent>
           <VendorsDataTable vendors={vendors} />
         </CardContent>

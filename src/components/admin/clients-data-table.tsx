@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import {
   Table,
   TableBody,
@@ -12,43 +12,44 @@ import {
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Search, MoreHorizontal, Eye, Edit, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { Search, MoreHorizontal, Eye, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination'
 import type { UserProfile } from '@/types/db'
 
 interface ClientsDataTableProps {
   clients: UserProfile[]
-  pagination?: {
-    page: number
-    per_page: number
-    total: number
-    total_pages: number
-    offset: number
-    limit: number
-  }
-  currentSearch?: string
 }
 
-export function ClientsDataTable({ clients, pagination, currentSearch }: ClientsDataTableProps) {
+type SortKey = 'first_name' | 'email' | 'is_active' | 'created_at'
+type SortOrder = 'asc' | 'desc' | null
+
+export function ClientsDataTable({ clients }: ClientsDataTableProps) {
   const [searchTerm, setSearchTerm] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [sortKey, setSortKey] = useState<SortKey | null>(null)
+  const [sortOrder, setSortOrder] = useState<SortOrder>(null)
   const router = useRouter()
-  const searchParams = useSearchParams()
+  
+  const itemsPerPage = 10
 
-  // When pagination is provided, show all clients (already paginated server-side)
-  // When no pagination, use client-side filtering
-  const filteredClients = pagination ? clients : clients.filter(client =>
-    client.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.email.toLowerCase().includes(searchTerm.toLowerCase())
-  )
-
+  // Helper functions
   const formatDate = (dateString: string) => {
+    if (!dateString) return 'N/A'
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -56,24 +57,133 @@ export function ClientsDataTable({ clients, pagination, currentSearch }: Clients
     })
   }
 
-  const handlePageChange = (newPage: number) => {
-    const params = new URLSearchParams(searchParams.toString())
-    params.set('page', newPage.toString())
-    router.push(`/admin/clients?${params.toString()}`)
+  // Filter clients based on search term across all columns
+  const filteredClients = useMemo(() => {
+    if (!searchTerm) return clients
+
+    const lowerSearch = searchTerm.toLowerCase()
+    return clients.filter(client => {
+      const fullName = `${client.first_name || ''} ${client.last_name || ''}`.trim()
+      return (
+        fullName.toLowerCase().includes(lowerSearch) ||
+        client.first_name?.toLowerCase().includes(lowerSearch) ||
+        client.last_name?.toLowerCase().includes(lowerSearch) ||
+        client.email.toLowerCase().includes(lowerSearch) ||
+        (client.is_active ? 'active' : 'inactive').includes(lowerSearch) ||
+        formatDate(client.created_at).toLowerCase().includes(lowerSearch)
+      )
+    })
+  }, [clients, searchTerm])
+
+  // Sort clients
+  const sortedClients = useMemo(() => {
+    if (!sortKey || !sortOrder) return filteredClients
+
+    return [...filteredClients].sort((a, b) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let aVal: any = a[sortKey]
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let bVal: any = b[sortKey]
+
+      // Handle null/undefined values
+      if (aVal == null) return sortOrder === 'asc' ? 1 : -1
+      if (bVal == null) return sortOrder === 'asc' ? -1 : 1
+
+      // Handle specific data types
+      if (sortKey === 'created_at') {
+        aVal = new Date(aVal).getTime()
+        bVal = new Date(bVal).getTime()
+      } else if (sortKey === 'first_name') {
+        // Sort by full name
+        const aName = `${a.first_name || ''} ${a.last_name || ''}`.trim().toLowerCase()
+        const bName = `${b.first_name || ''} ${b.last_name || ''}`.trim().toLowerCase()
+        return sortOrder === 'asc' 
+          ? aName.localeCompare(bName)
+          : bName.localeCompare(aName)
+      } else if (typeof aVal === 'string') {
+        aVal = aVal.toLowerCase()
+        bVal = bVal.toLowerCase()
+      }
+
+      if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1
+      if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1
+      return 0
+    })
+  }, [filteredClients, sortKey, sortOrder])
+
+  // Paginate clients
+  const totalPages = Math.ceil(sortedClients.length / itemsPerPage)
+  const paginatedClients = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage
+    return sortedClients.slice(startIndex, startIndex + itemsPerPage)
+  }, [sortedClients, currentPage])
+
+  // Reset to page 1 when search or sort changes
+  useMemo(() => {
+    setCurrentPage(1)
+  }, [searchTerm, sortKey, sortOrder])
+
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      // Cycle through: asc -> desc -> null
+      if (sortOrder === 'asc') {
+        setSortOrder('desc')
+      } else if (sortOrder === 'desc') {
+        setSortKey(null)
+        setSortOrder(null)
+      }
+    } else {
+      setSortKey(key)
+      setSortOrder('asc')
+    }
+  }
+
+  const getSortIcon = (key: SortKey) => {
+    if (sortKey !== key) {
+      return <ArrowUpDown className="ml-2 h-4 w-4" />
+    }
+    if (sortOrder === 'asc') {
+      return <ArrowUp className="ml-2 h-4 w-4" />
+    }
+    return <ArrowDown className="ml-2 h-4 w-4" />
+  }
+
+  const generatePaginationItems = () => {
+    const items = []
+    const maxVisible = 5
+    
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) {
+        items.push(i)
+      }
+    } else {
+      if (currentPage <= 3) {
+        items.push(1, 2, 3, 4, -1, totalPages)
+      } else if (currentPage >= totalPages - 2) {
+        items.push(1, -1, totalPages - 3, totalPages - 2, totalPages - 1, totalPages)
+      } else {
+        items.push(1, -1, currentPage - 1, currentPage, currentPage + 1, -2, totalPages)
+      }
+    }
+    
+    return items
   }
 
   return (
     <div className="space-y-4">
       {/* Search */}
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center justify-between">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search clients..."
+            placeholder="Search all columns..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-8"
           />
+        </div>
+        <div className="text-sm text-muted-foreground">
+          {sortedClients.length} client{sortedClients.length !== 1 ? 's' : ''} found
         </div>
       </div>
 
@@ -82,38 +192,76 @@ export function ClientsDataTable({ clients, pagination, currentSearch }: Clients
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Joined</TableHead>
-              <TableHead className="w-[50px]">Actions</TableHead>
+              <TableHead className="text-left">
+                <Button
+                  variant="ghost"
+                  onClick={() => handleSort('first_name')}
+                  className="h-auto p-0 font-medium hover:bg-transparent text-left justify-start"
+                >
+                  Name
+                  {getSortIcon('first_name')}
+                </Button>
+              </TableHead>
+              <TableHead className="text-left">
+                <Button
+                  variant="ghost"
+                  onClick={() => handleSort('email')}
+                  className="h-auto p-0 font-medium hover:bg-transparent text-left justify-start"
+                >
+                  Email
+                  {getSortIcon('email')}
+                </Button>
+              </TableHead>
+              <TableHead className="text-left">
+                <Button
+                  variant="ghost"
+                  onClick={() => handleSort('is_active')}
+                  className="h-auto p-0 font-medium hover:bg-transparent text-left justify-start"
+                >
+                  Status
+                  {getSortIcon('is_active')}
+                </Button>
+              </TableHead>
+              <TableHead className="text-left">
+                <Button
+                  variant="ghost"
+                  onClick={() => handleSort('created_at')}
+                  className="h-auto p-0 font-medium hover:bg-transparent text-left justify-start"
+                >
+                  Joined
+                  {getSortIcon('created_at')}
+                </Button>
+              </TableHead>
+              <TableHead className="w-[50px] text-left">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredClients.length === 0 ? (
+            {paginatedClients.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground">
-                  No clients found
+                <TableCell colSpan={5} className="text-center text-muted-foreground h-32">
+                  {searchTerm ? 'No clients found matching your search.' : 'No clients found.'}
                 </TableCell>
               </TableRow>
             ) : (
-              filteredClients.map((client) => (
-                <TableRow key={client.id}>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">
-                        {client.first_name} {client.last_name}
-                      </div>
+              paginatedClients.map((client) => (
+                <TableRow 
+                  key={client.id} 
+                  className="cursor-pointer hover:bg-gray-50"
+                  onClick={() => router.push(`/admin/clients/${client.id}`)}
+                >
+                  <TableCell className="text-left">
+                    <div className="font-medium">
+                      {client.first_name} {client.last_name}
                     </div>
                   </TableCell>
-                  <TableCell>{client.email}</TableCell>
-                  <TableCell>
+                  <TableCell className="text-left">{client.email}</TableCell>
+                  <TableCell className="text-left">
                     <Badge variant={client.is_active ? "default" : "secondary"}>
                       {client.is_active ? "Active" : "Inactive"}
                     </Badge>
                   </TableCell>
-                  <TableCell>{formatDate(client.created_at)}</TableCell>
-                  <TableCell>
+                  <TableCell className="text-left">{formatDate(client.created_at)}</TableCell>
+                  <TableCell className="text-left" onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-8 w-8 p-0">
@@ -122,17 +270,9 @@ export function ClientsDataTable({ clients, pagination, currentSearch }: Clients
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => router.push(`/admin/clients/${client.id}`)}>
                           <Eye className="mr-2 h-4 w-4" />
-                          View Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600">
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
+                          View Client
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -144,57 +284,53 @@ export function ClientsDataTable({ clients, pagination, currentSearch }: Clients
         </Table>
       </div>
 
-      {/* Pagination and Summary */}
-      <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
-          {pagination ? (
-            <>Showing {pagination.offset + 1} to {Math.min(pagination.offset + pagination.per_page, pagination.total)} of {pagination.total} clients</>
-          ) : (
-            <>Showing {filteredClients.length} of {clients.length} clients</>
-          )}
-        </div>
-        
-        {pagination && pagination.total_pages > 1 && (
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handlePageChange(pagination.page - 1)}
-              disabled={pagination.page <= 1}
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Previous
-            </Button>
-            
-            <div className="flex items-center space-x-1">
-              {Array.from({ length: Math.min(5, pagination.total_pages) }, (_, i) => {
-                const pageNum = i + 1
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, sortedClients.length)} of {sortedClients.length} clients
+          </div>
+          
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious 
+                  onClick={() => currentPage > 1 && setCurrentPage(currentPage - 1)}
+                  className={currentPage <= 1 ? 'pointer-events-none opacity-50' : ''}
+                />
+              </PaginationItem>
+              
+              {generatePaginationItems().map((pageNum, idx) => {
+                if (pageNum === -1 || pageNum === -2) {
+                  return (
+                    <PaginationItem key={`ellipsis-${idx}`}>
+                      <PaginationEllipsis />
+                    </PaginationItem>
+                  )
+                }
+                
                 return (
-                  <Button
-                    key={pageNum}
-                    variant={pagination.page === pageNum ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => handlePageChange(pageNum)}
-                    className="w-8 h-8 p-0"
-                  >
-                    {pageNum}
-                  </Button>
+                  <PaginationItem key={pageNum}>
+                    <PaginationLink
+                      onClick={() => setCurrentPage(pageNum)}
+                      isActive={currentPage === pageNum}
+                    >
+                      {pageNum}
+                    </PaginationLink>
+                  </PaginationItem>
                 )
               })}
-            </div>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handlePageChange(pagination.page + 1)}
-              disabled={pagination.page >= pagination.total_pages}
-            >
-              Next
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
-      </div>
+              
+              <PaginationItem>
+                <PaginationNext 
+                  onClick={() => currentPage < totalPages && setCurrentPage(currentPage + 1)}
+                  className={currentPage >= totalPages ? 'pointer-events-none opacity-50' : ''}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
     </div>
   )
 }

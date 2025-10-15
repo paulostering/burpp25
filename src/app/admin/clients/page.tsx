@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ClientsDataTable } from '@/components/admin/clients-data-table'
 import { createAdminSupabase } from '@/lib/supabase/server'
 
-async function getClients(page: number = 1, perPage: number = 20) {
+async function getClients() {
   const supabase = createAdminSupabase()
   
   // Get all auth users and their profiles (if they exist)
@@ -10,7 +10,7 @@ async function getClients(page: number = 1, perPage: number = 20) {
   
   if (authError) {
     console.error('Error fetching auth users:', authError)
-    return { clients: [], pagination: undefined }
+    return { clients: [] }
   }
   
   // Get all user profiles
@@ -20,14 +20,14 @@ async function getClients(page: number = 1, perPage: number = 20) {
   
   if (profilesError) {
     console.error('Error fetching user profiles:', profilesError)
-    return { clients: [], pagination: undefined }
+    return { clients: [] }
   }
   
   // Create a map of profiles by user ID
   const profilesMap = new Map(profiles?.map(p => [p.id, p]) || [])
   
   // Filter and transform users to show only customers
-  const allClients = authUsers.users
+  const clients = authUsers.users
     .map(user => {
       const profile = profilesMap.get(user.id)
       
@@ -55,32 +55,11 @@ async function getClients(page: number = 1, perPage: number = 20) {
     )
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
   
-  // Implement pagination
-  const total = allClients.length
-  const totalPages = Math.ceil(total / perPage)
-  const offset = (page - 1) * perPage
-  const clients = allClients.slice(offset, offset + perPage)
-  
-  const pagination = {
-    page,
-    per_page: perPage,
-    total,
-    total_pages: totalPages,
-    offset,
-    limit: perPage
-  }
-  
-  return { clients, pagination }
+  return { clients }
 }
 
-interface AdminClientsPageProps {
-  searchParams: Promise<{ page?: string }>
-}
-
-export default async function AdminClientsPage({ searchParams }: AdminClientsPageProps) {
-  const { page } = await searchParams
-  const currentPage = parseInt(page || '1', 10)
-  const { clients, pagination } = await getClients(currentPage)
+export default async function AdminClientsPage() {
+  const { clients } = await getClients()
 
   return (
     <div className="space-y-6">
@@ -96,7 +75,7 @@ export default async function AdminClientsPage({ searchParams }: AdminClientsPag
           <CardTitle>Customer Accounts</CardTitle>
         </CardHeader>
         <CardContent>
-          <ClientsDataTable clients={clients} pagination={pagination} />
+          <ClientsDataTable clients={clients} />
         </CardContent>
       </Card>
     </div>
