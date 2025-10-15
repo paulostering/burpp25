@@ -83,16 +83,16 @@ export function FeaturedCategories() {
         return (
           <div
             key={category.id}
-            className="aspect-square rounded-lg border bg-card p-4 text-center text-sm flex items-center justify-center cursor-pointer hover:bg-accent transition-colors"
+            className="rounded-lg border bg-card p-4 text-center text-sm flex items-center justify-center cursor-pointer hover:bg-accent transition-colors"
             onClick={() => handleCategoryClick(category)}
           >
-            <div className="flex flex-col items-center justify-center gap-2">
+            <div className="flex flex-col items-center justify-center gap-0">
               {validIconUrl && (
-                <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
+                <div className="w-20 h-20 flex items-center justify-center">
                   <img
                     src={validIconUrl}
                     alt={`${category.name} icon`}
-                    className="h-8 w-8 object-contain filter brightness-0 invert"
+                    className="h-60 w-60 object-contain"
                     onError={(e) => {
                       e.currentTarget.style.display = 'none'
                     }}
