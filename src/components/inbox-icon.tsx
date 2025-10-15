@@ -6,12 +6,14 @@ import { Badge } from '@/components/ui/badge'
 import { Mail } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/auth-context'
 
 export function InboxIcon() {
   const [unreadCount, setUnreadCount] = useState(0)
   const { user } = useAuth()
   const supabase = createClient()
+  const router = useRouter()
 
   useEffect(() => {
     if (!user) {
@@ -100,18 +102,22 @@ export function InboxIcon() {
   if (!user) return null
 
   return (
-    <Button variant="ghost" size="icon" className="h-8 w-8 relative" asChild>
-      <Link href="/messages">
-        <Mail className="h-4 w-4" />
-        {unreadCount > 0 && (
-          <Badge 
-            variant="secondary" 
-            className="absolute -top-0.5 -right-0.5 h-4 min-w-4 text-[10px] p-0 flex items-center justify-center bg-primary text-white"
-          >
-            {unreadCount > 99 ? '99+' : unreadCount}
-          </Badge>
-        )}
-      </Link>
+    <Button 
+      variant="ghost" 
+      size="icon" 
+      className="h-8 w-8 relative"
+      onClick={() => router.push('/messages')}
+      aria-label="Open inbox"
+    >
+      <Mail className="h-4 w-4" />
+      {unreadCount > 0 && (
+        <Badge 
+          variant="secondary" 
+          className="absolute -top-0.5 -right-0.5 h-4 min-w-4 text-[10px] p-0 flex items-center justify-center bg-primary text-white"
+        >
+          {unreadCount > 99 ? '99+' : unreadCount}
+        </Badge>
+      )}
     </Button>
   )
 }

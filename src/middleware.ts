@@ -64,8 +64,8 @@ export async function middleware(request: NextRequest) {
       request.nextUrl.pathname.startsWith(route + '/')
     )
     
-    // Allow access to login/logout and admin routes
-    const allowedRoutes = ['/login', '/signup', '/logout', '/admin']
+    // Allow access to login/logout, admin routes and messages/inbox
+    const allowedRoutes = ['/login', '/signup', '/logout', '/admin', '/messages']
     const isAllowedRoute = allowedRoutes.some(route => 
       request.nextUrl.pathname === route || 
       request.nextUrl.pathname.startsWith(route + '/')
@@ -86,8 +86,8 @@ export async function middleware(request: NextRequest) {
       request.nextUrl.pathname.startsWith(route + '/')
     )
     
-    // Allow access to login/logout and vendor dashboard routes
-    const allowedRoutes = ['/login', '/signup', '/logout', `/vendor/${user.id}/dashboard`]
+    // Allow access to login/logout, messages/inbox and vendor dashboard routes
+    const allowedRoutes = ['/login', '/signup', '/logout', '/messages', `/vendor/${user.id}/dashboard`]
     const isAllowedRoute = allowedRoutes.some(route => 
       request.nextUrl.pathname === route || 
       request.nextUrl.pathname.startsWith(route + '/')
