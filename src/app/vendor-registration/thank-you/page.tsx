@@ -17,13 +17,13 @@ export default function VendorThankYouPage() {
       try {
         const { data: { user } } = await supabase.auth.getUser()
         if (user) {
-          const { data: vendorProfile } = await supabase
+          const { data: vendorProfile, error } = await supabase
             .from('vendor_profiles')
             .select('id')
             .eq('user_id', user.id)
-            .single()
+            .maybeSingle()
           
-          if (vendorProfile) {
+          if (vendorProfile && !error) {
             setVendorId(vendorProfile.id)
           }
         }

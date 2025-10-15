@@ -23,14 +23,13 @@ export function FavoritesIcon() {
 
       try {
         // Check if user is a vendor
-        const { data: vendorProfile } = await supabase
+        const { data: vendorProfile, error } = await supabase
           .from('vendor_profiles')
           .select('id')
           .eq('user_id', user.id)
-          .single()
+          .maybeSingle()
 
-
-        setIsVendor(!!vendorProfile)
+        setIsVendor(!!vendorProfile && !error)
       } catch (error) {
         setIsVendor(false)
       }

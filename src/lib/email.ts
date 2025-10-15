@@ -1,4 +1,10 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminSupabase } from '@/lib/supabase/server'
+import sgMail from '@sendgrid/mail'
+
+// Initialize SendGrid
+if (process.env.SENDGRID_API_KEY) {
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY)
+}
 
 interface EmailVariables {
   [key: string]: string
@@ -9,7 +15,14 @@ export async function sendTemplateEmail(
   recipientEmail: string,
   variables: EmailVariables
 ) {
-  const supabase = createClient()
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+  console.log('📧 SENDING EMAIL')
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+  console.log('Event:', eventName)
+  console.log('Recipient:', recipientEmail)
+  console.log('Variables:', variables)
+  
+  const supabase = createAdminSupabase()
   
   // Add siteUrl to variables automatically
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
@@ -18,7 +31,10 @@ export async function sendTemplateEmail(
     siteUrl
   }
   
+  console.log('All variables (including siteUrl):', allVariables)
+  
   // Get the template
+  console.log('Fetching template:', eventName)
   const { data: template, error: templateError } = await supabase
     .from('email_templates')
     .select('*')
@@ -27,9 +43,14 @@ export async function sendTemplateEmail(
     .single()
   
   if (templateError || !template) {
-    console.error('Email template not found or inactive:', eventName)
+    console.error('❌ Email template not found or inactive:', eventName)
+    console.error('Error:', templateError)
     return { success: false, error: 'Template not found' }
   }
+  
+  console.log('✓ Template found:', template.event_label)
+  console.log('From:', `${template.from_name} <${template.from_email}>`)
+  console.log('Subject (before replacement):', template.subject)
   
   // Replace variables in subject and body
   let subject = template.subject
@@ -37,34 +58,72 @@ export async function sendTemplateEmail(
   let bodyText = template.body_text || ''
   
   Object.entries(allVariables).forEach(([key, value]) => {
-    const regex = new RegExp(`{{${key}}}`, 'g')
+    const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g')
     subject = subject.replace(regex, value)
     bodyHtml = bodyHtml.replace(regex, value)
     bodyText = bodyText.replace(regex, value)
   })
   
-  // Here you would integrate with your email service (SendGrid, Resend, etc.)
-  // For now, we'll just log it
-  console.log('Sending email:', {
-    to: recipientEmail,
-    from: `${template.from_name} <${template.from_email}>`,
-    subject,
-    html: bodyHtml,
-    text: bodyText
-  })
+  console.log('Subject (after replacement):', subject)
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+  console.log('📨 EMAIL CONTENT:')
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+  console.log('To:', recipientEmail)
+  console.log('From:', `${template.from_name} <${template.from_email}>`)
+  console.log('Subject:', subject)
+  console.log('HTML Length:', bodyHtml.length, 'characters')
+  console.log('Text Length:', bodyText.length, 'characters')
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+  console.log('HTML Preview (first 500 chars):')
+  console.log(bodyHtml.substring(0, 500))
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
   
-  // TODO: Integrate with actual email service
-  // Example with Resend:
-  // const resend = new Resend(process.env.RESEND_API_KEY)
-  // await resend.emails.send({
-  //   from: `${template.from_name} <${template.from_email}>`,
-  //   to: recipientEmail,
-  //   subject,
-  //   html: bodyHtml,
-  //   text: bodyText
-  // })
-  
-  return { success: true }
+  // Send email with SendGrid
+  if (!process.env.SENDGRID_API_KEY) {
+    console.log('⚠️  SENDGRID_API_KEY not found in environment variables')
+    console.log('⚠️  Email was prepared but not sent')
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+    return { success: false, error: 'SendGrid not configured' }
+  }
+
+  try {
+    console.log('📤 Sending email via SendGrid...')
+    
+    const msg = {
+      to: recipientEmail,
+      from: {
+        email: template.from_email,
+        name: template.from_name
+      },
+      subject,
+      text: bodyText,
+      html: bodyHtml,
+    }
+    
+    console.log('Sending from:', `${template.from_name} <${template.from_email}>`)
+    
+    const result = await sgMail.send(msg)
+    
+    console.log('✅ Email sent successfully via SendGrid!')
+    console.log('SendGrid Response Status:', result[0].statusCode)
+    console.log('SendGrid Message ID:', result[0].headers['x-message-id'])
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+    
+    return { success: true, messageId: result[0].headers['x-message-id'] }
+  } catch (sendError: unknown) {
+    console.error('❌ SendGrid Error:', sendError)
+    if (sendError && typeof sendError === 'object' && 'response' in sendError) {
+      const sgError = sendError as { response?: { body?: unknown } }
+      console.error('SendGrid Error Details:', sgError.response?.body)
+    }
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+    return { success: false, error: 'Failed to send via SendGrid' }
+  }
+}
+
+// Helper to get site URL with fallback
+function getSiteUrl(): string {
+  return process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 }
 
 // Example usage functions for each template
@@ -74,11 +133,12 @@ export async function sendClientWelcomeEmail(
   firstName: string,
   lastName: string
 ) {
+  const siteUrl = getSiteUrl()
   return sendTemplateEmail('client_welcome', email, {
     firstName,
     lastName,
     email,
-    dashboardUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard`
+    dashboardUrl: `${siteUrl}/dashboard`
   })
 }
 
@@ -88,12 +148,13 @@ export async function sendVendorWelcomeEmail(
   lastName: string,
   businessName: string
 ) {
+  const siteUrl = getSiteUrl()
   return sendTemplateEmail('vendor_welcome', email, {
     firstName,
     lastName,
     businessName,
     email,
-    dashboardUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard`
+    dashboardUrl: `${siteUrl}/dashboard`
   })
 }
 
@@ -105,13 +166,14 @@ export async function sendVendorMessageNotification(
   messagePreview: string,
   conversationId: string
 ) {
+  const siteUrl = getSiteUrl()
   return sendTemplateEmail('vendor_message_received', vendorEmail, {
     firstName: vendorFirstName,
     businessName,
     clientName,
     messagePreview,
-    messageUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/messages?conversation=${conversationId}`,
-    settingsUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/settings`
+    messageUrl: `${siteUrl}/messages?conversation=${conversationId}`,
+    settingsUrl: `${siteUrl}/settings`
   })
 }
 
@@ -131,13 +193,14 @@ export async function sendPasswordResetConfirmation(
   email: string,
   firstName: string
 ) {
+  const siteUrl = getSiteUrl()
   const now = new Date()
   return sendTemplateEmail('password_reset_confirmed', email, {
     firstName,
     email,
     resetDate: now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
     resetTime: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-    loginUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/login`
+    loginUrl: `${siteUrl}/login`
   })
 }
 
