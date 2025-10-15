@@ -12,7 +12,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Search, MoreHorizontal, Edit, Plus, ArrowUpDown, CameraOff } from 'lucide-react'
+import { Search, MoreHorizontal, Edit, Plus, ArrowUpDown } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,7 +35,7 @@ interface EntitiesDataTableProps {
   entities: Category[]
 }
 
-type SortField = 'name' | 'created_at' | 'updated_at' | 'is_active' | 'is_featured' | 'icon_url'
+type SortField = 'name' | 'created_at' | 'updated_at' | 'is_active' | 'is_featured'
 type SortDirection = 'asc' | 'desc'
 
 export function EntitiesDataTable({ entities: initialEntities }: EntitiesDataTableProps) {
@@ -90,10 +90,6 @@ export function EntitiesDataTable({ entities: initialEntities }: EntitiesDataTab
         case 'is_featured':
           aValue = a.is_featured ? 1 : 0
           bValue = b.is_featured ? 1 : 0
-          break
-        case 'icon_url':
-          aValue = a.icon_url ? 1 : 0
-          bValue = b.icon_url ? 1 : 0
           break
         default:
           aValue = a.name.toLowerCase()
@@ -319,16 +315,6 @@ export function EntitiesDataTable({ entities: initialEntities }: EntitiesDataTab
               <TableHead>
                 <Button
                   variant="ghost"
-                  onClick={() => handleSort('icon_url')}
-                  className="h-auto p-0 font-semibold pl-0 !px-0"
-                >
-                  Icon
-                  <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-              </TableHead>
-              <TableHead>
-                <Button
-                  variant="ghost"
                   onClick={() => handleSort('name')}
                   className="h-auto p-0 font-semibold pl-0 !px-0"
                 >
@@ -382,36 +368,13 @@ export function EntitiesDataTable({ entities: initialEntities }: EntitiesDataTab
           <TableBody>
             {sortedAndFilteredEntities.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground pl-4">
+                <TableCell colSpan={5} className="text-center text-muted-foreground pl-4">
                   No categories found
                 </TableCell>
               </TableRow>
             ) : (
               sortedAndFilteredEntities.map((entity) => (
                 <TableRow key={entity.id}>
-                  <TableCell>
-                    {entity.icon_url ? (
-                      <div className="relative">
-                        <img 
-                          src={entity.icon_url} 
-                          alt={`${entity.name} icon`}
-                          className="h-6 w-6 object-contain"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none'
-                            // Show fallback icon
-                            const parent = e.currentTarget.parentElement
-                            if (parent) {
-                              parent.innerHTML = '<div class="h-6 w-6 bg-gray-300 rounded-full flex items-center justify-center"><svg class="h-3 w-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg></div>'
-                            }
-                          }}
-                        />
-                      </div>
-                    ) : (
-                      <div className="h-6 w-6 bg-gray-300 rounded-full flex items-center justify-center">
-                        <CameraOff className="h-3 w-3 text-gray-500" />
-                      </div>
-                    )}
-                  </TableCell>
                   <TableCell>
                     <div className="font-medium">
                       {entity.name}

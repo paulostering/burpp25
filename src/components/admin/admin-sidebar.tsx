@@ -31,6 +31,7 @@ import {
   GalleryVerticalEnd,
   Home,
   LogOut,
+  Mail,
   Map,
   PieChart,
   Settings,
@@ -106,6 +107,17 @@ const data: { navMain: MenuItem[] } = {
           title: "Categories",
           url: "/admin/entities",
           icon: Tag,
+        },
+      ],
+    },
+    {
+      title: "Settings",
+      icon: Settings,
+      items: [
+        {
+          title: "Email Templates",
+          url: "/admin/email-templates",
+          icon: Mail,
         },
       ],
     },
