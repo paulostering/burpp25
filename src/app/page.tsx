@@ -5,11 +5,7 @@ export default async function RootPage() {
   // Check if user is logged in
   const supabase = await createServerSupabase()
   const { data: { user }, error } = await supabase.auth.getUser()
-  
-  console.log('=== ROOT PAGE AUTH CHECK ===')
-  console.log('User:', user?.id, user?.email)
-  console.log('Error:', error)
-  
+
   if (user) {
     // Check user role
     const { data: profile } = await supabase

@@ -216,7 +216,6 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
   useEffect(() => {
     const loadReviews = async () => {
       setIsLoadingReviews(true)
-      console.log('Loading reviews for vendor ID:', vendor.id)
       
       // Test if the reviews table exists
       const { data: tableTest, error: tableError } = await supabase
@@ -229,10 +228,6 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
         setIsLoadingReviews(false)
         return
       }
-      
-      console.log('Reviews table exists, proceeding with query...')
-      
-      // First, let's try a simple query without the user join
       const { data, error } = await supabase
         .from('reviews')
         .select('*')

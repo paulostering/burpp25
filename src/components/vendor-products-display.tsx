@@ -25,8 +25,7 @@ export function VendorProductsDisplay({ vendorId }: VendorProductsDisplayProps) 
   const fetchProducts = async () => {
     try {
       setLoading(true)
-      console.log('VendorProductsDisplay: Fetching products for vendor:', vendorId)
-      
+
       const { data, error } = await supabase
         .from('vendor_products')
         .select('*')
@@ -34,19 +33,14 @@ export function VendorProductsDisplay({ vendorId }: VendorProductsDisplayProps) 
         .eq('is_active', true)
         .order('display_order', { ascending: true })
 
-      console.log('VendorProductsDisplay: Query result:', { data, error, count: data?.length })
-
       if (error) {
-        console.error('Supabase error fetching products for display:', error)
         // Silently fail for public display - just don't show products section
         setProducts([])
         return
       }
-      
+
       setProducts(data || [])
-      console.log('VendorProductsDisplay: Set products state:', data?.length || 0, 'products')
     } catch (error) {
-      console.error('Error fetching products for display:', error)
       // Silently fail for public display
       setProducts([])
     } finally {
@@ -56,7 +50,6 @@ export function VendorProductsDisplay({ vendorId }: VendorProductsDisplayProps) 
 
   // Don't render the section if there are no products
   if (!loading && products.length === 0) {
-    console.log('VendorProductsDisplay: No active products found, not rendering section')
     return null
   }
 

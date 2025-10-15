@@ -13,8 +13,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    console.log('Fetching favorites for user:', user.id)
-
     // First, get the user's favorites
     const { data: favorites, error: favoritesError } = await supabase
       .from('user_vendor_favorites')
@@ -23,7 +21,6 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false })
 
     if (favoritesError) {
-      console.error('Error fetching favorites:', favoritesError)
       return NextResponse.json({ error: 'Failed to fetch favorites' }, { status: 500 })
     }
 
@@ -34,8 +31,6 @@ export async function GET(request: NextRequest) {
     // Use admin client to fetch vendor profiles (bypasses RLS)
     const adminSupabase = createAdminSupabase()
     const vendorIds = favorites.map(fav => fav.vendor_id)
-
-    console.log('Fetching vendor profiles for IDs:', vendorIds)
 
     const { data: vendorProfiles, error: vendorError } = await adminSupabase
       .from('vendor_profiles')
@@ -52,11 +47,8 @@ export async function GET(request: NextRequest) {
       .in('id', vendorIds)
 
     if (vendorError) {
-      console.error('Error fetching vendor profiles:', vendorError)
       return NextResponse.json({ error: 'Failed to fetch vendor data' }, { status: 500 })
     }
-
-    console.log('Found vendor profiles:', vendorProfiles?.length || 0)
 
     // Combine favorites with vendor data
     const combinedData = favorites.map(favorite => ({
@@ -65,9 +57,8 @@ export async function GET(request: NextRequest) {
     }))
 
     return NextResponse.json(combinedData)
-    
+
   } catch (error) {
-    console.error('Error in GET /api/favorites:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

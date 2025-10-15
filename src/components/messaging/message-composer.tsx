@@ -55,7 +55,6 @@ export function MessageComposer({
         return
       }
 
-      console.log('Message sent successfully:', data)
       setMessage('')
       onMessageSent?.()
       

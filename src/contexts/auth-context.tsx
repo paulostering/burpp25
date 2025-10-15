@@ -37,16 +37,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Check if token is expired
       const expiresAt = authData.expires_at
       const now = Math.floor(Date.now() / 1000)
-      
-      console.log('AuthProvider: Token check:', { 
-        expiresAt, 
-        now, 
-        isExpired: now >= expiresAt,
-        user: authData.user?.email 
-      })
-      
+
       if (now >= expiresAt) {
-        console.warn('AuthProvider: Token is expired, clearing cookies')
         // Clear expired cookies
         const authCookies = [
           'sb-slvqwoglqaqccibwmpwx-auth-token',
@@ -59,11 +51,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         return null
       }
-      
-      console.log('AuthProvider: Parsed user from cookie:', authData.user?.email)
+
       return authData.user || null
     } catch (error) {
-      console.error('AuthProvider: Failed to parse auth cookie:', error)
       return null
     }
   }
@@ -72,19 +62,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Simplified auth initialization to prevent infinite loops
     const getInitialSession = async () => {
       try {
-        console.log('AuthProvider: Getting initial session...')
-        
         const { data: { session }, error } = await supabase.auth.getSession()
-        
+
         if (error) {
-          console.error('AuthProvider: Session error:', error)
           setUser(null)
         } else {
-          console.log('AuthProvider: Session loaded:', session?.user?.email || 'No user')
           setUser(session?.user ?? null)
         }
       } catch (error) {
-        console.warn('AuthProvider: Session failed:', error)
         setUser(null)
       } finally {
         setLoading(false)
@@ -96,7 +81,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log('AuthProvider: Auth state change:', event, session?.user?.email || 'No user')
         setUser(session?.user ?? null)
         setLoading(false)
       }
@@ -119,9 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       authCookies.forEach(cookieName => {
         document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`
       })
-      
-      console.log('AuthProvider: Cleared auth cookies')
-      
+
       // Try to sign out via Supabase, but don't wait too long
       const signOutPromise = supabase.auth.signOut()
       const timeoutPromise = new Promise((resolve) => 
@@ -133,7 +115,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Force page reload to clear any cached state
       window.location.href = '/login'
     } catch (error) {
-      console.error('Sign out error:', error)
       // Still redirect even if sign out failed
       window.location.href = '/login'
     }

@@ -63,7 +63,6 @@ export function VendorProductsManager({ vendorId }: VendorProductsManagerProps) 
     if (vendorId) {
       fetchProducts()
     } else {
-      console.error('No vendorId provided to VendorProductsManager')
       setHasError(true)
       setLoading(false)
     }
@@ -73,89 +72,25 @@ export function VendorProductsManager({ vendorId }: VendorProductsManagerProps) 
     try {
       setLoading(true)
       setHasError(false)
-      
-      console.log('=== VENDOR PRODUCTS DEBUG ===')
-      console.log('1. Vendor ID:', vendorId)
-      console.log('2. Vendor ID type:', typeof vendorId)
-      console.log('3. Is vendorId truthy?', !!vendorId)
-      
+
       if (!vendorId) {
-        console.error('ERROR: No vendor ID provided!')
         setHasError(true)
         toast.error('No vendor ID found. Please ensure you have a vendor profile.')
         return
       }
-      
-      // Check if user is authenticated
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      console.log('4. Current user:', user?.id)
-      console.log('5. Auth error?', authError)
-      
-      if (authError) {
-        console.error('Authentication error:', authError)
-        setHasError(true)
-        toast.error('Authentication error. Please log in again.')
-        return
-      }
-      
-      if (!user) {
-        console.error('No authenticated user found')
-        setHasError(true)
-        toast.error('You must be logged in to view products.')
-        return
-      }
-      
-      console.log('6. Querying vendor_products table...')
-      const { data, error, status, statusText } = await supabase
-        .from('vendor_products')
-        .select('*')
-        .eq('vendor_id', vendorId)
-        .order('display_order', { ascending: true })
 
-      console.log('7. Query status:', status, statusText)
-      console.log('8. Supabase data:', data)
-      console.log('9. Supabase error:', error)
-      console.log('10. Error type:', typeof error)
-      console.log('11. Error stringified:', JSON.stringify(error))
+      const response = await fetch(`/api/admin/vendors/${vendorId}/products`)
+      const result = await response.json()
 
-      if (error) {
-        console.error('=== ERROR DETAILS ===')
-        console.error('Full error object:', error)
-        console.error('Error keys:', Object.keys(error))
-        console.error('Error message:', error.message)
-        console.error('Error details:', error.details)
-        console.error('Error hint:', error.hint)
-        console.error('Error code:', error.code)
-        
+      if (!response.ok) {
         setHasError(true)
-        
-        // Check if table doesn't exist
-        if (error.message?.includes('relation') && error.message?.includes('does not exist')) {
-          toast.error('Products table not found. Please run database migrations.')
-          return
-        }
-        
-        // Check for RLS policy issues
-        if (error.message?.includes('policy') || error.code === '42501') {
-          toast.error('Permission error. RLS policies may not be set up correctly.')
-          return
-        }
-        
-        const errorMsg = error.message || error.details || 'Unknown database error'
-        toast.error(`Database error: ${errorMsg}`)
+        toast.error(result.error || 'Failed to load products')
         return
       }
-      
-      console.log(`12. Successfully loaded ${data?.length || 0} products`)
-      console.log('=== END DEBUG ===')
-      setProducts(data || [])
+
+      setProducts(result.data || [])
       setHasError(false)
     } catch (error) {
-      console.error('=== UNEXPECTED ERROR ===')
-      console.error('Caught error:', error)
-      console.error('Error type:', typeof error)
-      console.error('Error constructor:', error?.constructor?.name)
-      console.error('Error stack:', error instanceof Error ? error.stack : 'N/A')
       setHasError(true)
       toast.error('Failed to load products. Please try refreshing the page.')
     } finally {
@@ -289,7 +224,6 @@ export function VendorProductsManager({ vendorId }: VendorProductsManagerProps) 
         })
 
       if (error) {
-        console.error('Upload error:', error)
         throw error
       }
 
@@ -302,7 +236,6 @@ export function VendorProductsManager({ vendorId }: VendorProductsManagerProps) 
 
       return urlData.publicUrl
     } catch (error) {
-      console.error('Error uploading image:', error)
       toast.error('Failed to upload image')
       return null
     } finally {
@@ -312,18 +245,11 @@ export function VendorProductsManager({ vendorId }: VendorProductsManagerProps) 
 
   const deleteImageFromStorage = async (imageUrl: string) => {
     try {
-      // Extract the file path from the URL
-      const url = new URL(imageUrl)
-      const pathMatch = url.pathname.match(/\/vendor\/(.+)/)
-      if (!pathMatch) return
-
-      const filePath = pathMatch[1]
-
-      await supabase.storage
-        .from('vendor')
-        .remove([filePath])
+      // Delete via API route
+      await fetch(`/api/admin/vendors/${vendorId}/product-image?imageUrl=${encodeURIComponent(imageUrl)}`, {
+        method: 'DELETE',
+      })
     } catch (error) {
-      console.error('Error deleting image from storage:', error)
       // Don't show error to user as this is cleanup
     }
   }
@@ -341,36 +267,29 @@ export function VendorProductsManager({ vendorId }: VendorProductsManagerProps) 
 
       // If there's a cropped image, upload it first
       if (croppedImageUrl) {
-        // Convert cropped image URL to blob and upload
+        // Convert cropped image URL to blob and upload via API
         const response = await fetch(croppedImageUrl)
         const blob = await response.blob()
         
-        // Generate filename for cropped image
-        const fileExt = 'jpg' // Cropped images are always JPG
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
-        const filePath = `${vendorId}/product/${fileName}`
+        // Create form data
+        const uploadFormData = new FormData()
+        uploadFormData.append('file', blob, 'product.jpg')
 
-        // Upload to Supabase Storage
-        const { data, error } = await supabase.storage
-          .from('vendor')
-          .upload(filePath, blob, {
-            cacheControl: '3600',
-            upsert: false
-          })
+        // Upload via API route
+        const uploadResponse = await fetch(`/api/admin/vendors/${vendorId}/product-image`, {
+          method: 'POST',
+          body: uploadFormData,
+        })
 
-        if (error) {
-          console.error('Upload error:', error)
-          toast.error('Image upload failed. Please try again.')
+        const uploadResult = await uploadResponse.json()
+
+        if (!uploadResponse.ok) {
+          toast.error(uploadResult.error || 'Image upload failed. Please try again.')
           setSaving(false)
           return
         }
 
-        // Get public URL
-        const { data: urlData } = supabase.storage
-          .from('vendor')
-          .getPublicUrl(filePath)
-
-        imageUrl = urlData.publicUrl
+        imageUrl = uploadResult.publicUrl
         
         // If editing and there was an old image from storage, delete it
         if (editingProduct?.image_url && editingProduct.image_url.includes('supabase')) {
@@ -379,37 +298,53 @@ export function VendorProductsManager({ vendorId }: VendorProductsManagerProps) 
       }
       
       const productData = {
-        vendor_id: vendorId,
         title: formData.title.trim(),
         description: formData.description.trim(),
         starting_price: formData.starting_price ? parseFloat(formData.starting_price) : null,
         image_url: imageUrl,
         is_active: formData.is_active,
+        display_order: editingProduct?.display_order || 0,
       }
 
       if (editingProduct) {
-        // Update existing product
-        const { error } = await supabase
-          .from('vendor_products')
-          .update(productData)
-          .eq('id', editingProduct.id)
+        // Update existing product via API
+        const response = await fetch(`/api/admin/vendors/${vendorId}/products/${editingProduct.id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(productData),
+        })
 
-        if (error) throw error
+        const result = await response.json()
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to update product')
+        }
+
         toast.success('Product updated successfully')
       } else {
-        // Create new product
-        const { error } = await supabase
-          .from('vendor_products')
-          .insert(productData)
+        // Create new product via API
+        const response = await fetch(`/api/admin/vendors/${vendorId}/products`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(productData),
+        })
 
-        if (error) throw error
+        const result = await response.json()
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to create product')
+        }
+
         toast.success('Product added successfully')
       }
 
       closeDialog()
       fetchProducts()
     } catch (error) {
-      console.error('Error saving product:', error)
       toast.error('Failed to save product')
     } finally {
       setSaving(false)
@@ -418,17 +353,30 @@ export function VendorProductsManager({ vendorId }: VendorProductsManagerProps) 
 
   const handleToggleActive = async (product: VendorProduct) => {
     try {
-      const { error } = await supabase
-        .from('vendor_products')
-        .update({ is_active: !product.is_active })
-        .eq('id', product.id)
+      const response = await fetch(`/api/admin/vendors/${vendorId}/products/${product.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: product.title,
+          description: product.description,
+          starting_price: product.starting_price,
+          image_url: product.image_url,
+          is_active: !product.is_active,
+          display_order: product.display_order,
+        }),
+      })
 
-      if (error) throw error
-      
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to update product')
+      }
+
       toast.success(product.is_active ? 'Product hidden' : 'Product published')
       fetchProducts()
     } catch (error) {
-      console.error('Error toggling product:', error)
       toast.error('Failed to update product')
     }
   }
@@ -440,22 +388,24 @@ export function VendorProductsManager({ vendorId }: VendorProductsManagerProps) 
       // Find the product to get its image URL
       const product = products.find(p => p.id === productId)
       
-      const { error } = await supabase
-        .from('vendor_products')
-        .delete()
-        .eq('id', productId)
+      const response = await fetch(`/api/admin/vendors/${vendorId}/products/${productId}`, {
+        method: 'DELETE',
+      })
 
-      if (error) throw error
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to delete product')
+      }
       
       // Delete image from storage if it exists
       if (product?.image_url && product.image_url.includes('supabase')) {
         await deleteImageFromStorage(product.image_url)
       }
-      
+
       toast.success('Product deleted successfully')
       fetchProducts()
     } catch (error) {
-      console.error('Error deleting product:', error)
       toast.error('Failed to delete product')
     }
   }

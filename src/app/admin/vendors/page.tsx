@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { VendorsDataTable } from '@/components/admin/vendors-data-table'
 import { createAdminSupabase } from '@/lib/supabase/server'
 
-async function getVendors(page: number = 1, perPage: number = 20) {
+async function getVendors() {
   const supabase = createAdminSupabase()
   
   // Get all auth users and their profiles (if they exist)
@@ -10,7 +10,7 @@ async function getVendors(page: number = 1, perPage: number = 20) {
   
   if (authError) {
     console.error('Error fetching auth users:', authError)
-    return { vendors: [], pagination: undefined }
+    return { vendors: [] }
   }
   
   // Get all user profiles
@@ -36,7 +36,7 @@ async function getVendors(page: number = 1, perPage: number = 20) {
   const vendorProfilesMap = new Map(vendorProfiles?.map(p => [p.user_id || p.id, p]) || [])
   
   // Filter and transform users to show only vendors
-  const allVendors = authUsers.users
+  const vendors = authUsers.users
     .filter(user => {
       const userProfile = userProfilesMap.get(user.id)
       const hasVendorRole = userProfile?.role === 'vendor' || user.user_metadata?.role === 'vendor'
@@ -76,32 +76,11 @@ async function getVendors(page: number = 1, perPage: number = 20) {
     })
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
   
-  // Implement pagination
-  const total = allVendors.length
-  const totalPages = Math.ceil(total / perPage)
-  const offset = (page - 1) * perPage
-  const vendors = allVendors.slice(offset, offset + perPage)
-  
-  const pagination = {
-    page,
-    per_page: perPage,
-    total,
-    total_pages: totalPages,
-    offset,
-    limit: perPage
-  }
-  
-  return { vendors, pagination }
+  return { vendors }
 }
 
-interface AdminVendorsPageProps {
-  searchParams: Promise<{ page?: string }>
-}
-
-export default async function AdminVendorsPage({ searchParams }: AdminVendorsPageProps) {
-  const { page } = await searchParams
-  const currentPage = parseInt(page || '1', 10)
-  const { vendors, pagination } = await getVendors(currentPage)
+export default async function AdminVendorsPage() {
+  const { vendors } = await getVendors()
 
   return (
     <div className="space-y-6">
@@ -117,7 +96,7 @@ export default async function AdminVendorsPage({ searchParams }: AdminVendorsPag
           <CardTitle>Vendor Profiles</CardTitle>
         </CardHeader>
         <CardContent>
-          <VendorsDataTable vendors={vendors} pagination={pagination} />
+          <VendorsDataTable vendors={vendors} />
         </CardContent>
       </Card>
     </div>

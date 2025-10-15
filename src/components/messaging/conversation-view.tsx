@@ -47,7 +47,6 @@ export function ConversationView({ conversationId, onBack }: ConversationViewPro
           .single()
 
         if (convError) {
-          console.error('Error loading conversation:', convError)
           return
         }
 
@@ -61,7 +60,6 @@ export function ConversationView({ conversationId, onBack }: ConversationViewPro
           .order('created_at', { ascending: true })
 
         if (messagesError) {
-          console.error('Error loading messages:', messagesError)
           return
         }
 
@@ -73,19 +71,15 @@ export function ConversationView({ conversationId, onBack }: ConversationViewPro
         ) || []
 
         if (unreadMessages.length > 0) {
-          console.log('Marking incoming messages as read:', unreadMessages.length)
           const { error: markReadError } = await supabase
             .from('messages')
             .update({ is_read: true })
             .in('id', unreadMessages.map(msg => msg.id))
-          
-          if (markReadError) {
-            console.error('Error marking messages as read:', markReadError)
-          } else {
-            console.log('Successfully marked incoming messages as read')
+
+          if (!markReadError) {
             // Update local state to reflect the read status
-            setMessages(prev => 
-              prev.map(msg => 
+            setMessages(prev =>
+              prev.map(msg =>
                 unreadMessages.some(unread => unread.id === msg.id)
                   ? { ...msg, is_read: true }
                   : msg
@@ -95,7 +89,6 @@ export function ConversationView({ conversationId, onBack }: ConversationViewPro
         }
 
       } catch (error) {
-        console.error('Error loading conversation data:', error)
       } finally {
         setIsLoading(false)
       }
@@ -108,8 +101,6 @@ export function ConversationView({ conversationId, onBack }: ConversationViewPro
   useEffect(() => {
     if (!conversationId || !currentUser) return
 
-    console.log('Setting up real-time subscription for conversation:', conversationId)
-
     const channel = supabase
       .channel(`conversation-${conversationId}`)
       .on(
@@ -121,40 +112,33 @@ export function ConversationView({ conversationId, onBack }: ConversationViewPro
           filter: `conversation_id=eq.${conversationId}`
         },
         (payload) => {
-          console.log('Real-time message received:', payload)
           const newMessage = payload.new as Message
-          
+
           setMessages(prev => {
             // Check if message already exists to prevent duplicates
             const exists = prev.find(msg => msg.id === newMessage.id)
             if (exists) return prev
-            
+
             return [...prev, newMessage]
           })
-          
+
           // Only mark as read if this is an incoming message (not from current user)
           if (newMessage.sender_id !== currentUser.id) {
-            console.log('Marking incoming message as read:', newMessage.id, 'from sender:', newMessage.sender_id, 'current user:', currentUser.id)
             supabase
               .from('messages')
               .update({ is_read: true })
               .eq('id', newMessage.id)
               .then(({ error }) => {
-                if (error) {
-                  console.error('Error marking message as read:', error)
-                } else {
-                  console.log('Incoming message marked as read')
-                  setMessages(prev => 
-                    prev.map(msg => 
-                      msg.id === newMessage.id 
+                if (!error) {
+                  setMessages(prev =>
+                    prev.map(msg =>
+                      msg.id === newMessage.id
                         ? { ...msg, is_read: true }
                         : msg
                     )
                   )
                 }
               })
-          } else {
-            console.log('Message from current user, not marking as read:', newMessage.id)
           }
         }
       )
@@ -167,24 +151,20 @@ export function ConversationView({ conversationId, onBack }: ConversationViewPro
           filter: `conversation_id=eq.${conversationId}`
         },
         (payload) => {
-          console.log('Message updated:', payload)
           const updatedMessage = payload.new as Message
-          
-          setMessages(prev => 
-            prev.map(msg => 
-              msg.id === updatedMessage.id 
+
+          setMessages(prev =>
+            prev.map(msg =>
+              msg.id === updatedMessage.id
                 ? updatedMessage
                 : msg
             )
           )
         }
       )
-      .subscribe((status) => {
-        console.log('Subscription status:', status)
-      })
+      .subscribe()
 
     return () => {
-      console.log('Cleaning up real-time subscription')
       supabase.removeChannel(channel)
     }
   }, [conversationId, currentUser, supabase])

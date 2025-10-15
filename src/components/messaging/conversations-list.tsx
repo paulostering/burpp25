@@ -35,13 +35,11 @@ export function ConversationsList({ onConversationSelect, selectedConversationId
           .order('last_message_at', { ascending: false })
 
         if (error) {
-          console.error('Error loading conversations:', error)
           return
         }
 
         setConversations(data || [])
       } catch (error) {
-        console.error('Error loading conversations:', error)
       } finally {
         setIsLoading(false)
       }
@@ -64,12 +62,10 @@ export function ConversationsList({ onConversationSelect, selectedConversationId
           table: 'conversations'
         },
         (payload) => {
-          console.log('Conversation list - conversation updated:', payload)
           const updatedConversation = payload.new as any
-          
+
           // Check if this conversation involves the current user
           if (updatedConversation.customer_id === currentUser.id || updatedConversation.vendor_id === currentUser.id) {
-            console.log('Reloading conversations list')
             loadConversations()
           }
         }
@@ -82,7 +78,6 @@ export function ConversationsList({ onConversationSelect, selectedConversationId
           table: 'conversations'
         },
         (payload) => {
-          console.log('New conversation created:', payload)
           loadConversations()
         }
       )
@@ -94,27 +89,20 @@ export function ConversationsList({ onConversationSelect, selectedConversationId
           table: 'messages'
         },
         (payload) => {
-          console.log('New message in conversations list:', payload)
           // Update conversations when new messages arrive
           loadConversations()
         }
       )
-      .subscribe((status) => {
-        console.log('Conversations list subscription status:', status)
-      })
+      .subscribe()
 
     const loadConversations = async () => {
-      console.log('Loading conversations for user:', currentUser.id)
       const { data, error } = await supabase
         .from('conversation_list')
         .select('*')
         .or(`customer_id.eq.${currentUser.id},vendor_id.eq.${currentUser.id}`)
         .order('last_message_at', { ascending: false })
 
-      if (error) {
-        console.error('Error loading conversations:', error)
-      } else {
-        console.log('Loaded conversations:', data)
+      if (!error) {
         setConversations(data || [])
       }
     }

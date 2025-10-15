@@ -23,34 +23,26 @@ export function InboxIcon() {
 
     const loadUnreadCount = async () => {
       try {
-        console.log('Loading unread count for user:', user.id)
-        
         const { data, error } = await supabase
           .from('conversations')
           .select('customer_unread_count, vendor_unread_count, customer_id, vendor_id')
           .or(`customer_id.eq.${user.id},vendor_id.eq.${user.id}`)
 
         if (error) {
-          console.error('Error loading unread count:', error)
           return
         }
 
-        console.log('Conversations data:', data)
-
         const totalUnread = data?.reduce((total, conversation) => {
           // Get unread count based on user role in conversation
-          const unread = conversation.customer_id === user.id 
-            ? conversation.customer_unread_count 
+          const unread = conversation.customer_id === user.id
+            ? conversation.customer_unread_count
             : conversation.vendor_unread_count
-          
-          console.log(`Conversation ${conversation.customer_id === user.id ? 'as customer' : 'as vendor'}: ${unread} unread`)
+
           return total + (unread || 0)
         }, 0) || 0
 
-        console.log('Total unread count:', totalUnread)
         setUnreadCount(totalUnread)
       } catch (error) {
-        console.error('Error loading unread count:', error)
       }
     }
 
@@ -67,12 +59,10 @@ export function InboxIcon() {
           table: 'conversations'
         },
         (payload) => {
-          console.log('Conversation updated:', payload)
           const updatedConversation = payload.new as any
-          
+
           // Check if this conversation involves the current user
           if (updatedConversation.customer_id === user.id || updatedConversation.vendor_id === user.id) {
-            console.log('Conversation involves current user, reloading unread count')
             loadUnreadCount()
           }
         }
@@ -85,14 +75,11 @@ export function InboxIcon() {
           table: 'messages'
         },
         (payload) => {
-          console.log('New message inserted:', payload)
           // Always reload when new messages are inserted
           loadUnreadCount()
         }
       )
-      .subscribe((status) => {
-        console.log('Unread count subscription status:', status)
-      })
+      .subscribe()
 
     return () => {
       supabase.removeChannel(channel)

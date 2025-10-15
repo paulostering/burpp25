@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useState, useRef } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -13,19 +12,12 @@ import { Switch } from '@/components/ui/switch'
 import { 
   Save, 
   Edit, 
-  X, 
-  Upload, 
-  CheckCircle, 
-  Globe, 
-  MapPin,
-  DollarSign,
-  Phone,
-  AlertCircle,
+  X,
   Loader2,
   Camera,
-  Image as ImageIcon,
   Check,
-  ChevronsUpDown
+  ChevronsUpDown,
+  AlertCircle
 } from 'lucide-react'
 import { toast } from 'sonner'
 import Image from 'next/image'
@@ -46,13 +38,18 @@ import {
 } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
 
-interface VendorProfileManagerProps {
+interface AdminVendorProfileManagerProps {
   vendor: VendorProfile
+  stats: {
+    conversations: number
+    messages: number
+    reviews: number
+  }
   categories: Category[]
   onProfileUpdate: (updatedVendor: VendorProfile) => void
 }
 
-export function VendorProfileManager({ vendor, categories, onProfileUpdate }: VendorProfileManagerProps) {
+export function AdminVendorProfileManager({ vendor, stats, categories, onProfileUpdate }: AdminVendorProfileManagerProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [uploadingPhoto, setUploadingPhoto] = useState<'profile' | 'cover' | null>(null)
@@ -70,6 +67,7 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
     allow_phone_contact: vendor.allow_phone_contact || false,
     profile_photo_url: vendor.profile_photo_url || '',
     cover_photo_url: vendor.cover_photo_url || '',
+    admin_approved: vendor.admin_approved || false,
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   
@@ -83,8 +81,6 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
   
   const profilePhotoInputRef = useRef<HTMLInputElement>(null)
   const coverPhotoInputRef = useRef<HTMLInputElement>(null)
-
-  const supabase = createClient()
 
   // Get vendor categories with full objects
   const vendorCategories = formData.service_categories?.map(catId => 
@@ -156,23 +152,28 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
         offers_virtual_services: formData.offers_virtual_services,
         offers_in_person_services: formData.offers_in_person_services,
         allow_phone_contact: formData.allow_phone_contact,
-        updated_at: new Date().toISOString()
       }
 
-      const { data, error } = await supabase
-        .from('vendor_profiles')
-        .update(updateData)
-        .eq('id', vendor.id)
-        .select()
-        .single()
+      const response = await fetch(`/api/admin/vendors/${vendor.id}/profile`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData),
+      })
 
-      if (error) throw error
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to update profile')
+      }
 
       toast.success('Profile updated successfully!')
       setIsEditing(false)
-      onProfileUpdate(data)
+      onProfileUpdate(result.data)
     } catch (error) {
-      toast.error('Failed to update profile')
+      console.error('Error updating profile:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to update profile')
     } finally {
       setIsLoading(false)
     }
@@ -193,142 +194,77 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
       allow_phone_contact: vendor.allow_phone_contact || false,
       profile_photo_url: vendor.profile_photo_url || '',
       cover_photo_url: vendor.cover_photo_url || '',
+      admin_approved: vendor.admin_approved || false,
     })
     setErrors({})
     setIsEditing(false)
   }
 
-  const handleCategoryToggle = (categoryId: string) => {
-    const newCategories = formData.service_categories.includes(categoryId)
-      ? formData.service_categories.filter(id => id !== categoryId)
-      : [...formData.service_categories, categoryId]
-    
-    handleInputChange('service_categories', newCategories)
-  }
-
-  const validateImage = (file: File): string | null => {
-    // Check file type
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
-    if (!validTypes.includes(file.type)) {
-      return 'Please upload a valid image file (JPEG, PNG, or WebP)'
+  const handleImageUpload = async (file: File, type: 'profile' | 'cover') => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      setImageToCrop(e.target?.result as string)
+      setCropType(type)
+      setCropModalOpen(true)
     }
-
-    // Check file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024 // 5MB
-    if (file.size > maxSize) {
-      return 'Image size must be less than 5MB'
-    }
-
-    return null
+    reader.readAsDataURL(file)
   }
 
   const handlePhotoInputChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'profile' | 'cover') => {
     const file = e.target.files?.[0]
     if (file) {
-      // Validate image
-      const validationError = validateImage(file)
-      if (validationError) {
-        toast.error(validationError)
-        e.target.value = ''
-        return
-      }
-
-      // Create preview URL and open crop modal
-      const reader = new FileReader()
-      reader.onload = () => {
-        setImageToCrop(reader.result as string)
-        setCropType(type)
-        setCropModalOpen(true)
-      }
-      reader.readAsDataURL(file)
+      handleImageUpload(file, type)
     }
-    // Reset input value to allow uploading the same file again
     e.target.value = ''
   }
 
-  const handleCroppedImageUpload = async (croppedBlob: Blob) => {
+  const handleCroppedImage = async (croppedImageBlob: Blob) => {
     setUploadingPhoto(cropType)
-
     try {
-      // Get current user ID
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        toast.error('You must be logged in to upload photos')
+      // Check if we have user_id
+      if (!vendor.user_id) {
+        toast.error('Vendor user ID not found')
         return
       }
 
-      // Convert blob to file
-      const fileName = cropType === 'profile' ? 'profile.jpg' : 'cover.jpg'
-      const file = new File([croppedBlob], fileName, { type: 'image/jpeg' })
+      // Create form data
+      const uploadFormData = new FormData()
+      uploadFormData.append('file', croppedImageBlob, 'photo.jpg')
+      uploadFormData.append('type', cropType)
+      uploadFormData.append('userId', vendor.user_id)
 
-      // Create file path following vendor registration pattern: {userId}/{type}/{filename}
-      const filePath = `${user.id}/${cropType}/${fileName}`
+      // Upload via API route
+      const response = await fetch(`/api/admin/vendors/${vendor.id}/photo`, {
+        method: 'POST',
+        body: uploadFormData,
+      })
 
-      // Upload to Supabase Storage with upsert to replace existing
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('vendor')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: true,
-          contentType: 'image/jpeg'
-        })
+      const result = await response.json()
 
-      if (uploadError) {
-        toast.error(`Upload failed: ${uploadError.message}`)
-        return
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to upload image')
       }
 
-      if (!uploadData) {
-        toast.error('Upload failed: No data returned')
-        return
-      }
-
-      // Get public URL with cache-busting timestamp
-      const { data: { publicUrl } } = supabase.storage
-        .from('vendor')
-        .getPublicUrl(uploadData.path)
-
-      // Add timestamp to URL to bust cache
-      const cacheBustedUrl = `${publicUrl}?t=${Date.now()}`
-
-      // Update vendor profile in database
       const updateField = cropType === 'profile' ? 'profile_photo_url' : 'cover_photo_url'
-
-      const { data: updatedVendor, error: updateError } = await supabase
-        .from('vendor_profiles')
-        .update({
-          [updateField]: cacheBustedUrl,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', vendor.id)
-        .select()
-        .single()
-
-      if (updateError) {
-        toast.error(`Failed to update profile: ${updateError.message}`)
-        return
-      }
-
-      if (!updatedVendor) {
-        toast.error('Failed to update profile: No data returned')
-        return
-      }
-
-      // Update local state with cache-busted URL
-      setFormData(prev => ({
-        ...prev,
-        [updateField]: cacheBustedUrl
-      }))
-
-      // Notify parent component
-      onProfileUpdate(updatedVendor)
-
+      setFormData(prev => ({ ...prev, [updateField]: result.publicUrl }))
+      onProfileUpdate(result.data)
       toast.success(`${cropType === 'profile' ? 'Profile' : 'Cover'} photo updated successfully!`)
     } catch (error) {
-      toast.error(`Failed to upload ${cropType} photo. Please try again.`)
+      console.error('Error uploading image:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to upload image')
     } finally {
       setUploadingPhoto(null)
+      setCropModalOpen(false)
     }
+  }
+
+  const toggleCategory = (categoryId: string) => {
+    const currentCategories = formData.service_categories
+    const newCategories = currentCategories.includes(categoryId)
+      ? currentCategories.filter(id => id !== categoryId)
+      : [...currentCategories, categoryId]
+    
+    handleInputChange('service_categories', newCategories)
   }
 
   const triggerPhotoUpload = (type: 'profile' | 'cover') => {
@@ -339,16 +275,19 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
     }
   }
 
-  const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase()
-  }
-
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return 'N/A'
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
-      year: 'numeric'
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     })
+  }
+
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
   }
 
   return (
@@ -370,10 +309,7 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
       />
 
       {/* Header with Edit Toggle */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-semibold text-gray-900">Manage My Profile</h1>
-        </div>
+      <div className="flex items-center justify-end">
         <div className="flex space-x-3">
           {isEditing ? (
             <>
@@ -404,42 +340,43 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
         </div>
       </div>
 
+      {/* Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
         {/* Left Column - Profile Overview */}
         <div className="lg:col-span-1 space-y-6">
-          {/* Profile Photo Section - Matching Public View */}
+          {/* Profile Photo Section */}
           <Card className="border border-gray-200 shadow-none overflow-hidden pt-0">
             <CardContent className="p-0">
               <div className="relative">
                 {/* Cover Photo */}
                 <div className="h-48 bg-gradient-to-r from-primary to-primary/60 relative">
-                    {formData.cover_photo_url ? (
-                      <Image
-                        src={formData.cover_photo_url}
-                        alt="Cover"
-                        fill
-                        className="object-cover"
-                      />
-                    ) : null}
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="absolute top-4 right-4 bg-white/95 hover:bg-white shadow-md"
-                      onClick={() => triggerPhotoUpload('cover')}
-                      disabled={uploadingPhoto === 'cover'}
-                    >
-                      {uploadingPhoto === 'cover' ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Uploading...
-                        </>
-                      ) : (
-                        <>
-                          <Camera className="h-4 w-4 mr-2" />
-                          {formData.cover_photo_url ? 'Change Cover' : 'Add Cover'}
-                        </>
-                      )}
-                    </Button>
+                  {formData.cover_photo_url ? (
+                    <Image
+                      src={formData.cover_photo_url}
+                      alt="Cover"
+                      fill
+                      className="object-cover"
+                    />
+                  ) : null}
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="absolute top-4 right-4 bg-white/95 hover:bg-white shadow-md"
+                    onClick={() => triggerPhotoUpload('cover')}
+                    disabled={uploadingPhoto === 'cover'}
+                  >
+                    {uploadingPhoto === 'cover' ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <Camera className="h-4 w-4 mr-2" />
+                        {formData.cover_photo_url ? 'Change Cover' : 'Add Cover'}
+                      </>
+                    )}
+                  </Button>
                 </div>
                 
                 {/* Profile Photo */}
@@ -490,7 +427,7 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
           <Card className="border border-gray-200 shadow-none">
             <CardHeader className="pb-3">
               <CardTitle className="text-xl">Basic Information</CardTitle>
-              <CardDescription className="text-gray-500">Your business details and contact information</CardDescription>
+              <CardDescription className="text-gray-500">Business details and contact information</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Row 1: Business Name, Profile Title, Hourly Rate */}
@@ -503,7 +440,7 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
                         id="business_name"
                         value={formData.business_name}
                         onChange={(e) => handleInputChange('business_name', e.target.value)}
-                        placeholder="Enter your business name"
+                        placeholder="Enter business name"
                       />
                       {errors.business_name && (
                         <p className="text-sm text-red-600 flex items-center">
@@ -611,7 +548,7 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
                     id="about"
                     value={formData.about}
                     onChange={(e) => handleInputChange('about', e.target.value)}
-                    placeholder="Describe your services, experience, and what makes you unique..."
+                    placeholder="Describe services, experience, and what makes this business unique..."
                     rows={4}
                   />
                 ) : (
@@ -627,7 +564,7 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
           <Card className="border border-gray-200 shadow-none">
             <CardHeader className="pb-3">
               <CardTitle className="text-xl">Service Area</CardTitle>
-              <CardDescription className="text-gray-500">Where you provide your services</CardDescription>
+              <CardDescription className="text-gray-500">Where services are provided</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -682,48 +619,43 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
                 <Label>Service Types *</Label>
                 {isEditing ? (
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <Globe className="h-5 w-5 text-gray-400" />
-                        <Label htmlFor="offers_virtual_services">Virtual Services</Label>
-                      </div>
-                      <Switch
-                        id="offers_virtual_services"
-                        checked={formData.offers_virtual_services}
-                        onCheckedChange={(checked) => handleInputChange('offers_virtual_services', checked)}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <CheckCircle className="h-5 w-5 text-gray-400" />
-                        <Label htmlFor="offers_in_person_services">In-Person Services</Label>
-                      </div>
-                      <Switch
-                        id="offers_in_person_services"
-                        checked={formData.offers_in_person_services}
-                        onCheckedChange={(checked) => handleInputChange('offers_in_person_services', checked)}
-                      />
-                    </div>
                     {errors.service_types && (
                       <p className="text-sm text-red-600 flex items-center">
                         <AlertCircle className="h-4 w-4 mr-1" />
                         {errors.service_types}
                       </p>
                     )}
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="offers_virtual_services"
+                        checked={formData.offers_virtual_services}
+                        onCheckedChange={(checked) => handleInputChange('offers_virtual_services', checked)}
+                      />
+                      <Label htmlFor="offers_virtual_services" className="text-sm font-normal">
+                        Virtual Services
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="offers_in_person_services"
+                        checked={formData.offers_in_person_services}
+                        onCheckedChange={(checked) => handleInputChange('offers_in_person_services', checked)}
+                      />
+                      <Label htmlFor="offers_in_person_services" className="text-sm font-normal">
+                        In-Person Services
+                      </Label>
+                    </div>
                   </div>
                 ) : (
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     {formData.offers_virtual_services && (
-                      <Badge className="bg-primary text-white px-3 py-1 text-sm font-medium rounded-full flex items-center gap-2">
-                        <Globe className="h-4 w-4" />
-                        Virtual
-                      </Badge>
+                      <Badge variant="secondary">Virtual Services</Badge>
                     )}
                     {formData.offers_in_person_services && (
-                      <Badge className="bg-primary text-white px-3 py-1 text-sm font-medium rounded-full flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4" />
-                        In Person
-                      </Badge>
+                      <Badge variant="secondary">In-Person Services</Badge>
+                    )}
+                    {!formData.offers_virtual_services && !formData.offers_in_person_services && (
+                      <p className="text-gray-500 text-sm">No service types selected</p>
                     )}
                   </div>
                 )}
@@ -735,9 +667,9 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
           <Card className="border border-gray-200 shadow-none">
             <CardHeader className="pb-3">
               <CardTitle className="text-xl">Service Categories</CardTitle>
-              <CardDescription className="text-gray-500">What types of services you offer</CardDescription>
+              <CardDescription className="text-gray-500">Categories where this vendor appears</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               {isEditing ? (
                 <div className="space-y-3">
                   <Popover open={categoryPopoverOpen} onOpenChange={setCategoryPopoverOpen}>
@@ -746,38 +678,24 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
                         variant="outline"
                         role="combobox"
                         aria-expanded={categoryPopoverOpen}
-                        className="w-full justify-between h-auto min-h-[40px] py-2"
+                        className="w-full justify-between"
                       >
-                        <div className="flex flex-wrap gap-1">
-                          {formData.service_categories.length > 0 ? (
-                            formData.service_categories.map((catId) => {
-                              const category = categories.find(c => c.id === catId)
-                              return category ? (
-                                <Badge key={catId} variant="secondary" className="mr-1">
-                                  {category.name}
-                                </Badge>
-                              ) : null
-                            })
-                          ) : (
-                            <span className="text-gray-500">Select service categories...</span>
-                          )}
-                        </div>
+                        {vendorCategories.length > 0
+                          ? `${vendorCategories.length} selected`
+                          : 'Select categories...'}
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-full p-0" align="start">
+                    <PopoverContent className="w-full p-0">
                       <Command>
                         <CommandInput placeholder="Search categories..." />
+                        <CommandEmpty>No category found.</CommandEmpty>
                         <CommandList>
-                          <CommandEmpty>No categories found.</CommandEmpty>
                           <CommandGroup>
                             {categories.map((category) => (
                               <CommandItem
                                 key={category.id}
-                                value={category.name}
-                                onSelect={() => {
-                                  handleCategoryToggle(category.id)
-                                }}
+                                onSelect={() => toggleCategory(category.id)}
                               >
                                 <Check
                                   className={cn(
@@ -787,13 +705,6 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
                                       : "opacity-0"
                                   )}
                                 />
-                                {category.icon_url && (
-                                  <img 
-                                    src={category.icon_url} 
-                                    alt={`${category.name} icon`}
-                                    className="h-4 w-4 object-contain mr-2"
-                                  />
-                                )}
                                 {category.name}
                               </CommandItem>
                             ))}
@@ -802,33 +713,32 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
                       </Command>
                     </PopoverContent>
                   </Popover>
-                  
                   {errors.service_categories && (
                     <p className="text-sm text-red-600 flex items-center">
                       <AlertCircle className="h-4 w-4 mr-1" />
                       {errors.service_categories}
                     </p>
                   )}
+                  {vendorCategories.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {vendorCategories.map((category) => (
+                        <Badge key={category?.id} variant="secondary">
+                          {category?.name}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="flex flex-wrap gap-2">
                   {vendorCategories.length > 0 ? (
-                    vendorCategories.map((category, index) => (
-                      category && (
-                        <Badge key={index} className="bg-primary text-white px-3 py-1 text-sm font-medium rounded-full flex items-center gap-2">
-                          {category.icon_url && (
-                            <img 
-                              src={category.icon_url} 
-                              alt={`${category.name} icon`}
-                              className="h-4 w-4 object-contain filter brightness-0 invert"
-                            />
-                          )}
-                          {category.name}
-                        </Badge>
-                      )
+                    vendorCategories.map((category) => (
+                      <Badge key={category?.id} variant="secondary">
+                        {category?.name}
+                      </Badge>
                     ))
                   ) : (
-                    <p className="text-gray-500">No categories selected</p>
+                    <p className="text-sm text-gray-500">No categories selected</p>
                   )}
                 </div>
               )}
@@ -842,14 +752,8 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
         open={cropModalOpen}
         onOpenChange={setCropModalOpen}
         imageSrc={imageToCrop}
-        onCropComplete={handleCroppedImageUpload}
+        onCropComplete={handleCroppedImage}
         aspectRatio={cropType === 'profile' ? 1 : 16 / 9}
-        title={cropType === 'profile' ? 'Crop Profile Photo' : 'Crop Cover Photo'}
-        description={
-          cropType === 'profile'
-            ? 'Adjust your profile photo. Try to center your face or logo.'
-            : 'Adjust your cover photo. This will be displayed at the top of your profile.'
-        }
       />
     </div>
   )

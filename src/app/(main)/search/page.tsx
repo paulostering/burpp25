@@ -39,9 +39,6 @@ export default async function SearchPage({
   const q: string | undefined = sp.q || undefined
   const searchCoords = q ? await geocode(q) : null
 
-  console.log('Search params:', { category, q })
-  console.log('Search coordinates:', searchCoords)
-
   // Get initial vendors directly from database
   const supabase = createAdminSupabase()
   let vendors: VendorProfile[] = []
@@ -93,7 +90,6 @@ export default async function SearchPage({
             }
           }
         } catch (error) {
-          console.error(`Error calculating distance for vendor ${vendor.id}:`, error)
         }
       }
 
@@ -118,8 +114,6 @@ export default async function SearchPage({
     const { data } = await query
     vendors = (data as VendorProfile[]) ?? []
   }
-
-  console.log(`Initial vendors loaded: ${vendors.length}`)
 
   return (
     <div className="min-h-screen bg-background">

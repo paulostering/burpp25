@@ -10,15 +10,13 @@ export async function GET() {
       .from('categories')
       .select('*')
       .order('name', { ascending: true })
-    
+
     if (error) {
-      console.error('Error fetching categories:', error)
       return NextResponse.json({ error: 'Failed to fetch categories' }, { status: 500 })
     }
-    
+
     return NextResponse.json(categories)
   } catch (error) {
-    console.error('Error in GET /api/categories:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -28,9 +26,7 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createServerSupabase()
     const body = await request.json()
-    
-    console.log('Creating category with data:', body)
-    
+
     const { name, icon_url, is_active, is_featured } = body
     
     // Validate required fields
@@ -59,16 +55,13 @@ export async function POST(request: NextRequest) {
         ])
         .select()
         .single()
-    
+
     if (error) {
-      console.error('Error creating category:', error)
       return NextResponse.json({ error: error.message || 'Failed to create category' }, { status: 500 })
     }
-    
-    console.log('Category created successfully:', category)
+
     return NextResponse.json(category, { status: 201 })
   } catch (error) {
-    console.error('Error in POST /api/categories:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

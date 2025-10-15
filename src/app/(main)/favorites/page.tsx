@@ -47,19 +47,15 @@ export default function FavoritesPage() {
   }, [user, authLoading, router])
 
   useEffect(() => {
-    console.log('useEffect triggered - user:', user?.id, 'isLoading:', isLoading)
     if (!user) {
-      console.log('No user, skipping favorites load')
       return
     }
 
     const loadFavorites = async () => {
-      console.log('Loading favorites for user:', user.id)
       setIsLoading(true)
-      
+
       // Add timeout to prevent infinite loading
       const timeoutId = setTimeout(() => {
-        console.warn('Favorites loading timeout - setting loading to false')
         setIsLoading(false)
         setHasError(true)
       }, 10000) // 10 second timeout
@@ -70,16 +66,9 @@ export default function FavoritesPage() {
           .from('categories')
           .select('id, name, icon_url')
 
-        if (catError) {
-          console.error('Error loading categories:', catError)
-        }
-
         setCategories((categoriesData as Category[]) || [])
-        console.log('Categories loaded:', categoriesData?.length || 0)
 
         // Fetch favorites via API endpoint to handle RLS issues
-        console.log('Fetching favorites via API for user:', user.id)
-        
         const response = await fetch('/api/favorites', {
           method: 'GET',
           headers: {
@@ -88,46 +77,20 @@ export default function FavoritesPage() {
         })
 
         if (!response.ok) {
-          console.error('API request failed:', response.status, response.statusText)
           setFavorites([])
           setHasError(true)
           return
         }
 
         const data: FavoriteVendor[] = await response.json()
-        const error = null
 
-        console.log('API response data:', data)
-
-        console.log('Final favorites data:', { data, error })
-        console.log('Query completed, data length:', data?.length || 0)
-
-        console.log('Setting favorites:', data)
-        console.log('Favorites data structure:', JSON.stringify(data, null, 2))
-        
-        // Debug: Check if vendor_profiles data is missing
-        if (data && data.length > 0) {
-          data.forEach((fav, index) => {
-            console.log(`Favorite ${index}:`, {
-              id: fav.id,
-              vendor_id: fav.vendor_id,
-              vendor_profiles: fav.vendor_profiles
-            })
-            if (!fav.vendor_profiles) {
-              console.warn(`Missing vendor_profiles for favorite ${fav.id}, vendor_id: ${fav.vendor_id}`)
-            }
-          })
-        }
-        
         setFavorites(data || [])
       } catch (error) {
-        console.error('Error in loadFavorites:', error)
         setFavorites([])
         setHasError(true)
         toast.error('Failed to load favorites')
       } finally {
         clearTimeout(timeoutId)
-        console.log('Setting loading to false')
         setIsLoading(false)
       }
     }
@@ -146,17 +109,14 @@ export default function FavoritesPage() {
         // Check if the error is due to table not existing
         if (error.message?.includes('Could not find the table') ||
             error.code === 'PGRST205') {
-          console.warn('user_vendor_favorites table does not exist. Favorites feature not available.')
           toast.error('Favorites feature is not available')
           return
         }
-        console.error('Error removing favorite:', error)
         return
       }
 
       setFavorites(prev => prev.filter(fav => fav.id !== favoriteId))
     } catch (error) {
-      console.error('Error removing favorite:', error)
     }
   }
 
@@ -215,9 +175,7 @@ export default function FavoritesPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {favorites.map((favorite) => {
               const vendor = favorite.vendor_profiles
-              console.log('Processing favorite:', favorite.id, 'vendor:', vendor)
               if (!vendor) {
-                console.log('Vendor is null for favorite:', favorite.id)
                 // Show a placeholder card for debugging
                 return (
                   <Card key={favorite.id} className="border-red-200 bg-red-50">

@@ -8,7 +8,6 @@ export async function POST(request: NextRequest) {
   try {
     // Check if SendGrid API key is configured
     if (!process.env.SENDGRID_API_KEY) {
-      console.error('SendGrid API key not configured')
       return NextResponse.json(
         { error: 'Email service not configured' },
         { status: 500 }
@@ -70,9 +69,7 @@ This message was sent from the Burpp contact form.
 
     try {
       await sgMail.send(msg)
-      console.log('Email sent successfully to contact@burpp.com')
     } catch (sendGridError) {
-      console.error('SendGrid error:', sendGridError)
       return NextResponse.json(
         { error: 'Failed to send email' },
         { status: 500 }
@@ -85,7 +82,6 @@ This message was sent from the Burpp contact form.
     )
 
   } catch (error) {
-    console.error('Contact form error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
