@@ -5,9 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { Search, MapPin, X } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { Search, MapPin, X, ChevronLeft } from 'lucide-react'
 import { getCategories } from '@/lib/categories-cache'
 
 interface Category {
@@ -21,26 +19,22 @@ interface LocationSuggestion {
   context: Array<{ text: string }>
 }
 
-export function SearchHero() {
+export function MobileSearchHero() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [categories, setCategories] = useState<Category[]>([])
-  const [filteredCategories, setFilteredCategories] = useState<Category[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string>('')
   const [selectedCategoryName, setSelectedCategoryName] = useState<string>('')
   const [categorySearch, setCategorySearch] = useState<string>('')
-  const [isCategoryOpen, setIsCategoryOpen] = useState(false)
-  const [location, setLocation] = useState('')
-  const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([])
-  const [isLocationOpen, setIsLocationOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [userLocation, setUserLocation] = useState<string>('')
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false)
   const [modalCategorySearch, setModalCategorySearch] = useState<string>('')
   const [filteredModalCategories, setFilteredModalCategories] = useState<Category[]>([])
+  const [location, setLocation] = useState('')
+  const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([])
+  const [isLocationOpen, setIsLocationOpen] = useState(false)
+  const [userLocation, setUserLocation] = useState<string>('')
   const locationInputRef = useRef<HTMLInputElement>(null)
   const locationContainerRef = useRef<HTMLDivElement>(null)
-  const categoryContainerRef = useRef<HTMLDivElement>(null)
   const modalSearchInputRef = useRef<HTMLInputElement>(null)
 
   // Handle clicking outside to close dropdowns
@@ -48,9 +42,6 @@ export function SearchHero() {
     const handleClickOutside = (event: MouseEvent) => {
       if (locationContainerRef.current && !locationContainerRef.current.contains(event.target as Node)) {
         setIsLocationOpen(false)
-      }
-      if (categoryContainerRef.current && !categoryContainerRef.current.contains(event.target as Node)) {
-        setIsCategoryOpen(false)
       }
     }
 
@@ -62,7 +53,6 @@ export function SearchHero() {
 
   // Load categories using cache
   useEffect(() => {
-    // Only load categories if we don't have them already
     if (categories.length > 0) return
     
     let isMounted = true
@@ -71,10 +61,8 @@ export function SearchHero() {
       try {
         const data = await getCategories()
         
-        // Only update state if component is still mounted
         if (isMounted) {
           setCategories(data)
-          setFilteredCategories(data)
         }
       } catch (error) {
         console.error('Error loading categories:', error)
@@ -87,18 +75,6 @@ export function SearchHero() {
       isMounted = false
     }
   }, [categories.length])
-
-  // Filter categories based on search
-  useEffect(() => {
-    if (!categorySearch) {
-      setFilteredCategories(categories)
-    } else {
-      const filtered = categories.filter(category =>
-        category.name.toLowerCase().includes(categorySearch.toLowerCase())
-      )
-      setFilteredCategories(filtered)
-    }
-  }, [categorySearch, categories])
 
   // Filter modal categories based on search
   useEffect(() => {
@@ -117,7 +93,6 @@ export function SearchHero() {
     if (isCategoryModalOpen) {
       setFilteredModalCategories(categories)
       setModalCategorySearch('')
-      // Focus the search input when modal opens
       setTimeout(() => {
         modalSearchInputRef.current?.focus()
       }, 100)
@@ -159,15 +134,11 @@ export function SearchHero() {
       return
     }
 
-    console.log('Searching for location:', query)
-    console.log('Mapbox token:', process.env.NEXT_PUBLIC_MAPBOX_TOKEN)
-
     try {
       const response = await fetch(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}&types=place&country=us`
       )
       const data = await response.json()
-      console.log('Mapbox response:', data)
       setLocationSuggestions(data.features || [])
     } catch (error) {
       console.error('Error searching locations:', error)
@@ -197,13 +168,7 @@ export function SearchHero() {
     setSelectedCategory(categoryId)
     setSelectedCategoryName(categoryName)
     setCategorySearch(categoryName)
-    setIsCategoryOpen(false)
     setIsCategoryModalOpen(false)
-  }
-
-  // Handle modal category selection
-  const handleModalCategorySelect = (categoryId: string, categoryName: string) => {
-    handleCategorySelect(categoryId, categoryName)
   }
 
   // Open category modal
@@ -244,195 +209,21 @@ export function SearchHero() {
         />
       </div>
       
-      <div className="relative z-10 mx-auto max-w-6xl pt-24 md:pt-48 px-6">
+      <div className="relative z-10 mx-auto max-w-6xl pt-24 px-6">
         <div className="text-left mb-8 max-w-3xl">
-          <h1 className="text-5xl font-bold mb-4 text-white">
+          <h1 className="text-4xl font-bold mb-4 text-white">
             Find Your Next Anything
           </h1>
-          <p className="text-xl text-white">
+          <p className="text-lg text-white">
             Burpp is your go-to source for finding highly rated independent contractors to assist you with anything. <strong>Fast. Local. Reliable</strong>
           </p>
         </div>
 
-        {/* Search Form */}
-        <div className="relative w-full max-w-4xl">
-          {/* Desktop Layout - Horizontal */}
-          <div className="hidden md:flex items-center bg-white border border-gray-300 rounded-full pl-6 pr-3 py-2 h-16">
-            {/* Category Section */}
-            <div className="flex-1 min-w-0 relative" ref={categoryContainerRef}>
-              <Input
-                type="text"
-                placeholder="Category"
-                value={categorySearch}
-                onChange={(e) => {
-                  setCategorySearch(e.target.value)
-                  if (!selectedCategory || e.target.value !== selectedCategoryName) {
-                    setSelectedCategory('')
-                    setSelectedCategoryName('')
-                  }
-                }}
-                onClick={openCategoryModal}
-                onFocus={openCategoryModal}
-                readOnly
-                className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 font-semibold text-gray-700 placeholder:text-gray-500 pr-8 cursor-pointer"
-                style={{ fontSize: '16px', fontFamily: 'Poppins, sans-serif' }}
-              />
-              {categorySearch && (
-                <button
-                  onClick={() => {
-                    setCategorySearch('')
-                    setSelectedCategory('')
-                    setSelectedCategoryName('')
-                  }}
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
-              
-              {/* Desktop Category Dropdown */}
-              {isCategoryModalOpen && (
-                <div className="absolute top-full left-0 w-96 z-50 mt-2 bg-white border border-gray-200 rounded-2xl shadow-lg max-h-60 overflow-y-auto">
-                  <div className="p-4 border-b border-gray-200">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                      <Input
-                        ref={modalSearchInputRef}
-                        type="text"
-                        placeholder="Search categories..."
-                        value={modalCategorySearch}
-                        onChange={(e) => setModalCategorySearch(e.target.value)}
-                        className="pl-8 pr-4 py-2 text-sm border-gray-300 focus:border-primary focus:ring-primary"
-                        style={{ fontSize: '14px', fontFamily: 'Poppins, sans-serif' }}
-                      />
-                    </div>
-                  </div>
-                  <div className="max-h-48 overflow-y-auto">
-                    {filteredModalCategories.length > 0 ? (
-                      filteredModalCategories.map((category) => (
-                        <button
-                          key={category.id}
-                          onClick={() => handleModalCategorySelect(category.id, category.name)}
-                          className="w-full px-4 py-3 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none first:rounded-t-2xl last:rounded-b-2xl"
-                        >
-                          <div className="font-medium text-sm">
-                            {highlightText(category.name, modalCategorySearch)}
-                          </div>
-                        </button>
-                      ))
-                    ) : (
-                      <div className="flex flex-col items-center justify-center py-8 text-gray-500">
-                        <Search className="h-8 w-8 mb-2 text-gray-300" />
-                        <p className="text-sm font-medium">No categories found</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Divider */}
-            <div className="w-px h-8 bg-gray-300 mx-4" />
-            {/* Location Section */}
-            <div className="flex-1 min-w-0 relative" ref={locationContainerRef}>
-              <div className="flex items-center">
-                <button
-                  onClick={() => {
-                    if (navigator.geolocation) {
-                      navigator.geolocation.getCurrentPosition(
-                        async (position) => {
-                          const { latitude, longitude } = position.coords
-                          try {
-                            const response = await fetch(
-                              `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}&types=place`
-                            )
-                            const data = await response.json()
-                            if (data.features && data.features.length > 0) {
-                              const place = data.features[0]
-                              const locationText = `${place.text}, ${place.context?.find((c: any) => c.id.startsWith('region'))?.text || ''}`
-                              setUserLocation(locationText)
-                              setLocation(locationText)
-                            }
-                          } catch (error) {
-                            console.error('Error reverse geocoding:', error)
-                          }
-                        },
-                        (error) => {
-                          console.error('Error getting location:', error)
-                        }
-                      )
-                    }
-                  }}
-                  className="mr-3 text-gray-400 hover:text-gray-600"
-                >
-                  <MapPin className="h-4 w-4" />
-                </button>
-                <Input
-                  ref={locationInputRef}
-                  type="text"
-                  placeholder="Location"
-                  value={location}
-                  onChange={(e) => {
-                    setLocation(e.target.value)
-                    handleLocationSearch(e.target.value)
-                  }}
-                  onFocus={() => setIsLocationOpen(true)}
-                  className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 font-semibold text-gray-700 placeholder:text-gray-500 pr-8"
-                  style={{ fontSize: '16px', fontFamily: 'Poppins, sans-serif' }}
-                />
-                {location && (
-                  <button
-                    onClick={clearLocation}
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-
-              {/* Location Suggestions Dropdown */}
-              {isLocationOpen && locationSuggestions.length > 0 && (
-                <div className="absolute top-full right-0 w-96 z-50 mt-2 bg-white border border-gray-200 rounded-2xl shadow-lg max-h-60 overflow-y-auto">
-                  {locationSuggestions.map((suggestion, index) => (
-                    <button
-                      key={index}
-                      onClick={() => {
-                        setLocation(suggestion.place_name)
-                        setIsLocationOpen(false)
-                      }}
-                      className="w-full px-4 py-3 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none flex items-start gap-3 first:rounded-t-2xl last:rounded-b-2xl"
-                    >
-                      <MapPin className="mt-0.5 h-4 w-4 text-gray-400 flex-shrink-0" />
-                      <div>
-                        <div className="font-medium text-sm">
-                          {highlightText(suggestion.place_name, location)}
-                        </div>
-                        {suggestion.context && suggestion.context.length > 0 && (
-                          <div className="text-xs text-gray-500">
-                            {suggestion.context.map((c, i) => c.text).join(', ')}
-                          </div>
-                        )}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Search Button */}
-            <Button
-              onClick={handleSearch}
-              size="lg"
-              className="ml-4 h-10 w-10 p-0 rounded-full bg-primary hover:bg-primary/90"
-            >
-              <Search className="h-5 w-5" />
-            </Button>
-          </div>
-
-          {/* Mobile Layout - 3 Rows */}
-          <div className="md:hidden space-y-3">
+        {/* Mobile Search Form - 3 Rows */}
+        <div className="relative w-full max-w-md">
+          <div className="space-y-3">
             {/* Row 1: Category */}
-            <div className="relative" ref={categoryContainerRef}>
+            <div className="relative">
               <div className="bg-white border border-gray-300 rounded-lg px-4 py-3">
                 <Input
                   type="text"
@@ -555,7 +346,7 @@ export function SearchHero() {
             </div>
 
             {/* Row 3: Search Button */}
-            <div className="flex justify-center">
+            <div>
               <Button
                 onClick={handleSearch}
                 size="lg"
@@ -568,8 +359,8 @@ export function SearchHero() {
           </div>
         </div>
         
-        {/* Scuba Instructor Tag - Inline */}
-        <div className="mt-4 flex items-center mt-16 md:mt-36 mb-12">
+        {/* Featured Service Tag */}
+        <div className="mt-16 flex mb-12">
           <div className="bg-black/50 backdrop-blur-sm pl-4 pr-8 py-4 shadow-lg border-l-4 border-primary">
             <div className="text-lg font-medium text-white">
               Fitness Instructor
@@ -581,6 +372,66 @@ export function SearchHero() {
         </div>
       </div>
 
+      {/* Category Selection Modal */}
+      {isCategoryModalOpen && (
+        <div className="fixed inset-0 z-50 bg-white">
+          <div className="flex flex-col h-full">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <button
+                onClick={() => setIsCategoryModalOpen(false)}
+                className="flex items-center text-gray-600 hover:text-gray-800"
+              >
+                <ChevronLeft className="h-6 w-6 mr-1" />
+                Back
+              </button>
+              <h2 className="text-lg font-semibold text-gray-900">Select Category</h2>
+              <div className="w-16" />
+            </div>
+
+            {/* Search Input */}
+            <div className="p-4 border-b border-gray-200">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Input
+                  ref={modalSearchInputRef}
+                  type="text"
+                  placeholder="Search categories..."
+                  value={modalCategorySearch}
+                  onChange={(e) => setModalCategorySearch(e.target.value)}
+                  className="pl-10 pr-4 py-3 text-base border-gray-300 focus:border-primary focus:ring-primary"
+                  style={{ fontSize: '16px', fontFamily: 'Poppins, sans-serif' }}
+                />
+              </div>
+            </div>
+
+            {/* Categories List */}
+            <div className="flex-1 overflow-y-auto">
+              {filteredModalCategories.length > 0 ? (
+                <div className="p-4">
+                  {filteredModalCategories.map((category) => (
+                    <button
+                      key={category.id}
+                      onClick={() => handleCategorySelect(category.id, category.name)}
+                      className="w-full px-4 py-4 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none border-b border-gray-100 last:border-b-0 transition-colors"
+                    >
+                      <div className="font-medium text-base text-gray-900">
+                        {highlightText(category.name, modalCategorySearch)}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                  <Search className="h-12 w-12 mb-4 text-gray-300" />
+                  <p className="text-lg font-medium mb-2">No categories found</p>
+                  <p className="text-sm">Try searching for something else</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

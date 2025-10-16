@@ -2,6 +2,7 @@
 
 import { Suspense } from "react"
 import { SearchHero } from "@/components/search-hero"
+import { MobileSearchHero } from "@/components/mobile-search-hero"
 import { Footer } from "@/components/footer"
 import { FeaturedCategories } from "@/components/featured-categories"
 import { Button } from "@/components/ui/button"
@@ -13,8 +14,15 @@ function HomeContent() {
   
   return (
     <div className="space-y-24">
-      {/* Section 1: Hero */}
-      <SearchHero />
+      {/* Section 1: Hero - Desktop */}
+      <div className="hidden md:block">
+        <SearchHero />
+      </div>
+      
+      {/* Section 1: Hero - Mobile */}
+      <div className="md:hidden">
+        <MobileSearchHero />
+      </div>
 
       {/* Section 2: Popular services near you */}
       <section className="mx-auto max-w-6xl px-6">
