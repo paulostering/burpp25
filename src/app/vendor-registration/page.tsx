@@ -432,16 +432,12 @@ export default function VendorRegisterPage() {
     // Set the appropriate state based on type
     if (type === 'profile') {
       setProfilePhotoFile(file)
-      setZoom(1)
-      setCrop({ x: 0, y: 0 })
       setCroppedAreaPixels(null)
       if (profilePhotoUrl) URL.revokeObjectURL(profilePhotoUrl)
       const url = URL.createObjectURL(file)
       setProfilePhotoUrl(url)
     } else {
       setCoverPhotoFile(file)
-      setZoom(1)
-      setCrop({ x: 0, y: 0 })
       setCroppedAreaPixels(null)
       if (coverPhotoUrl) URL.revokeObjectURL(coverPhotoUrl)
       const url = URL.createObjectURL(file)
