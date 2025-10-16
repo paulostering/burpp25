@@ -42,7 +42,7 @@ export function Footer() {
               <Link href="/burp-for-business" className="block text-gray-600 hover:text-gray-900 transition-colors">
                 Burpp For Pros
               </Link>
-              <Link href="/signup" className="block text-gray-600 hover:text-gray-900 transition-colors">
+              <Link href="/vendor-registration" className="block text-gray-600 hover:text-gray-900 transition-colors">
                 Join Burpp
               </Link>
             </div>
@@ -71,7 +71,7 @@ export function Footer() {
         <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
           {/* Copyright */}
           <div className="text-gray-600 text-sm">
-            © 2025 Burpp. All Rights Reserved.
+            © {new Date().getFullYear()} Burpp. All Rights Reserved.
           </div>
 
           {/* Social Media Icons */}
