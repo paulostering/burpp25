@@ -90,10 +90,10 @@ function HomeContent() {
      
 
       {/* Section 5: Find Your Next Anything - Profile Section */}
-      <section className="mx-auto max-w-6xl px-6">
+      <section className="mx-auto max-w-6xl px-6 pb-16">
         <div className="grid gap-12 md:grid-cols-2 md:items-center">
           {/* Left: Content */}
-          <div className="space-y-6">
+          <div className="space-y-6 text-center md:text-left">
             <h3 className="text-3xl font-bold">
               Find Your Next{' '}
               <span className="text-primary">Anything</span>
@@ -101,19 +101,22 @@ function HomeContent() {
             <p className="text-lg text-muted-foreground">
               Burpp makes it easy to connect with trusted local professionals – from fitness instructors and poker dealers to home improvement specialists. Whatever you need, we've got you covered.
             </p>
-            <Button onClick={() => router.push('/signup')} className="mt-4">
-              Find Your Next Burpp Pro
-            </Button>
+            <div className="flex justify-center md:justify-start">
+              <Button onClick={() => router.push('/signup')} className="mt-4">
+                Find Your Next Burpp Pro
+              </Button>
+            </div>
           </div>
 
           {/* Right: Profile Images */}
-          <div className="flex items-center justify-center">
+          <div className="flex items-center justify-center w-full">
             <Image
               src="/images/home-burpp-pros.png"
               alt="Burpp Professionals"
-              width={400}
-              height={400}
-              className="max-w-full h-auto"
+              width={500}
+              height={500}
+              className="w-full max-w-[500px] h-auto object-contain"
+              priority
             />
           </div>
         </div>
