@@ -32,7 +32,6 @@ interface FavoriteVendor {
 
 export default function FavoritesPage() {
   const [favorites, setFavorites] = useState<FavoriteVendor[]>([])
-  const [categories, setCategories] = useState<Category[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [hasError, setHasError] = useState(false)
   const { user, loading: authLoading } = useAuth()
@@ -61,12 +60,6 @@ export default function FavoritesPage() {
       }, 10000) // 10 second timeout
       
       try {
-        // Load categories first
-        const { data: categoriesData, error: catError } = await supabase
-          .from('categories')
-          .select('id, name, icon_url')
-
-        setCategories((categoriesData as Category[]) || [])
 
         // Fetch favorites via API endpoint to handle RLS issues
         const response = await fetch('/api/favorites', {
@@ -85,7 +78,7 @@ export default function FavoritesPage() {
         const data: FavoriteVendor[] = await response.json()
 
         setFavorites(data || [])
-      } catch (error) {
+      } catch {
         setFavorites([])
         setHasError(true)
         toast.error('Failed to load favorites')
@@ -112,11 +105,14 @@ export default function FavoritesPage() {
           toast.error('Favorites feature is not available')
           return
         }
+        toast.error('Failed to remove favorite')
         return
       }
 
       setFavorites(prev => prev.filter(fav => fav.id !== favoriteId))
-    } catch (error) {
+      toast.success('Removed from favorites')
+    } catch {
+      toast.error('Failed to remove favorite')
     }
   }
 
