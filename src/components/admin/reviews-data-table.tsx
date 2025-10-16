@@ -106,16 +106,20 @@ export function ReviewsDataTable({ reviews: initialReviews }: ReviewsDataTablePr
     if (!sortKey || !sortOrder) return filteredReviews
 
     return [...filteredReviews].sort((a, b) => {
-      let aVal: string | number | Date | undefined = a[sortKey]
-      let bVal: string | number | Date | undefined = b[sortKey]
+      let aVal: string | number | boolean | Date | undefined = a[sortKey]
+      let bVal: string | number | boolean | Date | undefined = b[sortKey]
 
       if (aVal == null) return sortOrder === 'asc' ? 1 : -1
       if (bVal == null) return sortOrder === 'asc' ? -1 : 1
 
       if (sortKey === 'created_at') {
-        aVal = new Date(aVal).getTime()
-        bVal = new Date(bVal).getTime()
+        aVal = new Date(aVal as string).getTime()
+        bVal = new Date(bVal as string).getTime()
       }
+
+      // Convert boolean to number for comparison
+      if (typeof aVal === 'boolean') aVal = aVal ? 1 : 0
+      if (typeof bVal === 'boolean') bVal = bVal ? 1 : 0
 
       if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1
       if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1
