@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminSupabase } from '@/lib/supabase/server'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminSupabase, createServerSupabase } from '@/lib/supabase/server'
 
 export async function POST(
   request: NextRequest,
@@ -11,7 +10,7 @@ export async function POST(
     const supabase = createAdminSupabase()
     
     // Get the current admin user
-    const authSupabase = await createClient()
+    const authSupabase = await createServerSupabase()
     const { data: { user } } = await authSupabase.auth.getUser()
 
     const { error } = await supabase
