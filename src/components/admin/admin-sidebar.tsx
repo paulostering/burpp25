@@ -5,6 +5,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import type { UserProfile } from "@/types/db"
+import NextImage from "next/image"
 
 // Type definitions for menu items
 interface MenuItem {
@@ -28,7 +29,6 @@ import {
   ChevronsUpDown,
   Command,
   Frame,
-  GalleryVerticalEnd,
   Home,
   LogOut,
   Mail,
@@ -163,18 +163,23 @@ export function AdminSidebar({ ...props }: React.ComponentPropsWithoutRef<typeof
 
 
   return (
-    <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader>
+    <Sidebar collapsible="icon" {...props} className="bg-primary border-r-0">
+      <SidebarHeader className="bg-primary border-b-0">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
+            <SidebarMenuButton size="lg" asChild className="hover:bg-primary/90">
               <a href="/admin">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                  <GalleryVerticalEnd className="size-4" />
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-white/10">
+                  <NextImage 
+                    src="/images/burpp_icon_white.svg" 
+                    alt="Burpp" 
+                    width={20} 
+                    height={20}
+                    className="size-5"
+                  />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">Burpp Admin</span>
-                  <span className="truncate text-xs">Enterprise Dashboard</span>
+                  <span className="truncate font-semibold text-white">Burpp Admin</span>
                 </div>
               </a>
             </SidebarMenuButton>
@@ -182,9 +187,9 @@ export function AdminSidebar({ ...props }: React.ComponentPropsWithoutRef<typeof
         </SidebarMenu>
       </SidebarHeader>
       
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Platform</SidebarGroupLabel>
+      <SidebarContent className="bg-primary">
+        <SidebarGroup className="bg-primary">
+          <SidebarGroupLabel className="text-white/70">Platform</SidebarGroupLabel>
           <SidebarMenu>
             {data.navMain.map((item) => {
               const isActive = item.url ? pathname === item.url : 
@@ -193,10 +198,10 @@ export function AdminSidebar({ ...props }: React.ComponentPropsWithoutRef<typeof
               if (!item.items) {
                 return (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={isActive}>
-                      <Link href={item.url!}>
-                        <item.icon className="size-4" />
-                        <span>{item.title}</span>
+                    <SidebarMenuButton asChild isActive={isActive} className="!text-white font-semibold hover:!bg-white/10 data-[active=true]:!bg-white/20 data-[active=true]:!text-white">
+                      <Link href={item.url!} className="!text-white">
+                        <item.icon className="size-4 !text-white" />
+                        <span className="!text-white">{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -212,10 +217,10 @@ export function AdminSidebar({ ...props }: React.ComponentPropsWithoutRef<typeof
                 >
                   <SidebarMenuItem>
                     <CollapsibleTrigger asChild>
-                      <SidebarMenuButton tooltip={item.title}>
-                        {item.icon && <item.icon className="size-4" />}
-                        <span>{item.title}</span>
-                        <ChevronRight className="ml-auto size-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                      <SidebarMenuButton tooltip={item.title} className="!text-white font-semibold hover:!bg-white/10">
+                        {item.icon && <item.icon className="size-4 !text-white" />}
+                        <span className="!text-white">{item.title}</span>
+                        <ChevronRight className="ml-auto size-4 !text-white transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                       </SidebarMenuButton>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
@@ -224,10 +229,10 @@ export function AdminSidebar({ ...props }: React.ComponentPropsWithoutRef<typeof
                           const isSubActive = pathname === subItem.url
                           return (
                             <SidebarMenuSubItem key={subItem.title}>
-                              <SidebarMenuSubButton asChild isActive={isSubActive}>
-                                <Link href={subItem.url}>
-                                  {subItem.icon && <subItem.icon className="size-3" />}
-                                  <span>{subItem.title}</span>
+                              <SidebarMenuSubButton asChild isActive={isSubActive} className="!text-white/90 font-semibold hover:!bg-white/10 data-[active=true]:!bg-white/20 data-[active=true]:!text-white">
+                                <Link href={subItem.url} className="!text-white">
+                                  {subItem.icon && <subItem.icon className="size-3 !text-white" />}
+                                  <span className="!text-white">{subItem.title}</span>
                                 </Link>
                               </SidebarMenuSubButton>
                             </SidebarMenuSubItem>
@@ -243,31 +248,31 @@ export function AdminSidebar({ ...props }: React.ComponentPropsWithoutRef<typeof
         </SidebarGroup>
       </SidebarContent>
       
-      <SidebarFooter>
+      <SidebarFooter className="bg-primary border-t-0">
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton
                   size="lg"
-                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                  className="text-white hover:bg-white/10 data-[state=open]:bg-white/20"
                 >
                   <Avatar className="h-8 w-8 rounded-lg">
                     <AvatarImage 
                       src={user?.user_metadata?.avatar_url} 
                       alt={profile?.first_name || 'Admin'} 
                     />
-                    <AvatarFallback className="rounded-lg">
+                    <AvatarFallback className="rounded-lg bg-white/20 text-white">
                       {getInitials(profile?.first_name, profile?.last_name)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">
+                    <span className="truncate font-semibold text-white">
                       {profile?.first_name} {profile?.last_name}
                     </span>
-                    <span className="truncate text-xs">{user?.email}</span>
+                    <span className="truncate text-xs text-white font-semibold">{user?.email}</span>
                   </div>
-                  <ChevronsUpDown className="ml-auto size-4" />
+                  <ChevronsUpDown className="ml-auto size-4 text-white" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent
