@@ -6,7 +6,7 @@ import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Search, MapPin, X } from 'lucide-react'
+import { Search, MapPin, X, ChevronLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getCategories } from '@/lib/categories-cache'
 
@@ -35,9 +35,13 @@ export function SearchHero() {
   const [isLocationOpen, setIsLocationOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [userLocation, setUserLocation] = useState<string>('')
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false)
+  const [modalCategorySearch, setModalCategorySearch] = useState<string>('')
+  const [filteredModalCategories, setFilteredModalCategories] = useState<Category[]>([])
   const locationInputRef = useRef<HTMLInputElement>(null)
   const locationContainerRef = useRef<HTMLDivElement>(null)
   const categoryContainerRef = useRef<HTMLDivElement>(null)
+  const modalSearchInputRef = useRef<HTMLInputElement>(null)
 
   // Handle clicking outside to close dropdowns
   useEffect(() => {
@@ -95,6 +99,30 @@ export function SearchHero() {
       setFilteredCategories(filtered)
     }
   }, [categorySearch, categories])
+
+  // Filter modal categories based on search
+  useEffect(() => {
+    if (!modalCategorySearch) {
+      setFilteredModalCategories(categories)
+    } else {
+      const filtered = categories.filter(category =>
+        category.name.toLowerCase().includes(modalCategorySearch.toLowerCase())
+      )
+      setFilteredModalCategories(filtered)
+    }
+  }, [modalCategorySearch, categories])
+
+  // Initialize modal categories when modal opens
+  useEffect(() => {
+    if (isCategoryModalOpen) {
+      setFilteredModalCategories(categories)
+      setModalCategorySearch('')
+      // Focus the search input when modal opens
+      setTimeout(() => {
+        modalSearchInputRef.current?.focus()
+      }, 100)
+    }
+  }, [isCategoryModalOpen, categories])
 
   // Auto-detect user location
   useEffect(() => {
@@ -170,6 +198,17 @@ export function SearchHero() {
     setSelectedCategoryName(categoryName)
     setCategorySearch(categoryName)
     setIsCategoryOpen(false)
+    setIsCategoryModalOpen(false)
+  }
+
+  // Handle modal category selection
+  const handleModalCategorySelect = (categoryId: string, categoryName: string) => {
+    handleCategorySelect(categoryId, categoryName)
+  }
+
+  // Open category modal
+  const openCategoryModal = () => {
+    setIsCategoryModalOpen(true)
   }
 
   // Handle search submission
@@ -232,8 +271,10 @@ export function SearchHero() {
                     setSelectedCategoryName('')
                   }
                 }}
-                onFocus={() => setIsCategoryOpen(true)}
-                className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 font-semibold text-gray-700 placeholder:text-gray-500 pr-8"
+                onClick={openCategoryModal}
+                onFocus={openCategoryModal}
+                readOnly
+                className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 font-semibold text-gray-700 placeholder:text-gray-500 pr-8 cursor-pointer"
                 style={{ fontSize: '16px', fontFamily: 'Poppins, sans-serif' }}
               />
               {categorySearch && (
@@ -242,29 +283,11 @@ export function SearchHero() {
                     setCategorySearch('')
                     setSelectedCategory('')
                     setSelectedCategoryName('')
-                    setIsCategoryOpen(false)
                   }}
                   className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
                   <X className="h-4 w-4" />
                 </button>
-              )}
-              
-              {/* Category Suggestions Dropdown */}
-              {isCategoryOpen && filteredCategories.length > 0 && (
-                <div className="absolute top-full left-0 w-96 z-50 mt-2 bg-white border border-gray-200 rounded-2xl shadow-lg max-h-60 overflow-y-auto">
-                  {filteredCategories.map((category) => (
-                    <button
-                      key={category.id}
-                      onClick={() => handleCategorySelect(category.id, category.name)}
-                      className="w-full px-4 py-3 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none first:rounded-t-2xl last:rounded-b-2xl"
-                    >
-                      <div className="font-medium text-sm">
-                        {highlightText(category.name, categorySearch)}
-                      </div>
-                    </button>
-                  ))}
-                </div>
               )}
             </div>
 
@@ -382,8 +405,10 @@ export function SearchHero() {
                       setSelectedCategoryName('')
                     }
                   }}
-                  onFocus={() => setIsCategoryOpen(true)}
-                  className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 font-semibold text-gray-700 placeholder:text-gray-500 pr-8"
+                  onClick={openCategoryModal}
+                  onFocus={openCategoryModal}
+                  readOnly
+                  className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 font-semibold text-gray-700 placeholder:text-gray-500 pr-8 cursor-pointer"
                   style={{ fontSize: '16px', fontFamily: 'Poppins, sans-serif' }}
                 />
                 {categorySearch && (
@@ -392,7 +417,6 @@ export function SearchHero() {
                       setCategorySearch('')
                       setSelectedCategory('')
                       setSelectedCategoryName('')
-                      setIsCategoryOpen(false)
                     }}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
@@ -400,23 +424,6 @@ export function SearchHero() {
                   </button>
                 )}
               </div>
-              
-              {/* Category Suggestions Dropdown */}
-              {isCategoryOpen && filteredCategories.length > 0 && (
-                <div className="absolute top-full left-0 right-0 z-50 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                  {filteredCategories.map((category) => (
-                    <button
-                      key={category.id}
-                      onClick={() => handleCategorySelect(category.id, category.name)}
-                      className="w-full px-4 py-3 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none first:rounded-t-lg last:rounded-b-lg"
-                    >
-                      <div className="font-medium text-sm">
-                        {highlightText(category.name, categorySearch)}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
 
             {/* Row 2: Location */}
@@ -533,6 +540,67 @@ export function SearchHero() {
           </div>
         </div>
       </div>
+
+      {/* Category Selection Modal */}
+      {isCategoryModalOpen && (
+        <div className="fixed inset-0 z-50 bg-white">
+          <div className="flex flex-col h-full">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <button
+                onClick={() => setIsCategoryModalOpen(false)}
+                className="flex items-center text-gray-600 hover:text-gray-800"
+              >
+                <ChevronLeft className="h-6 w-6 mr-1" />
+                Back
+              </button>
+              <h2 className="text-lg font-semibold text-gray-900">Select Category</h2>
+              <div className="w-16" /> {/* Spacer for centering */}
+            </div>
+
+            {/* Search Input */}
+            <div className="p-4 border-b border-gray-200">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Input
+                  ref={modalSearchInputRef}
+                  type="text"
+                  placeholder="Search categories..."
+                  value={modalCategorySearch}
+                  onChange={(e) => setModalCategorySearch(e.target.value)}
+                  className="pl-10 pr-4 py-3 text-base border-gray-300 focus:border-primary focus:ring-primary"
+                  style={{ fontSize: '16px', fontFamily: 'Poppins, sans-serif' }}
+                />
+              </div>
+            </div>
+
+            {/* Categories List */}
+            <div className="flex-1 overflow-y-auto">
+              {filteredModalCategories.length > 0 ? (
+                <div className="p-4">
+                  {filteredModalCategories.map((category) => (
+                    <button
+                      key={category.id}
+                      onClick={() => handleModalCategorySelect(category.id, category.name)}
+                      className="w-full px-4 py-4 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none border-b border-gray-100 last:border-b-0 transition-colors"
+                    >
+                      <div className="font-medium text-base text-gray-900">
+                        {highlightText(category.name, modalCategorySearch)}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                  <Search className="h-12 w-12 mb-4 text-gray-300" />
+                  <p className="text-lg font-medium mb-2">No categories found</p>
+                  <p className="text-sm">Try searching for something else</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
