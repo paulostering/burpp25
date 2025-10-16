@@ -22,25 +22,16 @@ interface SubMenuItem {
 }
 
 import {
-  AudioWaveform,
-  BookOpen,
-  Bot,
   ChevronRight,
   ChevronsUpDown,
-  Command,
-  Frame,
   Home,
   LogOut,
   Mail,
-  Map,
   MessageSquare,
-  PieChart,
   Settings,
   Settings2,
-  SquareTerminal,
   Store,
   Tag,
-  User,
   Users,
 } from "lucide-react"
 
@@ -57,7 +48,6 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -69,11 +59,9 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
-  SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSub,

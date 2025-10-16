@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabase, createAdminSupabase } from '@/lib/supabase/server'
 
 // GET - Fetch user's favorites with vendor data
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const supabase = await createServerSupabase()
     
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(combinedData)
 
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

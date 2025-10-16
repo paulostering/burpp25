@@ -6,12 +6,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-  InputGroupText,
-} from '@/components/ui/input-group'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import type { VendorProfile } from '@/types/db'
@@ -36,10 +30,8 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Check, MapPin, Loader2, Camera, Sparkles, RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import Cropper from 'react-easy-crop'
 import type { Area } from 'react-easy-crop'
 import { ImageCropModal } from '@/components/image-crop-modal'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
 
 const step1Schema = z.object({
@@ -85,11 +77,6 @@ export default function VendorRegisterPage() {
   const router = useRouter()
   const [step, setStep] = useState(1)
   const [open, setOpen] = useState(false)
-  const [isClient, setIsClient] = useState(false)
-
-  useEffect(() => {
-    setIsClient(true)
-  }, [])
 
   // Step data
   const [categories, setCategories] = useState<Category[]>([])
@@ -115,10 +102,7 @@ export default function VendorRegisterPage() {
   const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null)
   const [coverPhotoFile, setCoverPhotoFile] = useState<File | null>(null)
   const [coverPhotoUrl, setCoverPhotoUrl] = useState<string | null>(null)
-  const [crop, setCrop] = useState({ x: 0, y: 0 })
-  const [zoom, setZoom] = useState(1)
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null)
-  const [uploadingPhoto, setUploadingPhoto] = useState<'profile' | 'cover' | null>(null)
   const [cropType, setCropType] = useState<'profile' | 'cover'>('profile')
   const [cropModalOpen, setCropModalOpen] = useState(false)
 
@@ -468,45 +452,6 @@ export default function VendorRegisterPage() {
     setCropModalOpen(true)
   }
 
-  const ensureImageDims = async (imageUrl: string): Promise<HTMLImageElement | null> => {
-    if (!imageUrl) return null
-    return new Promise((resolve) => {
-      const img = document.createElement('img')
-      img.onload = () => {
-        resolve(img)
-      }
-      img.src = imageUrl
-    })
-  }
-
-  const getCroppedBlob = async (imageUrl: string): Promise<Blob | null> => {
-    if (!imageUrl || !croppedAreaPixels) return null
-    const img = await ensureImageDims(imageUrl)
-    if (!img) return null
-    
-    const canvas = document.createElement('canvas')
-    const ctx = canvas.getContext('2d')!
-    
-    // Use different dimensions based on crop type
-    const size = cropType === 'profile' ? 300 : 800
-    canvas.width = size
-    canvas.height = cropType === 'profile' ? size : size * 0.4 // Cover photos are wider
-    
-    ctx.drawImage(
-      img,
-      croppedAreaPixels.x,
-      croppedAreaPixels.y,
-      croppedAreaPixels.width,
-      croppedAreaPixels.height,
-      0,
-      0,
-      canvas.width,
-      canvas.height
-    )
-    
-    return await new Promise((resolve) => canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.9))
-  }
-
   const handleCropComplete = async (croppedBlob: Blob) => {
     // Create preview URL from cropped blob
     const previewUrl = URL.createObjectURL(croppedBlob)
@@ -640,7 +585,7 @@ export default function VendorRegisterPage() {
             const { data: pub } = supabase.storage.from('vendor').getPublicUrl(up.path)
             profile_photo_url = pub.publicUrl
           }
-        } catch (imageError) {
+        } catch {
           toast.error('Profile photo processing failed, continuing without photo')
         }
       }
@@ -659,7 +604,7 @@ export default function VendorRegisterPage() {
             const { data: pub } = supabase.storage.from('vendor').getPublicUrl(up.path)
             cover_photo_url = pub.publicUrl
           }
-        } catch (imageError) {
+        } catch {
           toast.error('Cover photo processing failed, continuing without photo')
         }
       }

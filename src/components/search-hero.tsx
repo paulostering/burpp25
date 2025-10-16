@@ -5,9 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
 import { Search, MapPin, X } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import { getCategories } from '@/lib/categories-cache'
 import { toast } from 'sonner'
 
@@ -24,24 +22,18 @@ interface LocationSuggestion {
 
 export function SearchHero() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const [categories, setCategories] = useState<Category[]>([])
-  const [filteredCategories, setFilteredCategories] = useState<Category[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string>('')
   const [selectedCategoryName, setSelectedCategoryName] = useState<string>('')
   const [categorySearch, setCategorySearch] = useState<string>('')
-  const [isCategoryOpen, setIsCategoryOpen] = useState(false)
   const [location, setLocation] = useState('')
   const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([])
   const [isLocationOpen, setIsLocationOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [userLocation, setUserLocation] = useState<string>('')
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false)
   const [modalCategorySearch, setModalCategorySearch] = useState<string>('')
   const [filteredModalCategories, setFilteredModalCategories] = useState<Category[]>([])
   const locationInputRef = useRef<HTMLInputElement>(null)
   const locationContainerRef = useRef<HTMLDivElement>(null)
-  const categoryContainerRef = useRef<HTMLDivElement>(null)
   const modalSearchInputRef = useRef<HTMLInputElement>(null)
 
   // Handle clicking outside to close dropdowns
@@ -49,9 +41,6 @@ export function SearchHero() {
     const handleClickOutside = (event: MouseEvent) => {
       if (locationContainerRef.current && !locationContainerRef.current.contains(event.target as Node)) {
         setIsLocationOpen(false)
-      }
-      if (categoryContainerRef.current && !categoryContainerRef.current.contains(event.target as Node)) {
-        setIsCategoryOpen(false)
       }
     }
 
@@ -75,7 +64,7 @@ export function SearchHero() {
         // Only update state if component is still mounted
         if (isMounted) {
           setCategories(data)
-          setFilteredCategories(data)
+          setFilteredModalCategories(data)
         }
       } catch (error) {
         console.error('Error loading categories:', error)
@@ -89,17 +78,7 @@ export function SearchHero() {
     }
   }, [categories.length])
 
-  // Filter categories based on search
-  useEffect(() => {
-    if (!categorySearch) {
-      setFilteredCategories(categories)
-    } else {
-      const filtered = categories.filter(category =>
-        category.name.toLowerCase().includes(categorySearch.toLowerCase())
-      )
-      setFilteredCategories(filtered)
-    }
-  }, [categorySearch, categories])
+  // Filter categories is handled in the modal separately
 
   // Filter modal categories based on search
   useEffect(() => {
@@ -172,7 +151,6 @@ export function SearchHero() {
     setSelectedCategory(categoryId)
     setSelectedCategoryName(categoryName)
     setCategorySearch(categoryName)
-    setIsCategoryOpen(false)
     setIsCategoryModalOpen(false)
   }
 
@@ -200,7 +178,6 @@ export function SearchHero() {
   // Clear location
   const clearLocation = () => {
     setLocation('')
-    setUserLocation('')
     if (locationInputRef.current) {
       locationInputRef.current.focus()
     }
@@ -234,7 +211,7 @@ export function SearchHero() {
           {/* Desktop Layout - Horizontal */}
           <div className="hidden md:flex items-center bg-white border border-gray-300 rounded-full pl-6 pr-3 py-2 h-16">
             {/* Category Section */}
-            <div className="flex-1 min-w-0 relative" ref={categoryContainerRef}>
+            <div className="flex-1 min-w-0 relative">
               <Input
                 type="text"
                 placeholder="Category"
@@ -324,8 +301,7 @@ export function SearchHero() {
                             const data = await response.json()
                             if (data.features && data.features.length > 0) {
                               const place = data.features[0]
-                              const locationText = `${place.text}, ${place.context?.find((c: any) => c.id.startsWith('region'))?.text || ''}`
-                              setUserLocation(locationText)
+                              const locationText = `${place.text}, ${place.context?.find((c: {id: string; text: string}) => c.id.startsWith('region'))?.text || ''}`
                               setLocation(locationText)
                             }
                           } catch (error) {
@@ -418,7 +394,7 @@ export function SearchHero() {
           {/* Mobile Layout - 3 Rows */}
           <div className="md:hidden space-y-3">
             {/* Row 1: Category */}
-            <div className="relative" ref={categoryContainerRef}>
+            <div className="relative">
               <div className="bg-white border border-gray-300 rounded-lg px-4 py-3">
                 <Input
                   type="text"
@@ -469,8 +445,7 @@ export function SearchHero() {
                               const data = await response.json()
                               if (data.features && data.features.length > 0) {
                                 const place = data.features[0]
-                                const locationText = `${place.text}, ${place.context?.find((c: any) => c.id.startsWith('region'))?.text || ''}`
-                                setUserLocation(locationText)
+                                const locationText = `${place.text}, ${place.context?.find((c: {id: string; text: string}) => c.id.startsWith('region'))?.text || ''}`
                                 setLocation(locationText)
                               }
                             } catch (error) {

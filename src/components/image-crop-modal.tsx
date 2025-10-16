@@ -39,8 +39,8 @@ export function ImageCropModal({
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<CropArea | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
 
-  const onCropChange = useCallback((crop: { x: number; y: number }) => {
-    setCrop(crop)
+  const onCropChange = useCallback((newCrop: { x: number; y: number }) => {
+    setCrop(newCrop)
   }, [])
 
   const onZoomChange = useCallback((zoom: number) => {

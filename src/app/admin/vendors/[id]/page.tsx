@@ -1,8 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { AdminVendorDashboardWrapper } from '@/components/admin/admin-vendor-dashboard-wrapper'
 import { createAdminSupabase } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
-import type { VendorProfile, Category } from '@/types/db'
 
 async function getVendorData(vendorId: string) {
   const supabase = createAdminSupabase()

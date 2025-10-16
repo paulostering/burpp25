@@ -49,7 +49,7 @@ interface AdminVendorProfileManagerProps {
   onProfileUpdate: (updatedVendor: VendorProfile) => void
 }
 
-export function AdminVendorProfileManager({ vendor, stats, categories, onProfileUpdate }: AdminVendorProfileManagerProps) {
+export function AdminVendorProfileManager({ vendor, stats: _stats, categories, onProfileUpdate }: AdminVendorProfileManagerProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [uploadingPhoto, setUploadingPhoto] = useState<'profile' | 'cover' | null>(null)
@@ -275,7 +275,7 @@ export function AdminVendorProfileManager({ vendor, stats, categories, onProfile
     }
   }
 
-  const formatDate = (dateString: string | undefined) => {
+  const _formatDate = (dateString: string | undefined) => {
     if (!dateString) return 'N/A'
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',

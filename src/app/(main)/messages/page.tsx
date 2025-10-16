@@ -10,7 +10,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 
 function MessagesPageContent() {
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null)
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<{id: string} | null>(null)
   const [isMobile, setIsMobile] = useState(false)
   const supabase = createClient()
   const router = useRouter()

@@ -70,8 +70,6 @@ export function ReviewsDataTable({ reviews: initialReviews }: ReviewsDataTablePr
   const [reviewToDelete, setReviewToDelete] = useState<Review | null>(null)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
 
-  const supabase = createClient()
-
   const formatDate = (dateString: string) => {
     if (!dateString) return 'N/A'
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -108,8 +106,8 @@ export function ReviewsDataTable({ reviews: initialReviews }: ReviewsDataTablePr
     if (!sortKey || !sortOrder) return filteredReviews
 
     return [...filteredReviews].sort((a, b) => {
-      let aVal: any = a[sortKey]
-      let bVal: any = b[sortKey]
+      let aVal: string | number | Date | undefined = a[sortKey]
+      let bVal: string | number | Date | undefined = b[sortKey]
 
       if (aVal == null) return sortOrder === 'asc' ? 1 : -1
       if (bVal == null) return sortOrder === 'asc' ? -1 : 1

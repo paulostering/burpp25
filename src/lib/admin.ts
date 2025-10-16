@@ -1,6 +1,7 @@
 import { createServerSupabase } from '@/lib/supabase/server'
 import { createClient as createClientClient } from '@/lib/supabase/client'
-import type { UserRole, UserProfile, AdminActivityLog } from '@/types/db'
+import type { AdminActivityLog } from '@/types/db'
+import type { User } from '@supabase/supabase-js'
 
 // Server-side admin utilities
 export async function getServerUser() {
@@ -44,7 +45,7 @@ export async function requireAdmin() {
 export function useAdminCheck() {
   const supabase = createClientClient()
   
-  const checkAdminStatus = async (): Promise<{ isAdmin: boolean; user: any }> => {
+  const checkAdminStatus = async (): Promise<{ isAdmin: boolean; user: User | null }> => {
     const { data: { user } } = await supabase.auth.getUser()
     
     if (!user) {
@@ -70,8 +71,8 @@ export async function logAdminActivity(
   action: string,
   tableName: string,
   recordId?: string,
-  oldValues?: Record<string, any>,
-  newValues?: Record<string, any>
+  oldValues?: Record<string, unknown>,
+  newValues?: Record<string, unknown>
 ) {
   const supabase = await createServerSupabase()
   

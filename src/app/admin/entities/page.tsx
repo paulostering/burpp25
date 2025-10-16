@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { EntitiesDataTable } from '@/components/admin/entities-data-table'
 import { createServerSupabase } from '@/lib/supabase/server'
 

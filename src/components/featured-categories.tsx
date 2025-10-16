@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
 import type { Category } from '@/types/db'
 

@@ -4,7 +4,7 @@ import { createServerSupabase } from '@/lib/supabase/server'
 export default async function RootPage() {
   // Check if user is logged in
   const supabase = await createServerSupabase()
-  const { data: { user }, error } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
 
   if (user) {
     // Check user role

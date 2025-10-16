@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Edit, Eye, Mail } from 'lucide-react'
+import { Edit, Mail } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import type { EmailTemplate } from '@/types/email'
 
@@ -21,7 +21,6 @@ interface EmailTemplatesListProps {
 
 export function EmailTemplatesList({ templates }: EmailTemplatesListProps) {
   const router = useRouter()
-  const [previewTemplate, setPreviewTemplate] = useState<EmailTemplate | null>(null)
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {

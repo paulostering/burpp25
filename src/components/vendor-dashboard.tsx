@@ -10,14 +10,11 @@ import {
   MessageSquare, 
   Star, 
   Users, 
-  Settings, 
   Edit, 
   Phone, 
   MapPin, 
   Clock,
-  DollarSign,
-  TrendingUp,
-  Calendar
+  DollarSign
 } from 'lucide-react'
 import Link from 'next/link'
 import type { VendorProfile } from '@/types/db'

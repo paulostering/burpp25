@@ -32,7 +32,6 @@ export function CondensedSearch() {
   const [location, setLocation] = useState('')
   const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([])
   const [isLocationOpen, setIsLocationOpen] = useState(false)
-  const [userLocation, setUserLocation] = useState<string>('')
   const [isMobile, setIsMobile] = useState(false)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const locationContainerRef = useRef<HTMLDivElement>(null)
@@ -82,7 +81,8 @@ export function CondensedSearch() {
           setCategories(data)
           setFilteredCategories(data)
         }
-      } catch (error) {
+      } catch {
+        // Silently fail if categories can't be loaded
       }
     }
     
@@ -120,19 +120,9 @@ export function CondensedSearch() {
       )
       const data = await response.json()
       setLocationSuggestions(data.features || [])
-    } catch (error) {
+    } catch {
+      // Silently fail if location suggestions can't be loaded
     }
-  }
-
-  // Handle search submission
-  const handleSearch = () => {
-    if (!selectedCategory || !location) return
-
-    const params = new URLSearchParams()
-    params.set('category', selectedCategory)
-    params.set('q', location)
-
-    router.push(`/search?${params.toString()}`)
   }
 
   // Helper function to highlight search terms
@@ -164,7 +154,6 @@ export function CondensedSearch() {
   // Clear location
   const clearLocation = () => {
     setLocation('')
-    setUserLocation('')
     setIsLocationOpen(false)
   }
 
@@ -259,11 +248,11 @@ export function CondensedSearch() {
                         const data = await response.json()
                         if (data.features && data.features.length > 0) {
                           const place = data.features[0]
-                          const locationText = `${place.text}, ${place.context?.find((c: any) => c.id.startsWith('region'))?.text || ''}`
-                          setUserLocation(locationText)
+                          const locationText = `${place.text}, ${place.context?.find((c: {id: string; text: string}) => c.id.startsWith('region'))?.text || ''}`
                           setLocation(locationText)
                         }
-                      } catch (error) {
+                      } catch {
+                        // Silently fail if reverse geocoding fails
                       }
                     },
                     (error) => {
@@ -340,7 +329,7 @@ export function CondensedSearch() {
                   </div>
                   {suggestion.context && suggestion.context.length > 0 && (
                     <div className="text-xs text-gray-500">
-                      {suggestion.context.map((c, i) => c.text).join(', ')}
+                      {suggestion.context.map((c) => c.text).join(', ')}
                     </div>
                   )}
                 </div>

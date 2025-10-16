@@ -11,7 +11,6 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { toast } from 'sonner'
 import { useAuth } from '@/contexts/auth-context'
-import type { Category } from '@/types/db'
 
 interface FavoriteVendor {
   id: string

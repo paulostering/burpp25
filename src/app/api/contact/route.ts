@@ -69,7 +69,7 @@ This message was sent from the Burpp contact form.
 
     try {
       await sgMail.send(msg)
-    } catch (sendGridError) {
+    } catch {
       return NextResponse.json(
         { error: 'Failed to send email' },
         { status: 500 }
@@ -81,7 +81,7 @@ This message was sent from the Burpp contact form.
       { status: 200 }
     )
 
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

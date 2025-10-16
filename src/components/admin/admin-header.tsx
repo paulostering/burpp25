@@ -10,16 +10,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { LogOut, Settings, User, Home, Menu } from 'lucide-react'
+import { LogOut } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import type { UserProfile } from '@/types/db'
-import Link from 'next/link'
 import { SidebarTrigger } from '@/components/ui/sidebar'
+import type { User } from '@supabase/supabase-js'
 
 export function AdminHeader() {
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const router = useRouter()
   const supabase = createClient()

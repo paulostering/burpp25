@@ -2,7 +2,6 @@
 
 import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Upload, X, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -45,7 +44,7 @@ export function IconUpload({ value, onChange, onRemove, disabled = false }: Icon
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
 
       // Upload to Supabase storage
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from('categories')
         .upload(fileName, file, {
           cacheControl: '3600',

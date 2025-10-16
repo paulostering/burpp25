@@ -21,43 +21,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
 
-  // Parse user from auth cookie as fallback
-  const parseUserFromCookie = (): User | null => {
-    try {
-      const authCookie = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('sb-slvqwoglqaqccibwmpwx-auth-token='))
-        ?.split('=')[1]
-
-      if (!authCookie) return null
-
-      const decoded = atob(authCookie.replace('base64-', ''))
-      const authData = JSON.parse(decoded)
-      
-      // Check if token is expired
-      const expiresAt = authData.expires_at
-      const now = Math.floor(Date.now() / 1000)
-
-      if (now >= expiresAt) {
-        // Clear expired cookies
-        const authCookies = [
-          'sb-slvqwoglqaqccibwmpwx-auth-token',
-          'sb-slvqwoglqaqccibwmpwx-auth-token-code-verifier'
-        ]
-        
-        authCookies.forEach(cookieName => {
-          document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`
-        })
-        
-        return null
-      }
-
-      return authData.user || null
-    } catch (error) {
-      return null
-    }
-  }
-
   useEffect(() => {
     // Simplified auth initialization to prevent infinite loops
     const getInitialSession = async () => {
@@ -69,7 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
           setUser(session?.user ?? null)
         }
-      } catch (error) {
+      } catch {
         setUser(null)
       } finally {
         setLoading(false)
@@ -87,6 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     )
 
     return () => subscription.unsubscribe()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const signOut = async () => {
@@ -114,7 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       // Force page reload to clear any cached state
       window.location.href = '/login'
-    } catch (error) {
+    } catch {
       // Still redirect even if sign out failed
       window.location.href = '/login'
     }

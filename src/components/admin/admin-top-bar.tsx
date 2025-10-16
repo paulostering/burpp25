@@ -1,7 +1,7 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
-import { ChevronRight, Home, PanelLeftClose } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 
