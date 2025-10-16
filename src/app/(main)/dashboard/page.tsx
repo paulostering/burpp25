@@ -63,8 +63,8 @@ export default function VendorDashboardPage() {
               .eq('vendor_id', vendorId),
             supabase
               .from('messages')
-              .select('*', { count: 'exact', head: true })
-              .eq('vendor_id', vendorId),
+              .select('*, conversations!inner(vendor_id)', { count: 'exact', head: true })
+              .eq('conversations.vendor_id', vendorId),
             supabase
               .from('reviews')
               .select('*', { count: 'exact', head: true })

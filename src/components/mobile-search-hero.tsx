@@ -99,33 +99,7 @@ export function MobileSearchHero() {
     }
   }, [isCategoryModalOpen, categories])
 
-  // Auto-detect user location
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const { latitude, longitude } = position.coords
-          try {
-            const response = await fetch(
-              `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}&types=place`
-            )
-            const data = await response.json()
-            if (data.features && data.features.length > 0) {
-              const place = data.features[0]
-              const locationText = `${place.text}, ${place.context?.find((c: any) => c.id.startsWith('region'))?.text || ''}`
-              setUserLocation(locationText)
-              setLocation(locationText)
-            }
-          } catch (error) {
-            console.error('Error reverse geocoding:', error)
-          }
-        },
-        (error) => {
-          console.error('Error getting location:', error)
-        }
-      )
-    }
-  }, [])
+  // Removed automatic geolocation - only request on user gesture
 
   // Handle location search
   const handleLocationSearch = async (query: string) => {
