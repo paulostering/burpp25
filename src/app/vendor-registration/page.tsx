@@ -34,7 +34,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
-import { Check, MapPin, Loader2, Camera } from 'lucide-react'
+import { Check, MapPin, Loader2, Camera, Sparkles, RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import Cropper from 'react-easy-crop'
 import type { Area } from 'react-easy-crop'
@@ -98,6 +98,8 @@ export default function VendorRegisterPage() {
 
   const [profileTitle, setProfileTitle] = useState('')
   const [about, setAbout] = useState('')
+  const [isGeneratingTitle, setIsGeneratingTitle] = useState(false)
+  const [isGeneratingDescription, setIsGeneratingDescription] = useState(false)
 
   const [offersVirtual, setOffersVirtual] = useState<boolean>(true)
   const [offersInPerson, setOffersInPerson] = useState<boolean>(true)
@@ -208,6 +210,80 @@ export default function VendorRegisterPage() {
   const clearError = (field: string) => {
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }))
+    }
+  }
+
+  const handleGenerateTitle = async () => {
+    setIsGeneratingTitle(true)
+    try {
+      const selectedCategories = categories
+        .filter(c => selectedCategoryIds.includes(c.id))
+        .map(c => c.name)
+
+      const response = await fetch('/api/generate-profile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'title',
+          businessName,
+          categories: selectedCategories,
+          currentText: profileTitle || null,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to generate title')
+      }
+
+      setProfileTitle(data.text)
+      clearError('profile_title')
+      toast.success(profileTitle ? 'Title refined!' : 'Title generated!')
+    } catch (error) {
+      console.error('Error generating title:', error)
+      toast.error('Failed to generate title. Please try again.')
+    } finally {
+      setIsGeneratingTitle(false)
+    }
+  }
+
+  const handleGenerateDescription = async () => {
+    setIsGeneratingDescription(true)
+    try {
+      const selectedCategories = categories
+        .filter(c => selectedCategoryIds.includes(c.id))
+        .map(c => c.name)
+
+      const response = await fetch('/api/generate-profile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'description',
+          businessName,
+          categories: selectedCategories,
+          currentText: about || null,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to generate description')
+      }
+
+      setAbout(data.text)
+      clearError('about')
+      toast.success(about ? 'Description refined!' : 'Description generated!')
+    } catch (error) {
+      console.error('Error generating description:', error)
+      toast.error('Failed to generate description. Please try again.')
+    } finally {
+      setIsGeneratingDescription(false)
     }
   }
 
@@ -781,7 +857,38 @@ export default function VendorRegisterPage() {
             <p className="text-muted-foreground">Create a compelling profile to attract potential clients.</p>
           </div>
           <div className="space-y-3">
-            <Label htmlFor="title">Profile Title *</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="title">Profile Title *</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleGenerateTitle}
+                disabled={isGeneratingTitle || !businessName}
+                className="text-xs h-7 px-2"
+              >
+                {isGeneratingTitle ? (
+                  <>
+                    <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    {profileTitle ? (
+                      <>
+                        <RefreshCw className="mr-1 h-3 w-3" />
+                        Refine
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="mr-1 h-3 w-3" />
+                        Generate
+                      </>
+                    )}
+                  </>
+                )}
+              </Button>
+            </div>
             <Input 
               id="title" 
               value={profileTitle} 
@@ -790,13 +897,50 @@ export default function VendorRegisterPage() {
                 setProfileTitle(e.target.value)
               }}
               className={errors.profile_title ? 'border-red-500' : ''}
+              placeholder="e.g., Professional Plumber with 10+ Years Experience"
             />
             {errors.profile_title && (
               <p className="text-sm text-red-500">{errors.profile_title}</p>
             )}
+            {!businessName && (
+              <p className="text-xs text-muted-foreground">
+                Complete Step 1 to use AI generation
+              </p>
+            )}
           </div>
           <div className="space-y-3">
-            <Label htmlFor="about">About *</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="about">About *</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleGenerateDescription}
+                disabled={isGeneratingDescription || !businessName}
+                className="text-xs h-7 px-2"
+              >
+                {isGeneratingDescription ? (
+                  <>
+                    <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    {about ? (
+                      <>
+                        <RefreshCw className="mr-1 h-3 w-3" />
+                        Refine
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="mr-1 h-3 w-3" />
+                        Generate
+                      </>
+                    )}
+                  </>
+                )}
+              </Button>
+            </div>
             <Textarea 
               id="about" 
               value={about} 
@@ -806,9 +950,15 @@ export default function VendorRegisterPage() {
               }}
               rows={6}
               className={errors.about ? 'border-red-500' : ''}
+              placeholder="Tell potential clients about your business, experience, and what makes you unique..."
             />
             {errors.about && (
               <p className="text-sm text-red-500">{errors.about}</p>
+            )}
+            {!businessName && (
+              <p className="text-xs text-muted-foreground">
+                Complete Step 1 to use AI generation
+              </p>
             )}
           </div>
           <div className="flex justify-between gap-2">

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Search, MapPin, X, ChevronLeft } from 'lucide-react'
 import { getCategories } from '@/lib/categories-cache'
+import { toast } from 'sonner'
 
 interface Category {
   id: string
@@ -258,6 +259,16 @@ export function MobileSearchHero() {
                           },
                           (error) => {
                             console.error('Error getting location:', error)
+                            // Provide user-friendly error messages
+                            if (error.code === 1) {
+                              // PERMISSION_DENIED - user chose not to share
+                            } else if (error.code === 2) {
+                              // POSITION_UNAVAILABLE
+                              toast.error('Location unavailable. Please enter your location manually.')
+                            } else if (error.code === 3) {
+                              // TIMEOUT
+                              toast.error('Location request timed out. Please try again or enter manually.')
+                            }
                           }
                         )
                       }

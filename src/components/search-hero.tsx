@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Search, MapPin, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getCategories } from '@/lib/categories-cache'
+import { toast } from 'sonner'
 
 interface Category {
   id: string
@@ -333,6 +334,17 @@ export function SearchHero() {
                         },
                         (error) => {
                           console.error('Error getting location:', error)
+                          // Provide user-friendly error messages
+                          if (error.code === 1) {
+                            // PERMISSION_DENIED
+                            // Don't show error - user chose not to share location
+                          } else if (error.code === 2) {
+                            // POSITION_UNAVAILABLE
+                            toast.error('Location unavailable. Please enter your location manually.')
+                          } else if (error.code === 3) {
+                            // TIMEOUT
+                            toast.error('Location request timed out. Please try again or enter manually.')
+                          }
                         }
                       )
                     }

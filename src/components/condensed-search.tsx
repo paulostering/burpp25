@@ -8,6 +8,7 @@ import { Search, MapPin, X } from 'lucide-react'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
 import { getCategories } from '@/lib/categories-cache'
+import { toast } from 'sonner'
 
 interface Category {
   id: string
@@ -266,7 +267,16 @@ export function CondensedSearch() {
                       }
                     },
                     (error) => {
-                      // Silently fail - user can still manually enter location
+                      console.error('Error getting location:', error)
+                      // Provide user-friendly error messages
+                      if (error.code === 2) {
+                        // POSITION_UNAVAILABLE
+                        toast.error('Location unavailable. Please enter your location manually.')
+                      } else if (error.code === 3) {
+                        // TIMEOUT
+                        toast.error('Location request timed out. Please try again or enter manually.')
+                      }
+                      // code 1 (PERMISSION_DENIED) - silently fail as user chose not to share
                     }
                   )
                 }
