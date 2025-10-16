@@ -23,7 +23,7 @@ export function Footer() {
 
           {/* Column 2: Burpp */}
           <div className="space-y-4">
-            <h3 className="text-gray-900 font-semibold text-lg">Burpp</h3>
+            <h3 className="font-normal text-base">Company</h3>
             <div className="space-y-3">
               <Link href="/about" className="block text-gray-600 hover:text-gray-900 transition-colors">
                 About
@@ -36,7 +36,7 @@ export function Footer() {
 
           {/* Column 3: Pros */}
           <div className="space-y-4">
-            <h3 className="text-gray-900 font-semibold text-lg">Pros</h3>
+            <h3 className="font-normal text-base">Pros</h3>
             <div className="space-y-3">
               <Link href="/burp-for-business" className="block text-gray-600 hover:text-gray-900 transition-colors">
                 Burpp For Pros
@@ -49,7 +49,7 @@ export function Footer() {
 
           {/* Column 4: Support */}
           <div className="space-y-4">
-            <h3 className="text-gray-900 font-semibold text-lg">Support</h3>
+            <h3 className="font-normal text-base">Support</h3>
             <div className="space-y-3">
               <Link href="/contact" className="block text-gray-600 hover:text-gray-900 transition-colors">
                 Contact Us
@@ -63,7 +63,7 @@ export function Footer() {
       </div>
 
       {/* Divider */}
-      <div className="border-t border-gray-300"></div>
+      <div className="border-t border-gray-200"></div>
 
       {/* Bottom Section */}
       <div className="mx-auto max-w-6xl px-6 py-6">

@@ -704,7 +704,8 @@ export default function VendorRegisterPage() {
               <DialogTrigger asChild>
                 <Button 
                   variant="outline" 
-                  className={`w-full justify-between ${errors.service_categories ? 'border-red-500' : ''}`}
+                  className={`w-full justify-between text-base font-normal ${errors.service_categories ? 'border-red-500' : ''}`}
+                  style={{ fontFamily: 'Helvetica Neue, sans-serif', fontSize: '16px' }}
                 >
                   <span className="truncate">
                     {selectedCategoryIds.length > 0 
@@ -779,7 +780,7 @@ export default function VendorRegisterPage() {
             <p className="text-muted-foreground">Create a compelling profile to attract potential clients.</p>
           </div>
           <div className="space-y-3">
-            <Label htmlFor="title">Profile title *</Label>
+            <Label htmlFor="title">Profile Title *</Label>
             <Input 
               id="title" 
               value={profileTitle} 
@@ -843,13 +844,15 @@ export default function VendorRegisterPage() {
               <p className="text-sm text-red-500">{errors.hourly_rate}</p>
             )}
           </div>
-          <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label>Offers virtual services</Label>
               <div className="flex gap-2">
                 <Button 
                   variant={offersVirtual ? 'default' : 'outline'} 
                   size="sm" 
+                  className="text-base"
+                  style={{ fontFamily: 'Helvetica Neue, sans-serif', fontSize: '16px' }}
                   onClick={() => {
                     clearError('general')
                     setOffersVirtual(true)
@@ -860,6 +863,8 @@ export default function VendorRegisterPage() {
                 <Button 
                   variant={!offersVirtual ? 'default' : 'outline'} 
                   size="sm" 
+                  className="text-base"
+                  style={{ fontFamily: 'Helvetica Neue, sans-serif', fontSize: '16px' }}
                   onClick={() => {
                     clearError('general')
                     setOffersVirtual(false)
@@ -875,6 +880,8 @@ export default function VendorRegisterPage() {
                 <Button 
                   variant={offersInPerson ? 'default' : 'outline'} 
                   size="sm" 
+                  className="text-base"
+                  style={{ fontFamily: 'Helvetica Neue, sans-serif', fontSize: '16px' }}
                   onClick={() => {
                     clearError('general')
                     setOffersInPerson(true)
@@ -885,6 +892,8 @@ export default function VendorRegisterPage() {
                 <Button 
                   variant={!offersInPerson ? 'default' : 'outline'} 
                   size="sm" 
+                  className="text-base"
+                  style={{ fontFamily: 'Helvetica Neue, sans-serif', fontSize: '16px' }}
                   onClick={() => {
                     clearError('general')
                     setOffersInPerson(false)
@@ -938,6 +947,8 @@ export default function VendorRegisterPage() {
                       key={r} 
                       variant={radius === r ? 'default' : 'outline'} 
                       size="sm" 
+                      className="text-base font-semibold"
+                      style={{ fontFamily: 'Helvetica Neue, sans-serif', fontSize: '16px' }}
                       onClick={() => {
                         clearError('service_radius')
                         setRadius(r)
@@ -984,7 +995,8 @@ export default function VendorRegisterPage() {
                 <Button
                   variant="secondary"
                   size="sm"
-                  className="absolute top-4 right-4 bg-white/95 hover:bg-white shadow-md"
+                  className="absolute top-4 right-4 bg-white/95 hover:bg-white shadow-md text-sm"
+                  style={{ fontFamily: 'Helvetica Neue, sans-serif', fontSize: '14px' }}
                   onClick={() => {
                     const input = document.createElement('input')
                     input.type = 'file'
