@@ -69,6 +69,7 @@ export default function VendorDashboardPage() {
               .from('reviews')
               .select('*', { count: 'exact', head: true })
               .eq('vendor_id', vendorId)
+              .eq('approved', true)
           ]),
           
           // Get categories

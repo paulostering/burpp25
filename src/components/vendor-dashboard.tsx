@@ -101,9 +101,11 @@ export function VendorDashboard({ vendor, stats }: VendorDashboardProps) {
           rating,
           comment,
           created_at,
-          client_name
+          client_name,
+          approved
         `)
         .eq('vendor_id', vendor.id)
+        .eq('approved', true)
         .order('created_at', { ascending: false })
         .limit(3)
 

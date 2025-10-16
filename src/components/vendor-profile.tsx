@@ -232,6 +232,7 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
         .from('reviews')
         .select('*')
         .eq('vendor_id', vendor.id)
+        .eq('approved', true)
         .order('created_at', { ascending: false })
 
       if (error) {
@@ -345,6 +346,27 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
     setIsSubmittingReview(true)
 
     try {
+      // First, moderate the review content using OpenAI
+      const moderationResponse = await fetch('/api/moderate-review', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: reviewTitle,
+          comment: reviewComment,
+        }),
+      })
+
+      const moderationResult = await moderationResponse.json()
+
+      if (!moderationResult.approved) {
+        toast.error(moderationResult.reason || 'Review content does not meet our guidelines')
+        setIsSubmittingReview(false)
+        return
+      }
+
+      // If moderation passed, insert the review (with approved flag)
       const { error } = await supabase
         .from('reviews')
         .insert({
@@ -352,7 +374,8 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
           vendor_id: vendor.id,
           rating: reviewRating,
           title: reviewTitle || null,
-          comment: reviewComment || null
+          comment: reviewComment || null,
+          approved: moderationResult.approved,
         })
 
       if (error) {
@@ -364,12 +387,12 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
         return
       }
 
-      toast.success('Review submitted successfully!')
+      toast.success('Review submitted successfully and is pending approval!')
       setReviewRating(5)
       setReviewTitle('')
       setReviewComment('')
       
-      // Reload reviews
+      // Reload reviews (only approved)
       const { data } = await supabase
         .from('reviews')
         .select(`
@@ -380,11 +403,12 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
           )
         `)
         .eq('vendor_id', vendor.id)
+        .eq('approved', true)
         .order('created_at', { ascending: false })
 
       if (data) {
         setReviews(data)
-        const avg = data.reduce((sum, review) => sum + review.rating, 0) / data.length
+        const avg = data.length > 0 ? data.reduce((sum, review) => sum + review.rating, 0) / data.length : 0
         setAverageRating(Math.round(avg * 10) / 10)
         setTotalReviews(data.length)
       }

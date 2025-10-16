@@ -31,7 +31,8 @@ async function getVendorData(vendorId: string) {
     supabase
       .from('reviews')
       .select('*', { count: 'exact', head: true })
-      .eq('vendor_id', vendorId),
+      .eq('vendor_id', vendorId)
+      .eq('approved', true),
     supabase
       .from('categories')
       .select('*')

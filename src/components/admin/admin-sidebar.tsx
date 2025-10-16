@@ -33,6 +33,7 @@ import {
   LogOut,
   Mail,
   Map,
+  MessageSquare,
   PieChart,
   Settings,
   Settings2,
@@ -108,6 +109,11 @@ const data: { navMain: MenuItem[] } = {
           url: "/admin/entities",
           icon: Tag,
         },
+        {
+          title: "Reviews",
+          url: "/admin/reviews",
+          icon: MessageSquare,
+        },
       ],
     },
     {
@@ -129,28 +135,34 @@ export function AdminSidebar({ ...props }: React.ComponentPropsWithoutRef<typeof
   const router = useRouter()
   const [user, setUser] = React.useState<any>(null)
   const [profile, setProfile] = React.useState<UserProfile | null>(null)
-  const supabase = createClient()
 
   React.useEffect(() => {
+    const supabase = createClient()
+    
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       setUser(user)
       
       if (user) {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('user_profiles')
           .select('*')
           .eq('id', user.id)
-          .single()
+          .maybeSingle()
         
-        setProfile(data)
+        if (!error && data) {
+          setProfile(data)
+        } else if (error) {
+          console.error('Error fetching user profile:', error)
+        }
       }
     }
     
     getUser()
-  }, [supabase])
+  }, [])
 
   const handleSignOut = async () => {
+    const supabase = createClient()
     await supabase.auth.signOut()
     router.push('/login')
   }

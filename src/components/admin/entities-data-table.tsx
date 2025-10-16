@@ -131,14 +131,19 @@ export function EntitiesDataTable({ entities: initialEntities }: EntitiesDataTab
       // Add new category to local state
       setEntities(prev => [...prev, responseData])
       
-      // Close sheet and show success toast
-      setIsAddSheetOpen(false)
       toast.success('Category created successfully!')
+      
+      // Reset loading state first
+      setIsLoading(false)
+      
+      // Small delay to ensure state updates propagate before closing
+      setTimeout(() => {
+        setIsAddSheetOpen(false)
+      }, 0)
       
     } catch (error) {
       console.error('Error adding category:', error)
       toast.error(error instanceof Error ? error.message : 'Failed to create category')
-    } finally {
       setIsLoading(false)
     }
   }
@@ -169,15 +174,20 @@ export function EntitiesDataTable({ entities: initialEntities }: EntitiesDataTab
         )
       )
       
-      // Close sheet and show success toast
-      setIsEditSheetOpen(false)
-      setSelectedCategory(null)
       toast.success('Category updated successfully!')
+      
+      // Reset state first, then close sheet
+      setSelectedCategory(null)
+      setIsLoading(false)
+      
+      // Small delay to ensure state updates propagate before closing
+      setTimeout(() => {
+        setIsEditSheetOpen(false)
+      }, 0)
       
     } catch (error) {
       console.error('Error updating category:', error)
       toast.error(error instanceof Error ? error.message : 'Failed to update category')
-    } finally {
       setIsLoading(false)
     }
   }
@@ -384,7 +394,10 @@ export function EntitiesDataTable({ entities: initialEntities }: EntitiesDataTab
                     <Badge 
                       variant={entity.is_active ? "default" : "secondary"}
                       className="cursor-pointer hover:opacity-80 transition-opacity"
-                      onClick={() => handleToggleActive(entity)}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleToggleActive(entity)
+                      }}
                     >
                       {entity.is_active ? "Active" : "Inactive"}
                     </Badge>
@@ -393,7 +406,10 @@ export function EntitiesDataTable({ entities: initialEntities }: EntitiesDataTab
                     <Badge 
                       variant={entity.is_featured ? "default" : "secondary"}
                       className="cursor-pointer hover:opacity-80 transition-opacity"
-                      onClick={() => handleToggleFeatured(entity)}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleToggleFeatured(entity)
+                      }}
                     >
                       {entity.is_featured ? "Featured" : "Not Featured"}
                     </Badge>

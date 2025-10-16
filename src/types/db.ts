@@ -47,6 +47,9 @@ export interface Review {
   rating: number
   title?: string | null
   comment?: string | null
+  approved: boolean
+  approved_at?: string | null
+  approved_by?: string | null
   created_at: string
   updated_at: string
   user?: {
