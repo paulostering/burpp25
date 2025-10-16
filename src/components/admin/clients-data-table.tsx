@@ -192,47 +192,47 @@ export function ClientsDataTable({ clients }: ClientsDataTableProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="text-left">
+              <TableHead className="text-left text-sm font-normal pl-0">
                 <Button
                   variant="ghost"
                   onClick={() => handleSort('first_name')}
-                  className="h-auto p-0 font-medium hover:bg-transparent text-left justify-start"
+                  className="h-auto p-0 font-normal text-sm hover:bg-transparent text-left justify-start"
                 >
                   Name
                   {getSortIcon('first_name')}
                 </Button>
               </TableHead>
-              <TableHead className="text-left">
+              <TableHead className="text-left text-sm font-normal pl-0">
                 <Button
                   variant="ghost"
                   onClick={() => handleSort('email')}
-                  className="h-auto p-0 font-medium hover:bg-transparent text-left justify-start"
+                  className="h-auto p-0 font-normal text-sm hover:bg-transparent text-left justify-start"
                 >
                   Email
                   {getSortIcon('email')}
                 </Button>
               </TableHead>
-              <TableHead className="text-left">
+              <TableHead className="text-left text-sm font-normal pl-0">
                 <Button
                   variant="ghost"
                   onClick={() => handleSort('is_active')}
-                  className="h-auto p-0 font-medium hover:bg-transparent text-left justify-start"
+                  className="h-auto p-0 font-normal text-sm hover:bg-transparent text-left justify-start"
                 >
                   Status
                   {getSortIcon('is_active')}
                 </Button>
               </TableHead>
-              <TableHead className="text-left">
+              <TableHead className="text-left text-sm font-normal pl-0">
                 <Button
                   variant="ghost"
                   onClick={() => handleSort('created_at')}
-                  className="h-auto p-0 font-medium hover:bg-transparent text-left justify-start"
+                  className="h-auto p-0 font-normal text-sm hover:bg-transparent text-left justify-start"
                 >
                   Joined
                   {getSortIcon('created_at')}
                 </Button>
               </TableHead>
-              <TableHead className="w-[50px] text-left">Actions</TableHead>
+              <TableHead className="w-[50px] text-left text-sm font-normal pl-0">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

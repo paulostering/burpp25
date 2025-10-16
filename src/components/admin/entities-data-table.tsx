@@ -284,9 +284,9 @@ export function EntitiesDataTable({ entities: initialEntities }: EntitiesDataTab
         {/* Add Category Sheet */}
         <Sheet open={isAddSheetOpen} onOpenChange={setIsAddSheetOpen}>
           <SheetTrigger asChild>
-            <Button>
+            <Button size="sm" className="text-base">
               <Plus className="mr-2 h-4 w-4" />
-              Add Category
+              Add
             </Button>
           </SheetTrigger>
           <SheetContent>
@@ -312,57 +312,57 @@ export function EntitiesDataTable({ entities: initialEntities }: EntitiesDataTab
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>
+              <TableHead className="text-left text-sm font-normal pl-0">
                 <Button
                   variant="ghost"
                   onClick={() => handleSort('name')}
-                  className="h-auto p-0 font-semibold pl-0 !px-0"
+                  className="h-auto p-0 font-normal text-sm hover:bg-transparent text-left justify-start"
                 >
                   Category Name
                   <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
               </TableHead>
-              <TableHead>
+              <TableHead className="text-left text-sm font-normal pl-0">
                 <Button
                   variant="ghost"
                   onClick={() => handleSort('is_active')}
-                  className="h-auto p-0 font-semibold pl-0 !px-0"
+                  className="h-auto p-0 font-normal text-sm hover:bg-transparent text-left justify-start"
                 >
                   Status
                   <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
               </TableHead>
-              <TableHead>
+              <TableHead className="text-left text-sm font-normal pl-0">
                 <Button
                   variant="ghost"
                   onClick={() => handleSort('is_featured')}
-                  className="h-auto p-0 font-semibold pl-0 !px-0"
+                  className="h-auto p-0 font-normal text-sm hover:bg-transparent text-left justify-start"
                 >
                   Featured
                   <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
               </TableHead>
-              <TableHead>
+              <TableHead className="text-left text-sm font-normal pl-0">
                 <Button
                   variant="ghost"
                   onClick={() => handleSort('created_at')}
-                  className="h-auto p-0 font-semibold pl-0 !px-0"
+                  className="h-auto p-0 font-normal text-sm hover:bg-transparent text-left justify-start"
                 >
                   Created
                   <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
               </TableHead>
-              <TableHead>
+              <TableHead className="text-left text-sm font-normal pl-0">
                 <Button
                   variant="ghost"
                   onClick={() => handleSort('updated_at')}
-                  className="h-auto p-0 font-semibold pl-0 !px-0"
+                  className="h-auto p-0 font-normal text-sm hover:bg-transparent text-left justify-start"
                 >
                   Updated
                   <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
               </TableHead>
-              <TableHead className="w-[50px]">Actions</TableHead>
+              <TableHead className="w-[50px] text-left text-sm font-normal pl-0">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
