@@ -89,7 +89,8 @@ export default async function SearchPage({
               shouldInclude = true
             }
           }
-        } catch (error) {
+        } catch {
+          // Ignore geocoding errors for individual vendors
         }
       }
 

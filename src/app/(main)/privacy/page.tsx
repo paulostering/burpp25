@@ -4,13 +4,10 @@ import { Footer } from "@/components/footer"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Mail, Shield, Eye, Lock, Users, Globe } from "lucide-react"
+import { Mail, Shield, Eye, Lock, Users, Globe } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 
 export default function PrivacyPolicy() {
-  const router = useRouter()
-
   return (
     <div className="space-y-24">
       {/* Hero Section */}

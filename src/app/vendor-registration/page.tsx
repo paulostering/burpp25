@@ -57,7 +57,7 @@ const step3Schema = z.object({
   offers_in_person_services: z.boolean(),
   zip_code: z.string().optional(),
   service_radius: z.number().optional(),
-  hourly_rate: z.number().min(1, 'Hourly rate must be at least $1.00'),
+  hourly_rate: z.number().min(1, 'Hourly rate must be at least $1.00').optional(),
 }).refine(
   (v) => {
     if (!v.offers_in_person_services) return true
@@ -172,16 +172,25 @@ export default function VendorRegisterPage() {
     }
     
     if (step === 3) {
+      // Custom validation for hourly rate to provide better error message
+      if (!hourlyRate || hourlyRate < 1) {
+        if (!hourlyRate) {
+          newErrors.hourly_rate = 'Please enter your starting hourly rate'
+        } else if (hourlyRate < 1) {
+          newErrors.hourly_rate = 'Hourly rate must be at least $1.00'
+        }
+      }
+      
       const res = step3Schema.safeParse({
         offers_virtual_services: offersVirtual,
         offers_in_person_services: offersInPerson,
         zip_code: zipCode || undefined,
         service_radius: radius,
-        hourly_rate: hourlyRate,
+        hourly_rate: hourlyRate || 0, // Pass 0 if undefined to avoid type error
       })
       if (!res.success) {
         res.error.issues.forEach(issue => {
-          if (issue.path[0] === 'hourly_rate') {
+          if (issue.path[0] === 'hourly_rate' && !newErrors.hourly_rate) {
             newErrors.hourly_rate = issue.message
           } else if (issue.path[0] === 'zip_code') {
             newErrors.zip_code = issue.message
@@ -976,21 +985,16 @@ export default function VendorRegisterPage() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="rate">What is the hourly rate for your service? *</Label>
-            <InputGroup>
-              <InputGroupAddon>
-                <InputGroupText>$</InputGroupText>
-              </InputGroupAddon>
-              <InputGroupInput
-                id="rate"
-                type="text"
-                inputMode="decimal"
-                placeholder="Enter amount (minimum $1.00)"
-                value={hourlyRateInput}
-                onChange={handleHourlyRateChange}
-                required
-                className={errors.hourly_rate ? 'border-red-500' : ''}
-              />
-            </InputGroup>
+            <Input
+              id="rate"
+              type="text"
+              inputMode="decimal"
+              placeholder="Enter amount (minimum $1.00)"
+              value={hourlyRateInput}
+              onChange={handleHourlyRateChange}
+              required
+              className={errors.hourly_rate ? 'border-red-500' : ''}
+            />
             {errors.hourly_rate && (
               <p className="text-sm text-red-500">{errors.hourly_rate}</p>
             )}

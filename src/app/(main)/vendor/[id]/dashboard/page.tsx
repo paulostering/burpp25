@@ -8,7 +8,7 @@ interface VendorDashboardPageProps {
 }
 
 // This route is deprecated. Redirect to the new dashboard route.
-export default function VendorDashboardPage({ params }: VendorDashboardPageProps) {
+export default function VendorDashboardPage({ params: _params }: VendorDashboardPageProps) {
   const router = useRouter()
 
   useEffect(() => {
