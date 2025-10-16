@@ -15,10 +15,47 @@ import { CondensedSearch } from "@/components/condensed-search"
 import { InboxIcon } from "@/components/inbox-icon"
 import { FavoritesIcon } from "@/components/favorites-icon"
 import { useAuth } from "@/contexts/auth-context"
+import { createClient } from "@/lib/supabase/client"
+import { useEffect, useState } from "react"
 
 export function TopNav() {
   const pathname = usePathname()
   const { user, loading, signOut } = useAuth()
+  const [isVendor, setIsVendor] = useState(false)
+  const [roleLoading, setRoleLoading] = useState(true)
+
+  // Check user role
+  useEffect(() => {
+    const checkUserRole = async () => {
+      if (!user) {
+        setIsVendor(false)
+        setRoleLoading(false)
+        return
+      }
+
+      try {
+        const supabase = createClient()
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('role, is_active')
+          .eq('id', user.id)
+          .single()
+
+        const userIsVendor = profile?.role === 'vendor' || 
+                           user.user_metadata?.role === 'vendor' ||
+                           (user as any).raw_user_meta_data?.role === 'vendor'
+        
+        setIsVendor(userIsVendor)
+      } catch (error) {
+        console.error('Error checking user role:', error)
+        setIsVendor(false)
+      } finally {
+        setRoleLoading(false)
+      }
+    }
+
+    checkUserRole()
+  }, [user])
 
   // Hide avatar on registration pages
   const isRegistrationPage = pathname?.includes('/vendor-registration')
@@ -26,9 +63,9 @@ export function TopNav() {
   const isAuthPage = pathname?.includes('/login') || pathname?.includes('/signup')
   // Hide condensed search on vendor dashboard pages to prevent API call issues
   const isVendorDashboard = pathname?.includes('/vendor/') && pathname?.includes('/dashboard')
-  // Show condensed search on non-homepage pages
+  // Show condensed search on non-homepage pages, but not for vendors
   const isHomePage = pathname === '/' || pathname === '/home'
-  const showCondensedSearch = !isHomePage && !isAuthPage && !isRegistrationPage && !isVendorDashboard
+  const showCondensedSearch = !isHomePage && !isAuthPage && !isRegistrationPage && !isVendorDashboard && !isVendor && !roleLoading
 
   // Get user initial from email
   const getUserInitial = () => {
