@@ -103,7 +103,7 @@ export function TopNav() {
               <Link href="/login" className="text-sm hover:underline">
                 Login
               </Link>
-              <Button asChild size="sm">
+              <Button asChild size="sm" className="text-sm">
                 <Link href="/signup">Sign Up</Link>
               </Button>
             </>
