@@ -88,8 +88,8 @@ export function TopNav() {
             <Image 
               src="/images/burpp_logo.png" 
               alt="Burpp Logo" 
-              width={80} 
-              height={32} 
+              width={60} 
+              height={24} 
               className="h-8 w-auto"
               style={{ width: 'auto', height: 'auto' }}
               priority

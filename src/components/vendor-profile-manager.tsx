@@ -396,7 +396,7 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
               </Button>
             </>
           ) : (
-            <Button onClick={() => setIsEditing(true)}>
+            <Button size="sm" className="text-base" onClick={() => setIsEditing(true)}>
               <Edit className="h-4 w-4 mr-2" />
               Edit Profile
             </Button>
@@ -424,7 +424,7 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
                     <Button
                       variant="secondary"
                       size="sm"
-                      className="absolute top-4 right-4 bg-white/95 hover:bg-white shadow-md"
+                      className="absolute top-4 right-4 bg-white/95 hover:bg-white shadow-md text-base"
                       onClick={() => triggerPhotoUpload('cover')}
                       disabled={uploadingPhoto === 'cover'}
                     >
