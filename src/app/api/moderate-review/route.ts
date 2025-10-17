@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+// This tells Next.js not to pre-render this route
+export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
   try {
+    // Initialize OpenAI client inside the function to avoid build-time initialization
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    })
+    
     const { title, comment } = await request.json()
 
     if (!title && !comment) {
