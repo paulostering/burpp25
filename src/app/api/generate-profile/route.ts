@@ -17,6 +17,7 @@ export async function POST(request: NextRequest) {
     }
 
     let prompt = ''
+    let characterLimit: number | null = null
     
     if (type === 'title') {
       if (currentText) {
@@ -37,6 +38,7 @@ Service Categories: ${categories?.join(', ') || 'Various services'}
 
 Provide only the title, nothing else. Maximum 60 characters.`
       }
+      characterLimit = 60
     } else if (type === 'description') {
       if (currentText) {
         // Refine existing description
@@ -46,15 +48,17 @@ Business Name: ${businessName}
 Service Categories: ${categories?.join(', ') || 'Various services'}
 Current Description: ${currentText}
 
-Provide only the refined description, nothing else. 2-3 paragraphs, maximum 500 characters.`
+Provide only the refined description, nothing else. Keep it concise and under 200 characters while preserving key selling points and a clear call to action.`
+        characterLimit = 200
       } else {
         // Generate new description
-        prompt = `Create a professional "About" section for a service provider business. Make it engaging, professional, highlight expertise and experience, and end with a call to action encouraging customers to reach out.
+        prompt = `Create a professional "About" section for a service provider business. Make it engaging, professional, highlight expertise and experience, and end with a call to action encouraging customers to reach out. The result must be concise and approximately 100 characters (between 90 and 110 characters), never exceeding 200 characters.
 
 Business Name: ${businessName}
 Service Categories: ${categories?.join(', ') || 'Various services'}
 
-Provide only the description, nothing else. 2-3 paragraphs, maximum 500 characters.`
+Provide only the description, nothing else.`
+        characterLimit = 100
       }
     }
 
@@ -88,6 +92,14 @@ Provide only the description, nothing else. 2-3 paragraphs, maximum 500 characte
       .replace(/^["']|["']$/g, '') // Remove leading/trailing quotes
       .replace(/^(Title:|Description:|About:|Profile Title:)/i, '') // Remove labels
       .trim()
+
+    if (characterLimit) {
+      if (generatedText.length > characterLimit) {
+        const truncated = generatedText.slice(0, characterLimit)
+        const lastSpace = truncated.lastIndexOf(' ')
+        generatedText = (lastSpace > 0 ? truncated.slice(0, lastSpace) : truncated).trim()
+      }
+    }
 
     return NextResponse.json({
       text: generatedText,

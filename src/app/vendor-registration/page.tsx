@@ -41,7 +41,10 @@ const step1Schema = z.object({
 
 const step2Schema = z.object({
   profile_title: z.string().min(1, 'Profile title is required'),
-  about: z.string().min(1, 'About is required'),
+  about: z
+    .string()
+    .min(1, 'About is required')
+    .max(200, 'About must be 200 characters or fewer'),
 })
 
 const step3Schema = z.object({
@@ -243,12 +246,24 @@ export default function VendorRegisterPage() {
     }
   }
 
+  const truncateWithWordBoundary = (text: string, limit: number) => {
+    if (text.length <= limit) {
+      return text.trim()
+    }
+    const truncated = text.slice(0, limit)
+    const lastSpace = truncated.lastIndexOf(' ')
+    return (lastSpace > 0 ? truncated.slice(0, lastSpace) : truncated).trim()
+  }
+
   const handleGenerateDescription = async () => {
     setIsGeneratingDescription(true)
     try {
       const selectedCategories = categories
         .filter(c => selectedCategoryIds.includes(c.id))
         .map(c => c.name)
+
+      const isRefinement = Boolean(about)
+      const characterLimit = isRefinement ? 200 : 100
 
       const response = await fetch('/api/generate-profile', {
         method: 'POST',
@@ -269,7 +284,7 @@ export default function VendorRegisterPage() {
         throw new Error(data.error || 'Failed to generate description')
       }
 
-      setAbout(data.text)
+      setAbout(truncateWithWordBoundary(data.text, characterLimit))
       clearError('about')
       toast.success(about ? 'Description refined!' : 'Description generated!')
     } catch (error) {
@@ -896,15 +911,20 @@ export default function VendorRegisterPage() {
               value={about} 
               onChange={(e) => {
                 clearError('about')
-                setAbout(e.target.value)
+                const value = e.target.value.slice(0, 200)
+                setAbout(value)
               }}
               rows={6}
-              className={errors.about ? 'border-red-500' : ''}
+              className={cn('text-base', errors.about && 'border-red-500')}
               placeholder="Tell potential clients about your business, experience, and what makes you unique..."
+              maxLength={200}
             />
             {errors.about && (
               <p className="text-sm text-red-500">{errors.about}</p>
             )}
+            <p className="text-xs text-muted-foreground text-right">
+              {about.length}/200 characters
+            </p>
             {!businessName && (
               <p className="text-xs text-muted-foreground">
                 Complete Step 1 to use AI generation
