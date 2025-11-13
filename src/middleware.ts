@@ -58,14 +58,14 @@ export async function middleware(request: NextRequest) {
   // Admin routing logic
   if (isAdmin) {
     // Admin users should be redirected to admin dashboard for most public routes
-    const publicRoutes = ['/', '/search', '/vendor', '/favorites', '/messages']
+    const publicRoutes = ['/', '/search', '/favorites']
     const isPublicRoute = publicRoutes.some(route => 
       request.nextUrl.pathname === route || 
       request.nextUrl.pathname.startsWith(route + '/')
     )
     
-    // Allow access to login/logout, admin routes and messages/inbox
-    const allowedRoutes = ['/login', '/signup', '/logout', '/admin', '/messages']
+    // Allow access to login/logout, admin routes, messages/inbox, and vendor public profiles
+    const allowedRoutes = ['/login', '/signup', '/logout', '/admin', '/messages', '/vendor']
     const isAllowedRoute = allowedRoutes.some(route => 
       request.nextUrl.pathname === route || 
       request.nextUrl.pathname.startsWith(route + '/')

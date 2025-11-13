@@ -70,11 +70,9 @@ export function AdminVendorDashboardWrapper({ vendor: initialVendor, stats, cate
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem asChild>
-              <Link href={`/vendor/${vendor.id}`} target="_blank" className="flex items-center">
-                <Eye className="mr-2 h-4 w-4" />
-                View Public Profile
-              </Link>
+            <DropdownMenuItem onClick={() => window.open(`/vendor/${vendor.id}`, '_blank')}>
+              <Eye className="mr-2 h-4 w-4" />
+              View Public Profile
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleResetPassword}>
               <KeyRound className="mr-2 h-4 w-4" />
