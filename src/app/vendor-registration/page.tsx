@@ -631,6 +631,27 @@ export default function VendorRegisterPage() {
 
       // Insert vendor profile if possible
       if (uid) {
+        // First, ensure user_profiles entry exists and is active
+        const { error: userProfileError } = await supabase
+          .from('user_profiles')
+          .upsert({
+            id: uid,
+            email,
+            first_name: firstName,
+            last_name: lastName,
+            role: 'vendor',
+            is_active: true,
+          }, {
+            onConflict: 'id'
+          })
+
+        if (userProfileError) {
+          console.error('User profile upsert error:', userProfileError)
+          toast.error(`Failed to create user profile: ${userProfileError.message}`)
+          return
+        }
+
+        // Then create vendor profile
         const payload: Partial<VendorProfile> & {
           user_id: string
           service_categories: string[]

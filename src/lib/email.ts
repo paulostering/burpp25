@@ -1,10 +1,8 @@
 import { createAdminSupabase } from '@/lib/supabase/server'
-import sgMail from '@sendgrid/mail'
+import { Resend } from 'resend'
 
-// Initialize SendGrid
-if (process.env.SENDGRID_API_KEY) {
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY)
-}
+// Initialize Resend
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
 interface EmailVariables {
   [key: string]: string
@@ -78,46 +76,41 @@ export async function sendTemplateEmail(
   console.log(bodyHtml.substring(0, 500))
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
   
-  // Send email with SendGrid
-  if (!process.env.SENDGRID_API_KEY) {
-    console.log('⚠️  SENDGRID_API_KEY not found in environment variables')
+  // Send email with Resend
+  if (!resend) {
+    console.log('⚠️  RESEND_API_KEY not found in environment variables')
     console.log('⚠️  Email was prepared but not sent')
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-    return { success: false, error: 'SendGrid not configured' }
+    return { success: false, error: 'Resend not configured' }
   }
 
   try {
-    console.log('📤 Sending email via SendGrid...')
-    
-    const msg = {
-      to: recipientEmail,
-      from: {
-        email: template.from_email,
-        name: template.from_name
-      },
-      subject,
-      text: bodyText,
-      html: bodyHtml,
-    }
-    
+    console.log('📤 Sending email via Resend...')
     console.log('Sending from:', `${template.from_name} <${template.from_email}>`)
     
-    const result = await sgMail.send(msg)
+    const result = await resend.emails.send({
+      from: `${template.from_name} <${template.from_email}>`,
+      to: recipientEmail,
+      subject,
+      html: bodyHtml,
+      text: bodyText,
+    })
     
-    console.log('✅ Email sent successfully via SendGrid!')
-    console.log('SendGrid Response Status:', result[0].statusCode)
-    console.log('SendGrid Message ID:', result[0].headers['x-message-id'])
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-    
-    return { success: true, messageId: result[0].headers['x-message-id'] }
-  } catch (sendError: unknown) {
-    console.error('❌ SendGrid Error:', sendError)
-    if (sendError && typeof sendError === 'object' && 'response' in sendError) {
-      const sgError = sendError as { response?: { body?: unknown } }
-      console.error('SendGrid Error Details:', sgError.response?.body)
+    if (result.error) {
+      console.error('❌ Resend Error:', result.error)
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+      return { success: false, error: result.error.message }
     }
+    
+    console.log('✅ Email sent successfully via Resend!')
+    console.log('Resend Message ID:', result.data?.id)
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-    return { success: false, error: 'Failed to send via SendGrid' }
+    
+    return { success: true, messageId: result.data?.id }
+  } catch (sendError: unknown) {
+    console.error('❌ Resend Error:', sendError)
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+    return { success: false, error: 'Failed to send via Resend' }
   }
 }
 

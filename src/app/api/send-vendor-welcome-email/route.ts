@@ -32,7 +32,8 @@ export async function POST(request: NextRequest) {
       // Don't fail the request - email is not critical for registration
       return NextResponse.json({ 
         success: false, 
-        warning: 'Account created but welcome email failed to send' 
+        warning: 'Account created but welcome email failed to send',
+        error: result.error // Include the actual error for debugging
       })
     }
 
