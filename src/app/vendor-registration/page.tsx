@@ -344,11 +344,20 @@ export default function VendorRegisterPage() {
       }
     }
     
+    // Parse the numeric value
+    const numValue = sanitized && sanitized !== '.' && sanitized !== '' ? parseFloat(sanitized) : undefined
+    
+    // Cap at 999
+    if (numValue !== undefined && numValue > 999) {
+      setHourlyRateInput('999')
+      setHourlyRate(999)
+      return
+    }
+    
     // Update the display value (preserves trailing decimal and zeros)
     setHourlyRateInput(sanitized)
     
     // Update the numeric value for validation/submission
-    const numValue = sanitized && sanitized !== '.' && sanitized !== '' ? parseFloat(sanitized) : undefined
     setHourlyRate(numValue)
   }
 
