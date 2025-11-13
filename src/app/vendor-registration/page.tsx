@@ -665,6 +665,7 @@ export default function VendorRegisterPage() {
           last_name: lastName,
           email,
           phone_number: phone,
+          admin_approved: true, // Auto-approve vendors on registration
         }
         const { error: insErr } = await supabase.from('vendor_profiles').insert(payload)
         if (insErr) {

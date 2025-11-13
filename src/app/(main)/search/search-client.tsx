@@ -20,6 +20,14 @@ export function SearchClient() {
     const fetchVendors = async () => {
       setLoading(true)
       
+      // Set a timeout to show results even if API is slow
+      const timeoutId = setTimeout(() => {
+        console.log('Search taking too long, showing empty results')
+        setLoading(false)
+        setVendors([])
+        setCount(0)
+      }, 5000) // 5 second timeout on client side
+      
       try {
         const params = new URLSearchParams()
         if (category) params.set('category', category)
@@ -28,10 +36,12 @@ export function SearchClient() {
         const response = await fetch(`/api/search-vendors?${params.toString()}`)
         const data = await response.json()
         
+        clearTimeout(timeoutId)
         setVendors(data.vendors || [])
         setCount(data.count || 0)
       } catch (error) {
         console.error('Error fetching vendors:', error)
+        clearTimeout(timeoutId)
         setVendors([])
         setCount(0)
       } finally {
@@ -92,18 +102,30 @@ export function SearchClient() {
               : 'No professionals found'
             }
           </h1>
-          {q && (
+          {q && count > 0 && (
             <p className="text-muted-foreground text-lg">
               Showing vendors who service "{q}" based on their service radius
             </p>
           )}
+          {count === 0 && q && (
+            <div className="mt-4 p-6 bg-gray-50 rounded-lg border border-gray-200">
+              <p className="text-lg text-gray-700 mb-2">
+                We couldn't find any professionals serving <strong>"{q}"</strong> in this category.
+              </p>
+              <p className="text-gray-600">
+                Try searching in a different location or browse all professionals in this category.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Vendor Results */}
-        <InfiniteScrollVendors 
-          initialVendors={vendors}
-          searchParams={{ category, q }}
-        />
+        {count > 0 && (
+          <InfiniteScrollVendors
+            initialVendors={vendors}
+            searchParams={{ category, q }}
+          />
+        )}
       </div>
     </div>
   )
