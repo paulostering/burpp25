@@ -96,6 +96,8 @@ export interface UserProfile {
   email: string
   first_name?: string | null
   last_name?: string | null
+  profile_photo_url?: string | null
+  phone_number?: string | null
   role: UserRole
   is_active: boolean
   created_at: string

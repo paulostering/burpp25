@@ -3,32 +3,37 @@
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { CondensedSearch } from "@/components/condensed-search"
 import { InboxIcon } from "@/components/inbox-icon"
 import { FavoritesIcon } from "@/components/favorites-icon"
 import { useAuth } from "@/contexts/auth-context"
 import { createClient } from "@/lib/supabase/client"
 import { useEffect, useState } from "react"
+import { User, Settings, LayoutDashboard, LogOut } from "lucide-react"
 
 export function TopNav() {
   const pathname = usePathname()
+  const router = useRouter()
   const { user, loading, signOut } = useAuth()
   const [isVendor, setIsVendor] = useState(false)
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null)
   const [roleLoading, setRoleLoading] = useState(true)
 
-  // Check user role
+  // Check user role and get profile photo
   useEffect(() => {
     const checkUserRole = async () => {
       if (!user) {
         setIsVendor(false)
+        setProfilePhotoUrl(null)
         setRoleLoading(false)
         return
       }
@@ -37,18 +42,20 @@ export function TopNav() {
         const supabase = createClient()
         const { data: profile } = await supabase
           .from('user_profiles')
-          .select('role, is_active')
+          .select('role, is_active, profile_photo_url')
           .eq('id', user.id)
           .single()
 
-        const userIsVendor = profile?.role === 'vendor' || 
+        const userIsVendor = profile?.role === 'vendor' ||
                            user.user_metadata?.role === 'vendor' ||
                            (user as any).raw_user_meta_data?.role === 'vendor'
-        
+
         setIsVendor(userIsVendor)
+        setProfilePhotoUrl(profile?.profile_photo_url || null)
       } catch (error) {
         console.error('Error checking user role:', error)
         setIsVendor(false)
+        setProfilePhotoUrl(null)
       } finally {
         setRoleLoading(false)
       }
@@ -122,12 +129,28 @@ export function TopNav() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full p-0">
                     <Avatar className="h-8 w-8">
+                      {profilePhotoUrl && <AvatarImage src={profilePhotoUrl} alt="Profile" />}
                       <AvatarFallback>{firstInitial}</AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" className="w-56">
+                  {isVendor && (
+                    <>
+                      <DropdownMenuItem onClick={() => router.push('/dashboard')}>
+                        <LayoutDashboard className="mr-2 h-4 w-4" />
+                        Dashboard
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+                  <DropdownMenuItem onClick={() => router.push('/profile')}>
+                    <User className="mr-2 h-4 w-4" />
+                    Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={signOut}>
+                    <LogOut className="mr-2 h-4 w-4" />
                     Logout
                   </DropdownMenuItem>
                 </DropdownMenuContent>
