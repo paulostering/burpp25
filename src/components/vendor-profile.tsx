@@ -518,8 +518,7 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
                   {/* Right: Contact Actions */}
                   <div className="flex items-center gap-2">
                     <Button 
-                      size="icon" 
-                      className="h-10 w-10"
+                      className="h-10"
                       onClick={async () => {
                         if (!user) {
                           setAuthMode('signup')
@@ -545,13 +544,13 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
                         }
                       }}
                     >
-                      <MessageCircle className="h-5 w-5" />
+                      <MessageCircle className="h-5 w-5 mr-2" />
+                      Message
                     </Button>
                     {vendor.allow_phone_contact && (
                       <Button 
                         variant="outline" 
-                        size="icon" 
-                        className="h-10 w-10"
+                        className="h-10"
                         onClick={() => {
                           if (!user) {
                             setAuthMode('signup')
@@ -567,7 +566,8 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
                           }
                         }}
                       >
-                        <Phone className="h-5 w-5" />
+                        <Phone className="h-5 w-5 mr-2" />
+                        Call
                       </Button>
                     )}
                   </div>
