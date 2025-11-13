@@ -24,12 +24,15 @@ export async function sendTemplateEmail(
   
   // Add siteUrl to variables automatically
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+  // Use separate URL for email assets (must be publicly accessible)
+  const emailAssetsUrl = process.env.NEXT_PUBLIC_EMAIL_ASSETS_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://burpp.vercel.app'
   const allVariables = {
     ...variables,
-    siteUrl
+    siteUrl,
+    emailAssetsUrl
   }
   
-  console.log('All variables (including siteUrl):', allVariables)
+  console.log('All variables (including siteUrl and emailAssetsUrl):', allVariables)
   
   // Get the template
   console.log('Fetching template:', eventName)
