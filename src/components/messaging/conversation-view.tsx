@@ -235,9 +235,6 @@ export function ConversationView({ conversationId, onBack }: ConversationViewPro
           <h2 className="font-semibold">
             {otherUser.name || otherUser.email}
           </h2>
-          <p className="text-sm text-gray-500">
-            {otherUser.email}
-          </p>
         </div>
       </div>
 

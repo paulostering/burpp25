@@ -58,6 +58,7 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
   const [reviewTitle, setReviewTitle] = useState('')
   const [reviewComment, setReviewComment] = useState('')
   const [isSubmittingReview, setIsSubmittingReview] = useState(false)
+  const [showImageModal, setShowImageModal] = useState(false)
 
   const supabase = createClient()
   const router = useRouter()
@@ -459,7 +460,10 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
                 
                 {/* Profile Photo */}
                 <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2">
-                  <Avatar className="h-24 w-24 border-4 border-white shadow-lg">
+                  <Avatar 
+                    className="h-24 w-24 border-4 border-white shadow-lg cursor-pointer hover:opacity-90 transition-opacity"
+                    onClick={() => vendor.profile_photo_url && setShowImageModal(true)}
+                  >
                     <AvatarImage src={vendor.profile_photo_url || undefined} />
                     <AvatarFallback className="text-lg font-semibold">
                       {getInitials(vendor.first_name, vendor.last_name)}
@@ -859,6 +863,32 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
               </Button>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Profile Image Modal */}
+      <Dialog open={showImageModal} onOpenChange={setShowImageModal}>
+        <DialogContent className="max-w-3xl p-0 border-0 shadow-none">
+          <DialogTitle className="sr-only">
+            {vendor.business_name} Profile Photo
+          </DialogTitle>
+          <div className="relative w-full aspect-square">
+            {vendor.profile_photo_url ? (
+              <Image
+                src={vendor.profile_photo_url}
+                alt={`${vendor.business_name} profile photo`}
+                fill
+                className="object-contain"
+                priority
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full bg-gray-100">
+                <div className="text-6xl font-semibold text-gray-400">
+                  {getInitials(vendor.first_name, vendor.last_name)}
+                </div>
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
