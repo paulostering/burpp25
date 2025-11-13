@@ -2,17 +2,44 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminSupabase } from "@/lib/supabase/server"
 import type { VendorProfile } from "@/types/db"
 
+// In-memory cache for geocoding results (1 hour TTL)
+const geocodeCache = new Map<string, { coords: { lat: number; lng: number } | null; timestamp: number }>()
+const CACHE_TTL = 3600000 // 1 hour in milliseconds
+
 async function geocode(q: string) {
-  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-    q
-  )}`
-  const res = await fetch(url, {
-    headers: { "User-Agent": "burpp-web/1.0" },
-    cache: "no-store",
-  })
-  const data = await res.json()
-  if (!Array.isArray(data) || data.length === 0) return null
-  return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) }
+  // Check cache first
+  const cached = geocodeCache.get(q)
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.coords
+  }
+
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+      q
+    )}`
+    const res = await fetch(url, {
+      headers: { "User-Agent": "burpp-web/1.0" },
+      cache: "no-store",
+    })
+    
+    if (!res.ok) {
+      console.error(`Geocoding failed for ${q}: ${res.status}`)
+      return null
+    }
+    
+    const data = await res.json()
+    const coords = (!Array.isArray(data) || data.length === 0) 
+      ? null 
+      : { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) }
+    
+    // Cache the result
+    geocodeCache.set(q, { coords, timestamp: Date.now() })
+    
+    return coords
+  } catch (error) {
+    console.error(`Geocoding error for ${q}:`, error)
+    return null
+  }
 }
 
 // Calculate distance between two points using Haversine formula
@@ -29,6 +56,7 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 }
 
 export async function GET(request: NextRequest) {
+  const startTime = Date.now()
   try {
     const { searchParams } = new URL(request.url)
     const category = searchParams.get('category')
@@ -37,7 +65,12 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '12')
     const offset = (page - 1) * limit
 
+    console.log(`[Search] Starting search for: ${q}, category: ${category}`)
+    
+    const geocodeStart = Date.now()
     const searchCoords = q ? await geocode(q) : null
+    console.log(`[Search] Geocoding took: ${Date.now() - geocodeStart}ms`)
+    
     const supabase = createAdminSupabase()
     let vendors: VendorProfile[] = []
 
@@ -51,26 +84,35 @@ export async function GET(request: NextRequest) {
         query = query.contains('service_categories', [category])
       }
 
+      const dbStart = Date.now()
       const { data: allVendors } = await query
+      console.log(`[Search] DB query took: ${Date.now() - dbStart}ms, found ${allVendors?.length || 0} vendors`)
+      
       vendors = (allVendors as VendorProfile[]) ?? []
 
-      // Filter vendors based on their service offerings and location
-      const filteredVendors = []
+      // Separate virtual-only vendors (instant) from location-based vendors
+      const virtualOnlyVendors = vendors.filter(
+        v => v.offers_virtual_services && !v.offers_in_person_services
+      )
       
-      for (const vendor of vendors) {
-        // Check if vendor offers services at the search location
-        let shouldInclude = false
+      const locationBasedVendors = vendors.filter(
+        v => v.offers_in_person_services && v.service_radius && v.zip_code
+      )
+      
+      console.log(`[Search] Virtual-only: ${virtualOnlyVendors.length}, Location-based: ${locationBasedVendors.length}`)
 
-        // For vendors who offer virtual services only (no in-person), include them everywhere
-        if (vendor.offers_virtual_services && !vendor.offers_in_person_services) {
-          shouldInclude = true
-        }
+      // Process location-based vendors in batches of 20 for better performance
+      const BATCH_SIZE = 20
+      const filteredLocationVendors: VendorProfile[] = []
+      
+      const filterStart = Date.now()
+      for (let i = 0; i < locationBasedVendors.length; i += BATCH_SIZE) {
+        const batch = locationBasedVendors.slice(i, i + BATCH_SIZE)
         
-        // For vendors who offer in-person services (with or without virtual), check distance
-        if (vendor.offers_in_person_services && vendor.service_radius && vendor.zip_code) {
+        const batchPromises = batch.map(async (vendor) => {
           try {
             // Geocode the vendor's zip code
-            const vendorCoords = await geocode(vendor.zip_code)
+            const vendorCoords = await geocode(vendor.zip_code!)
             
             if (vendorCoords) {
               // Calculate distance between search location and vendor location
@@ -82,43 +124,74 @@ export async function GET(request: NextRequest) {
               )
               
               // Check if distance is within vendor's service radius
-              if (distance <= vendor.service_radius) {
-                shouldInclude = true
+              if (distance <= vendor.service_radius!) {
+                return vendor
               }
             }
           } catch (error) {
             console.error(`Error calculating distance for vendor ${vendor.id}:`, error)
           }
-        }
+          return null
+        })
 
-        if (shouldInclude) {
-          filteredVendors.push(vendor)
+        const batchResults = await Promise.all(batchPromises)
+        filteredLocationVendors.push(...batchResults.filter((v): v is VendorProfile => v !== null))
+        
+        // Early exit if we have enough results
+        if (filteredLocationVendors.length + virtualOnlyVendors.length >= offset + limit) {
+          console.log(`[Search] Early exit at batch ${i / BATCH_SIZE + 1}, found enough results`)
+          break
         }
       }
+      console.log(`[Search] Filtering took: ${Date.now() - filterStart}ms, found ${filteredLocationVendors.length} matching vendors`)
+      
+      // Combine virtual-only and location-based vendors
+      const filteredVendors = [...virtualOnlyVendors, ...filteredLocationVendors]
+      const totalCount = filteredVendors.length
       
       // Apply pagination to filtered results
       vendors = filteredVendors.slice(offset, offset + limit)
+      
+      console.log(`[Search] Total time: ${Date.now() - startTime}ms`)
+      
+      return NextResponse.json({
+        vendors,
+        count: totalCount,
+        page,
+        limit,
+        hasMore: offset + vendors.length < totalCount
+      })
     } else {
       // No search location, just get vendors by category with pagination
-      let query = supabase
+      let countQuery = supabase
+        .from('vendor_profiles')
+        .select('*', { count: 'exact', head: true })
+      
+      let dataQuery = supabase
         .from('vendor_profiles')
         .select('*')
         .range(offset, offset + limit - 1)
       
       if (category) {
-        query = query.contains('service_categories', [category])
+        countQuery = countQuery.contains('service_categories', [category])
+        dataQuery = dataQuery.contains('service_categories', [category])
       }
 
-      const { data } = await query
+      const [{ count }, { data }] = await Promise.all([
+        countQuery,
+        dataQuery
+      ])
+      
       vendors = (data as VendorProfile[]) ?? []
+      
+      return NextResponse.json({
+        vendors,
+        count: count || 0,
+        page,
+        limit,
+        hasMore: offset + vendors.length < (count || 0)
+      })
     }
-
-    return NextResponse.json({
-      vendors,
-      page,
-      limit,
-      hasMore: vendors.length === limit
-    })
   } catch (error) {
     console.error('Search vendors API error:', error)
     return NextResponse.json(

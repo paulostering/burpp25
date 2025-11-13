@@ -118,7 +118,7 @@ export function SearchHero() {
 
     try {
       const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}&types=place&country=us`
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}&types=place,locality,neighborhood,postcode&country=us`
       )
       const data = await response.json()
       console.log('Mapbox response:', data)
@@ -358,7 +358,8 @@ export function SearchHero() {
                   {locationSuggestions.map((suggestion, index) => (
                     <button
                       key={index}
-                      onClick={() => {
+                      onMouseDown={(e) => {
+                        e.preventDefault()
                         setLocation(suggestion.place_name)
                         setIsLocationOpen(false)
                       }}
@@ -492,7 +493,8 @@ export function SearchHero() {
                   {locationSuggestions.map((suggestion, index) => (
                     <button
                       key={index}
-                      onClick={() => {
+                      onMouseDown={(e) => {
+                        e.preventDefault()
                         setLocation(suggestion.place_name)
                         setIsLocationOpen(false)
                       }}

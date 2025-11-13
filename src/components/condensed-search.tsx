@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -29,6 +29,8 @@ export function CondensedSearch() {
   const [selectedCategoryName, setSelectedCategoryName] = useState<string>('')
   const [categorySearch, setCategorySearch] = useState<string>('')
   const [isCategoryOpen, setIsCategoryOpen] = useState(false)
+  const [modalCategorySearch, setModalCategorySearch] = useState<string>('')
+  const [filteredModalCategories, setFilteredModalCategories] = useState<Category[]>([])
   const [location, setLocation] = useState('')
   const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([])
   const [isLocationOpen, setIsLocationOpen] = useState(false)
@@ -36,6 +38,9 @@ export function CondensedSearch() {
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const locationContainerRef = useRef<HTMLDivElement>(null)
   const categoryContainerRef = useRef<HTMLDivElement>(null)
+  const modalSearchInputRef = useRef<HTMLInputElement>(null)
+  const locationInputRef = useRef<HTMLInputElement>(null)
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Check if mobile
   useEffect(() => {
@@ -46,6 +51,15 @@ export function CondensedSearch() {
     checkMobile()
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current)
+      }
+    }
   }, [])
 
   // Handle clicking outside to close dropdowns
@@ -105,25 +119,57 @@ export function CondensedSearch() {
     }
   }, [categorySearch, categories])
 
+  // Filter modal categories based on modal search
+  useEffect(() => {
+    if (modalCategorySearch) {
+      const filtered = categories.filter(cat => 
+        cat.name.toLowerCase().includes(modalCategorySearch.toLowerCase())
+      )
+      setFilteredModalCategories(filtered)
+    } else {
+      setFilteredModalCategories(categories)
+    }
+  }, [modalCategorySearch, categories])
+
+  // Initialize modal categories when modal opens
+  useEffect(() => {
+    if (isCategoryOpen) {
+      setFilteredModalCategories(categories)
+      setModalCategorySearch('')
+      // Focus the search input when modal opens
+      setTimeout(() => {
+        modalSearchInputRef.current?.focus()
+      }, 100)
+    }
+  }, [isCategoryOpen, categories])
+
   // Removed automatic geolocation - only request on user gesture
 
-  // Handle location search
-  const handleLocationSearch = async (query: string) => {
+  // Handle location search with debounce
+  const handleLocationSearch = useCallback((query: string) => {
+    // Clear existing timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current)
+    }
+
     if (query.length < 3) {
       setLocationSuggestions([])
       return
     }
 
-    try {
-      const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}&types=place&country=us`
-      )
-      const data = await response.json()
-      setLocationSuggestions(data.features || [])
-    } catch {
-      // Silently fail if location suggestions can't be loaded
-    }
-  }
+    // Debounce the API call
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const response = await fetch(
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}&types=place,locality,neighborhood,postcode&country=us`
+        )
+        const data = await response.json()
+        setLocationSuggestions(data.features || [])
+      } catch {
+        // Silently fail if location suggestions can't be loaded
+      }
+    }, 300) // 300ms debounce
+  }, [])
 
   // Helper function to highlight search terms
   const highlightText = (text: string, searchTerm: string) => {
@@ -144,21 +190,21 @@ export function CondensedSearch() {
   }
 
   // Handle category selection
-  const handleCategorySelect = (categoryId: string, categoryName: string) => {
+  const handleCategorySelect = useCallback((categoryId: string, categoryName: string) => {
     setSelectedCategory(categoryId)
     setSelectedCategoryName(categoryName)
     setCategorySearch(categoryName)
     setIsCategoryOpen(false)
-  }
+  }, [])
 
   // Clear location
-  const clearLocation = () => {
+  const clearLocation = useCallback(() => {
     setLocation('')
     setIsLocationOpen(false)
-  }
+  }, [])
 
   // Handle search submission
-  const handleSearchSubmit = () => {
+  const handleSearchSubmit = useCallback(() => {
     if (!selectedCategory || !location) return
 
     const params = new URLSearchParams()
@@ -171,13 +217,13 @@ export function CondensedSearch() {
     if (isMobile) {
       setIsSheetOpen(false)
     }
-  }
+  }, [selectedCategory, location, router, isMobile])
 
   // Search form component (reusable for both desktop and mobile)
-  const SearchForm = () => (
-    <div className="relative w-full" ref={locationContainerRef}>
+  const searchForm = useMemo(() => (
+    <div className="relative w-full">
       {/* Unified Search Field */}
-      <div className="flex items-center bg-white border border-gray-200 rounded-md hover:shadow-md transition-shadow duration-200 pl-4 pr-2 py-1 h-10">
+      <div className="flex items-center bg-white border border-gray-200 rounded-md pl-4 pr-2 py-1 h-10">
         {/* Category Section */}
         <div className="flex-1 min-w-0 relative" ref={categoryContainerRef}>
           <Input
@@ -191,8 +237,10 @@ export function CondensedSearch() {
                 setSelectedCategoryName('')
               }
             }}
+            onClick={() => setIsCategoryOpen(true)}
             onFocus={() => setIsCategoryOpen(true)}
-            className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 text-sm text-gray-600 placeholder:text-gray-400 pr-6"
+            readOnly
+            className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 text-sm text-gray-600 placeholder:text-gray-400 pr-6 cursor-pointer"
           />
           {categorySearch && (
             <button
@@ -200,7 +248,6 @@ export function CondensedSearch() {
                 setCategorySearch('')
                 setSelectedCategory('')
                 setSelectedCategoryName('')
-                setIsCategoryOpen(false)
               }}
               className="absolute right-1 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
             >
@@ -208,23 +255,45 @@ export function CondensedSearch() {
             </button>
           )}
           
-          {/* Category Suggestions Dropdown */}
-          {isCategoryOpen && filteredCategories.length > 0 && (
+          {/* Category Modal Dropdown */}
+          {isCategoryOpen && (
             <div className={cn(
               "absolute top-full left-0 z-50 mt-2 bg-white border border-gray-200 rounded-2xl shadow-lg max-h-60 overflow-y-auto",
               isMobile ? "w-full" : "w-96"
             )}>
-              {filteredCategories.map((category) => (
-                <button
-                  key={category.id}
-                  onClick={() => handleCategorySelect(category.id, category.name)}
-                  className="w-full px-4 py-3 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none first:rounded-t-2xl last:rounded-b-2xl"
-                >
-                  <div className="font-medium text-sm">
-                    {highlightText(category.name, categorySearch)}
+              <div className="p-4 border-b border-gray-200">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    ref={modalSearchInputRef}
+                    type="text"
+                    placeholder="Search categories..."
+                    value={modalCategorySearch}
+                    onChange={(e) => setModalCategorySearch(e.target.value)}
+                    className="pl-8 pr-4 py-2 text-sm border-gray-300 focus:border-primary focus:ring-primary"
+                  />
+                </div>
+              </div>
+              <div className="max-h-48 overflow-y-auto">
+                {filteredModalCategories.length > 0 ? (
+                  filteredModalCategories.map((category) => (
+                    <button
+                      key={category.id}
+                      onClick={() => handleCategorySelect(category.id, category.name)}
+                      className="w-full px-4 py-3 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none first:rounded-t-2xl last:rounded-b-2xl"
+                    >
+                      <div className="font-medium text-sm">
+                        {highlightText(category.name, modalCategorySearch)}
+                      </div>
+                    </button>
+                  ))
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-8 text-gray-500">
+                    <Search className="h-8 w-8 mb-2 text-gray-300" />
+                    <p className="text-sm font-medium">No categories found</p>
                   </div>
-                </button>
-              ))}
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -233,7 +302,7 @@ export function CondensedSearch() {
         <div className="w-px h-6 bg-gray-300 mx-3" />
 
         {/* Location Section */}
-        <div className="flex-1 min-w-0 relative">
+        <div className="flex-1 min-w-0 relative" ref={locationContainerRef}>
           <div className="flex items-center">
             <button
               onClick={() => {
@@ -275,6 +344,7 @@ export function CondensedSearch() {
               <MapPin className="h-3 w-3" />
             </button>
             <Input
+              ref={locationInputRef}
               type="text"
               placeholder="Location"
               value={location}
@@ -283,7 +353,7 @@ export function CondensedSearch() {
                 handleLocationSearch(e.target.value)
               }}
               onFocus={() => setIsLocationOpen(true)}
-              className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 text-sm text-gray-600 placeholder:text-gray-400 pr-6"
+              className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 focus:ring-0 focus:outline-none text-sm text-gray-600 placeholder:text-gray-400 pr-6"
             />
             {location && (
               <button
@@ -294,6 +364,38 @@ export function CondensedSearch() {
               </button>
             )}
           </div>
+
+          {/* Location Suggestions Dropdown */}
+          {isLocationOpen && locationSuggestions.length > 0 && (
+            <div className={cn(
+              "absolute top-full right-0 z-50 mt-2 bg-white border border-gray-200 rounded-2xl shadow-lg max-h-60 overflow-y-auto",
+              isMobile ? "w-full" : "w-96"
+            )}>
+              {locationSuggestions.map((suggestion, index) => (
+                <button
+                  key={index}
+                  onMouseDown={(e) => {
+                    e.preventDefault()
+                    setLocation(suggestion.place_name)
+                    setIsLocationOpen(false)
+                  }}
+                  className="w-full px-4 py-3 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none flex items-start gap-3 first:rounded-t-2xl last:rounded-b-2xl"
+                >
+                  <MapPin className="mt-0.5 h-4 w-4 text-gray-400 flex-shrink-0" />
+                  <div>
+                    <div className="font-medium text-sm">
+                      {highlightText(suggestion.place_name, location)}
+                    </div>
+                    {suggestion.context && suggestion.context.length > 0 && (
+                      <div className="text-xs text-gray-500">
+                        {suggestion.context.map((c) => c.text).join(', ')}
+                      </div>
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Search Button */}
@@ -306,39 +408,24 @@ export function CondensedSearch() {
           <Search className="h-3 w-3" />
         </Button>
       </div>
-
-        {/* Location Suggestions Dropdown */}
-        {isLocationOpen && locationSuggestions.length > 0 && (
-          <div className={cn(
-            "absolute top-full right-0 z-50 mt-2 bg-white border border-gray-200 rounded-2xl shadow-lg max-h-60 overflow-y-auto",
-            isMobile ? "w-full" : "w-96"
-          )}>
-            {locationSuggestions.map((suggestion, index) => (
-              <button
-                key={index}
-                onClick={() => {
-                  setLocation(suggestion.place_name)
-                  setIsLocationOpen(false)
-                }}
-                className="w-full px-4 py-3 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none flex items-start gap-3 first:rounded-t-2xl last:rounded-b-2xl"
-              >
-                <MapPin className="mt-0.5 h-4 w-4 text-gray-400 flex-shrink-0" />
-                <div>
-                  <div className="font-medium text-sm">
-                    {highlightText(suggestion.place_name, location)}
-                  </div>
-                  {suggestion.context && suggestion.context.length > 0 && (
-                    <div className="text-xs text-gray-500">
-                      {suggestion.context.map((c) => c.text).join(', ')}
-                    </div>
-                  )}
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-  )
+    </div>
+  ), [
+    categorySearch,
+    selectedCategory,
+    selectedCategoryName,
+    isCategoryOpen,
+    filteredModalCategories,
+    modalCategorySearch,
+    location,
+    isLocationOpen,
+    locationSuggestions,
+    isMobile,
+    handleCategorySelect,
+    highlightText,
+    handleLocationSearch,
+    clearLocation,
+    handleSearchSubmit
+  ])
 
   return (
     <div className="relative w-full max-w-4xl">
@@ -355,13 +442,13 @@ export function CondensedSearch() {
                 <h2 className="text-lg font-semibold">Search Services</h2>
               </div>
               <div className="flex-1">
-                <SearchForm />
+                {searchForm}
               </div>
             </div>
           </SheetContent>
         </Sheet>
       ) : (
-        <SearchForm />
+        searchForm
       )}
     </div>
   )
