@@ -119,6 +119,21 @@ export function VendorProductsManager({ vendorId }: VendorProductsManagerProps) 
       // Find the product to get its image URL
       const product = products.find(p => p.id === productId)
       
+      // Delete image from storage if it exists
+      if (product?.image_url && product.image_url.includes('supabase')) {
+        try {
+          const imagePath = product.image_url.split('/').pop()
+          if (imagePath) {
+            await supabase.storage
+              .from('products')
+              .remove([`${vendorId}/${imagePath}`])
+          }
+        } catch (error) {
+          console.error('Error deleting image:', error)
+          // Continue with product deletion even if image deletion fails
+        }
+      }
+
       const response = await fetch(`/api/admin/vendors/${vendorId}/products/${productId}`, {
         method: 'DELETE',
       })
@@ -127,11 +142,6 @@ export function VendorProductsManager({ vendorId }: VendorProductsManagerProps) 
 
       if (!response.ok) {
         throw new Error(result.error || 'Failed to delete product')
-      }
-      
-      // Delete image from storage if it exists
-      if (product?.image_url && product.image_url.includes('supabase')) {
-        await deleteImageFromStorage(product.image_url)
       }
 
       toast.success('Product deleted successfully')

@@ -22,6 +22,8 @@ export default function BurppForBusiness() {
                 className="object-cover"
                 priority
               />
+              {/* 20% Black Overlay */}
+              <div className="absolute inset-0 bg-black/20" />
             </div>
             
             <div className="relative z-10 mx-auto max-w-6xl pt-24 md:pt-48 px-6">
@@ -29,7 +31,7 @@ export default function BurppForBusiness() {
                 <h1 className="text-5xl font-bold mb-4 text-white">
                   Share your skills. Grow your business.
                 </h1>
-                <p className="text-xl text-white">
+                <p className="text-xl text-white max-w-2xl">
                   Join a community of local pros offering services in person or online. With Burpp, it&apos;s free to connect, chat, and get booked.
                 </p>
               </div>
