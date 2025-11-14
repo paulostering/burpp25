@@ -33,6 +33,7 @@ export function MobileSearchHero() {
   const [location, setLocation] = useState('')
   const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([])
   const [isLocationOpen, setIsLocationOpen] = useState(false)
+  const [highlightedIndex, setHighlightedIndex] = useState<number>(-1)
   const [userLocation, setUserLocation] = useState<string>('')
   const locationInputRef = useRef<HTMLInputElement>(null)
   const locationContainerRef = useRef<HTMLDivElement>(null)
@@ -106,6 +107,7 @@ export function MobileSearchHero() {
   const handleLocationSearch = async (query: string) => {
     if (query.length < 3) {
       setLocationSuggestions([])
+      setHighlightedIndex(-1)
       return
     }
 
@@ -115,6 +117,7 @@ export function MobileSearchHero() {
       )
       const data = await response.json()
       setLocationSuggestions(data.features || [])
+      setHighlightedIndex(-1) // Reset highlighted index when new suggestions arrive
     } catch (error) {
       console.error('Error searching locations:', error)
     }
@@ -166,8 +169,39 @@ export function MobileSearchHero() {
   const clearLocation = () => {
     setLocation('')
     setUserLocation('')
+    setHighlightedIndex(-1)
     if (locationInputRef.current) {
       locationInputRef.current.focus()
+    }
+  }
+
+  // Handle keyboard navigation for location suggestions
+  const handleLocationKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!isLocationOpen || locationSuggestions.length === 0) return
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault()
+        setHighlightedIndex((prev) => 
+          prev < locationSuggestions.length - 1 ? prev + 1 : prev
+        )
+        break
+      case 'ArrowUp':
+        e.preventDefault()
+        setHighlightedIndex((prev) => prev > 0 ? prev - 1 : -1)
+        break
+      case 'Enter':
+        e.preventDefault()
+        if (highlightedIndex >= 0 && highlightedIndex < locationSuggestions.length) {
+          setLocation(locationSuggestions[highlightedIndex].place_name)
+          setIsLocationOpen(false)
+          setHighlightedIndex(-1)
+        }
+        break
+      case 'Escape':
+        setIsLocationOpen(false)
+        setHighlightedIndex(-1)
+        break
     }
   }
 
@@ -287,6 +321,7 @@ export function MobileSearchHero() {
                       handleLocationSearch(e.target.value)
                     }}
                     onFocus={() => setIsLocationOpen(true)}
+                    onKeyDown={handleLocationKeyDown}
                     className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 font-semibold text-gray-700 placeholder:text-gray-500 pr-8"
                     style={{ fontSize: '16px', fontFamily: 'Poppins, sans-serif' }}
                   />
@@ -311,8 +346,12 @@ export function MobileSearchHero() {
                         e.preventDefault()
                         setLocation(suggestion.place_name)
                         setIsLocationOpen(false)
+                        setHighlightedIndex(-1)
                       }}
-                      className="w-full px-4 py-3 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none flex items-start gap-3 first:rounded-t-lg last:rounded-b-lg"
+                      onMouseEnter={() => setHighlightedIndex(index)}
+                      className={`w-full px-4 py-3 text-left focus:outline-none flex items-start gap-3 first:rounded-t-lg last:rounded-b-lg transition-colors ${
+                        highlightedIndex === index ? 'bg-gray-100' : 'hover:bg-gray-50'
+                      }`}
                     >
                       <MapPin className="mt-0.5 h-4 w-4 text-gray-400 flex-shrink-0" />
                       <div>

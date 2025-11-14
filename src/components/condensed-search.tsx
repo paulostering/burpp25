@@ -36,6 +36,7 @@ export function CondensedSearch() {
   const [isLocationOpen, setIsLocationOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
+  const [highlightedIndex, setHighlightedIndex] = useState<number>(-1)
   const locationContainerRef = useRef<HTMLDivElement>(null)
   const categoryContainerRef = useRef<HTMLDivElement>(null)
   const modalSearchInputRef = useRef<HTMLInputElement>(null)
@@ -154,6 +155,7 @@ export function CondensedSearch() {
 
     if (query.length < 3) {
       setLocationSuggestions([])
+      setHighlightedIndex(-1)
       return
     }
 
@@ -165,6 +167,7 @@ export function CondensedSearch() {
         )
         const data = await response.json()
         setLocationSuggestions(data.features || [])
+        setHighlightedIndex(-1) // Reset highlighted index when new suggestions arrive
       } catch {
         // Silently fail if location suggestions can't be loaded
       }
@@ -201,7 +204,38 @@ export function CondensedSearch() {
   const clearLocation = useCallback(() => {
     setLocation('')
     setIsLocationOpen(false)
+    setHighlightedIndex(-1)
   }, [])
+
+  // Handle keyboard navigation for location suggestions
+  const handleLocationKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!isLocationOpen || locationSuggestions.length === 0) return
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault()
+        setHighlightedIndex((prev) => 
+          prev < locationSuggestions.length - 1 ? prev + 1 : prev
+        )
+        break
+      case 'ArrowUp':
+        e.preventDefault()
+        setHighlightedIndex((prev) => prev > 0 ? prev - 1 : -1)
+        break
+      case 'Enter':
+        e.preventDefault()
+        if (highlightedIndex >= 0 && highlightedIndex < locationSuggestions.length) {
+          setLocation(locationSuggestions[highlightedIndex].place_name)
+          setIsLocationOpen(false)
+          setHighlightedIndex(-1)
+        }
+        break
+      case 'Escape':
+        setIsLocationOpen(false)
+        setHighlightedIndex(-1)
+        break
+    }
+  }, [isLocationOpen, locationSuggestions, highlightedIndex])
 
   // Handle search submission
   const handleSearchSubmit = useCallback(() => {
@@ -353,6 +387,7 @@ export function CondensedSearch() {
                 handleLocationSearch(e.target.value)
               }}
               onFocus={() => setIsLocationOpen(true)}
+              onKeyDown={handleLocationKeyDown}
               className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 focus:ring-0 focus:outline-none text-sm text-gray-600 placeholder:text-gray-400 pr-6"
             />
             {location && (
@@ -378,8 +413,13 @@ export function CondensedSearch() {
                     e.preventDefault()
                     setLocation(suggestion.place_name)
                     setIsLocationOpen(false)
+                    setHighlightedIndex(-1)
                   }}
-                  className="w-full px-4 py-3 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none flex items-start gap-3 first:rounded-t-2xl last:rounded-b-2xl"
+                  onMouseEnter={() => setHighlightedIndex(index)}
+                  className={cn(
+                    "w-full px-4 py-3 text-left focus:outline-none flex items-start gap-3 first:rounded-t-2xl last:rounded-b-2xl transition-colors",
+                    highlightedIndex === index ? "bg-gray-100" : "hover:bg-gray-50"
+                  )}
                 >
                   <MapPin className="mt-0.5 h-4 w-4 text-gray-400 flex-shrink-0" />
                   <div>
@@ -420,9 +460,11 @@ export function CondensedSearch() {
     isLocationOpen,
     locationSuggestions,
     isMobile,
+    highlightedIndex,
     handleCategorySelect,
     highlightText,
     handleLocationSearch,
+    handleLocationKeyDown,
     clearLocation,
     handleSearchSubmit
   ])
