@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Search, MapPin, X } from 'lucide-react'
+import { Search, MapPin, X, LayoutGrid } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getCategories } from '@/lib/categories-cache'
 import { toast } from 'sonner'
@@ -34,6 +34,7 @@ export function SearchHero() {
   const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([])
   const [isLocationOpen, setIsLocationOpen] = useState(false)
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1)
+  const hasAttemptedGeolocation = useRef(false)
   const locationInputRef = useRef<HTMLInputElement>(null)
   const locationContainerRef = useRef<HTMLDivElement>(null)
   const categoryInputRef = useRef<HTMLInputElement>(null)
@@ -99,7 +100,8 @@ export function SearchHero() {
 
   // Auto-detect user location on mount
   useEffect(() => {
-    if (location) return // Don't override if location is already set
+    if (hasAttemptedGeolocation.current) return // Only attempt once
+    hasAttemptedGeolocation.current = true
     
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -125,7 +127,7 @@ export function SearchHero() {
         }
       )
     }
-  }, [location])
+  }, [])
 
   // Handle location search
   const handleLocationSearch = async (query: string) => {
@@ -160,7 +162,7 @@ export function SearchHero() {
     
     return parts.map((part, index) => 
       regex.test(part) ? (
-        <span key={index} className="bg-yellow-200 font-semibold">
+        <span key={index} className="font-bold">
           {part}
         </span>
       ) : (
@@ -292,24 +294,27 @@ export function SearchHero() {
           <div className="hidden md:flex items-center bg-white border border-gray-300 rounded-full pl-6 pr-3 py-2 h-16">
             {/* Category Section */}
             <div className="flex-1 min-w-0 relative" ref={categoryContainerRef}>
-              <Input
-                ref={categoryInputRef}
-                type="text"
-                placeholder="Category"
-                value={categorySearch}
-                onChange={(e) => {
-                  setCategorySearch(e.target.value)
-                  setIsCategoryOpen(true)
-                  if (!selectedCategory || e.target.value !== selectedCategoryName) {
-                    setSelectedCategory('')
-                    setSelectedCategoryName('')
-                  }
-                }}
-                onFocus={() => setIsCategoryOpen(true)}
-                onKeyDown={handleCategoryKeyDown}
-                className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 font-semibold text-gray-700 placeholder:text-gray-500 pr-8"
-                style={{ fontSize: '16px', fontFamily: 'Poppins, sans-serif' }}
-              />
+              <div className="flex items-center">
+                <LayoutGrid className="h-4 w-4 text-gray-400 mr-3 flex-shrink-0" />
+                <Input
+                  ref={categoryInputRef}
+                  type="text"
+                  placeholder="What would you like to do?"
+                  value={categorySearch}
+                  onChange={(e) => {
+                    setCategorySearch(e.target.value)
+                    setIsCategoryOpen(true)
+                    if (!selectedCategory || e.target.value !== selectedCategoryName) {
+                      setSelectedCategory('')
+                      setSelectedCategoryName('')
+                    }
+                  }}
+                  onFocus={() => setIsCategoryOpen(true)}
+                  onKeyDown={handleCategoryKeyDown}
+                  className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 font-semibold text-gray-700 placeholder:text-gray-500 pr-8"
+                  style={{ fontSize: '16px', fontFamily: 'Poppins, sans-serif' }}
+                />
+              </div>
               {categorySearch && (
                 <button
                   onClick={() => {
@@ -329,11 +334,14 @@ export function SearchHero() {
                   {filteredCategories.map((category, index) => (
                     <button
                       key={category.id}
-                      onClick={() => handleCategorySelect(category.id, category.name)}
+                      onMouseDown={(e) => {
+                        e.preventDefault()
+                        handleCategorySelect(category.id, category.name)
+                      }}
                       onMouseEnter={() => setHighlightedCategoryIndex(index)}
                       className={cn(
                         "w-full px-4 py-3 text-left focus:outline-none first:rounded-t-2xl last:rounded-b-2xl transition-colors",
-                        highlightedCategoryIndex === index ? "bg-gray-100" : "hover:bg-gray-50"
+                        highlightedCategoryIndex === index ? "bg-primary text-white" : "hover:bg-primary hover:text-white"
                       )}
                     >
                       <div className="font-medium text-sm">
@@ -430,16 +438,22 @@ export function SearchHero() {
                       onMouseEnter={() => setHighlightedIndex(index)}
                       className={cn(
                         "w-full px-4 py-3 text-left focus:outline-none flex items-start gap-3 first:rounded-t-2xl last:rounded-b-2xl transition-colors",
-                        highlightedIndex === index ? "bg-gray-100" : "hover:bg-gray-50"
+                        highlightedIndex === index ? "bg-primary text-white" : "hover:bg-primary hover:text-white"
                       )}
                     >
-                      <MapPin className="mt-0.5 h-4 w-4 text-gray-400 flex-shrink-0" />
+                      <MapPin className={cn(
+                        "mt-0.5 h-4 w-4 flex-shrink-0",
+                        highlightedIndex === index ? "text-white" : "text-gray-400"
+                      )} />
                       <div>
                         <div className="font-medium text-sm">
                           {highlightText(suggestion.place_name, location)}
                         </div>
                         {suggestion.context && suggestion.context.length > 0 && (
-                          <div className="text-xs text-gray-500">
+                          <div className={cn(
+                            "text-xs",
+                            highlightedIndex === index ? "text-white/80" : "text-gray-500"
+                          )}>
                             {suggestion.context.map((c, i) => c.text).join(', ')}
                           </div>
                         )}
@@ -465,9 +479,11 @@ export function SearchHero() {
             {/* Row 1: Category */}
             <div className="relative" ref={categoryContainerRef}>
               <div className="bg-white border border-gray-300 rounded-lg px-4 py-3">
+                <div className="flex items-center">
+                  <LayoutGrid className="h-4 w-4 text-gray-400 mr-3 flex-shrink-0" />
                   <Input
                     type="text"
-                    placeholder="Category"
+                    placeholder="What would you like to do?"
                     value={categorySearch}
                     onChange={(e) => {
                       setCategorySearch(e.target.value)
@@ -482,6 +498,7 @@ export function SearchHero() {
                     className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 font-semibold text-gray-700 placeholder:text-gray-500 pr-8"
                     style={{ fontSize: '16px', fontFamily: 'Poppins, sans-serif' }}
                   />
+                </div>
                 {categorySearch && (
                   <button
                     onClick={() => {
@@ -502,11 +519,14 @@ export function SearchHero() {
                   {filteredCategories.map((category, index) => (
                     <button
                       key={category.id}
-                      onClick={() => handleCategorySelect(category.id, category.name)}
+                      onMouseDown={(e) => {
+                        e.preventDefault()
+                        handleCategorySelect(category.id, category.name)
+                      }}
                       onMouseEnter={() => setHighlightedCategoryIndex(index)}
                       className={cn(
                         "w-full px-4 py-3 text-left focus:outline-none first:rounded-t-lg last:rounded-b-lg transition-colors",
-                        highlightedCategoryIndex === index ? "bg-gray-100" : "hover:bg-gray-50"
+                        highlightedCategoryIndex === index ? "bg-primary text-white" : "hover:bg-primary hover:text-white"
                       )}
                     >
                       <div className="font-medium text-sm">
@@ -592,16 +612,22 @@ export function SearchHero() {
                       onMouseEnter={() => setHighlightedIndex(index)}
                       className={cn(
                         "w-full px-4 py-3 text-left focus:outline-none flex items-start gap-3 first:rounded-t-lg last:rounded-b-lg transition-colors",
-                        highlightedIndex === index ? "bg-gray-100" : "hover:bg-gray-50"
+                        highlightedIndex === index ? "bg-primary text-white" : "hover:bg-primary hover:text-white"
                       )}
                     >
-                      <MapPin className="mt-0.5 h-4 w-4 text-gray-400 flex-shrink-0" />
+                      <MapPin className={cn(
+                        "mt-0.5 h-4 w-4 flex-shrink-0",
+                        highlightedIndex === index ? "text-white" : "text-gray-400"
+                      )} />
                       <div>
                         <div className="font-medium text-sm">
                           {highlightText(suggestion.place_name, location)}
                         </div>
                         {suggestion.context && suggestion.context.length > 0 && (
-                          <div className="text-xs text-gray-500">
+                          <div className={cn(
+                            "text-xs",
+                            highlightedIndex === index ? "text-white/80" : "text-gray-500"
+                          )}>
                             {suggestion.context.map((c, i) => c.text).join(', ')}
                           </div>
                         )}

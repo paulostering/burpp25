@@ -158,13 +158,13 @@ export function TopNav() {
             </>
           ) : !isRegistrationPage ? (
             <>
-              <Link href="/burp-for-business" className="hidden md:block text-sm hover:underline">
+              <Link href="/burp-for-business" className="hidden md:block text-base hover:underline px-4">
                 Join as a Pro
               </Link>
-              <Link href="/login" className="text-sm hover:underline">
-                Login
-              </Link>
-              <Button asChild size="sm" className="text-sm">
+              <Button asChild variant="ghost" size="sm" className="text-base border border-gray-300 px-6">
+                <Link href="/login">Login</Link>
+              </Button>
+              <Button asChild size="sm" className="text-base px-6">
                 <Link href="/signup">Sign Up</Link>
               </Button>
             </>

@@ -4,9 +4,10 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Search, MapPin, X } from 'lucide-react'
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { Search, MapPin, X, LayoutGrid } from 'lucide-react'
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 import { getCategories } from '@/lib/categories-cache'
 import { toast } from 'sonner'
 
@@ -36,6 +37,7 @@ export function CondensedSearch() {
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1)
   const [highlightedCategoryIndex, setHighlightedCategoryIndex] = useState<number>(-1)
+  const hasAttemptedGeolocation = useRef(false)
   const locationContainerRef = useRef<HTMLDivElement>(null)
   const categoryContainerRef = useRef<HTMLDivElement>(null)
   const categoryInputRef = useRef<HTMLInputElement>(null)
@@ -122,7 +124,8 @@ export function CondensedSearch() {
 
   // Auto-detect user location on mount
   useEffect(() => {
-    if (location) return // Don't override if location is already set
+    if (hasAttemptedGeolocation.current) return // Only attempt once
+    hasAttemptedGeolocation.current = true
     
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -148,7 +151,7 @@ export function CondensedSearch() {
         }
       )
     }
-  }, [location])
+  }, [])
 
   // Handle location search with debounce
   const handleLocationSearch = useCallback((query: string) => {
@@ -187,7 +190,7 @@ export function CondensedSearch() {
     
     return parts.map((part, index) => 
       regex.test(part) ? (
-        <span key={index} className="bg-yellow-200 font-semibold">
+        <span key={index} className="font-bold">
           {part}
         </span>
       ) : (
@@ -300,23 +303,26 @@ export function CondensedSearch() {
       <div className="flex items-center bg-white border border-gray-200 rounded-md pl-4 pr-2 py-1 h-10">
         {/* Category Section */}
         <div className="flex-1 min-w-0 relative" ref={categoryContainerRef}>
-          <Input
-            ref={categoryInputRef}
-            type="text"
-            placeholder="Category"
-            value={categorySearch}
-            onChange={(e) => {
-              setCategorySearch(e.target.value)
-              setIsCategoryOpen(true)
-              if (!selectedCategory || e.target.value !== selectedCategoryName) {
-                setSelectedCategory('')
-                setSelectedCategoryName('')
-              }
-            }}
-            onFocus={() => setIsCategoryOpen(true)}
-            onKeyDown={handleCategoryKeyDown}
-            className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 text-sm text-gray-600 placeholder:text-gray-400 pr-6"
-          />
+          <div className="flex items-center">
+            <LayoutGrid className="h-3 w-3 text-gray-400 mr-2 flex-shrink-0" />
+            <Input
+              ref={categoryInputRef}
+              type="text"
+              placeholder="Category"
+              value={categorySearch}
+              onChange={(e) => {
+                setCategorySearch(e.target.value)
+                setIsCategoryOpen(true)
+                if (!selectedCategory || e.target.value !== selectedCategoryName) {
+                  setSelectedCategory('')
+                  setSelectedCategoryName('')
+                }
+              }}
+              onFocus={() => setIsCategoryOpen(true)}
+              onKeyDown={handleCategoryKeyDown}
+              className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 text-sm text-gray-600 placeholder:text-gray-400 pr-6"
+            />
+          </div>
           {categorySearch && (
             <button
               onClick={() => {
@@ -339,11 +345,14 @@ export function CondensedSearch() {
               {filteredCategories.map((category, index) => (
                 <button
                   key={category.id}
-                  onClick={() => handleCategorySelect(category.id, category.name)}
+                  onMouseDown={(e) => {
+                    e.preventDefault()
+                    handleCategorySelect(category.id, category.name)
+                  }}
                   onMouseEnter={() => setHighlightedCategoryIndex(index)}
                   className={cn(
                     "w-full px-4 py-3 text-left focus:outline-none first:rounded-t-2xl last:rounded-b-2xl transition-colors",
-                    highlightedCategoryIndex === index ? "bg-gray-100" : "hover:bg-gray-50"
+                    highlightedCategoryIndex === index ? "bg-primary text-white" : "hover:bg-primary hover:text-white"
                   )}
                 >
                   <div className="font-medium text-sm">
@@ -441,16 +450,22 @@ export function CondensedSearch() {
                   onMouseEnter={() => setHighlightedIndex(index)}
                   className={cn(
                     "w-full px-4 py-3 text-left focus:outline-none flex items-start gap-3 first:rounded-t-2xl last:rounded-b-2xl transition-colors",
-                    highlightedIndex === index ? "bg-gray-100" : "hover:bg-gray-50"
+                    highlightedIndex === index ? "bg-primary text-white" : "hover:bg-primary hover:text-white"
                   )}
                 >
-                  <MapPin className="mt-0.5 h-4 w-4 text-gray-400 flex-shrink-0" />
+                  <MapPin className={cn(
+                    "mt-0.5 h-4 w-4 flex-shrink-0",
+                    highlightedIndex === index ? "text-white" : "text-gray-400"
+                  )} />
                   <div>
                     <div className="font-medium text-sm">
                       {highlightText(suggestion.place_name, location)}
                     </div>
                     {suggestion.context && suggestion.context.length > 0 && (
-                      <div className="text-xs text-gray-500">
+                      <div className={cn(
+                        "text-xs",
+                        highlightedIndex === index ? "text-white/80" : "text-gray-500"
+                      )}>
                         {suggestion.context.map((c) => c.text).join(', ')}
                       </div>
                     )}
@@ -503,6 +518,9 @@ export function CondensedSearch() {
             </div>
           </SheetTrigger>
           <SheetContent side="top" className="h-full p-6">
+            <VisuallyHidden>
+              <SheetTitle>Search Services</SheetTitle>
+            </VisuallyHidden>
             <div className="flex flex-col h-full">
               <div className="mb-6">
                 <h2 className="text-lg font-semibold">Search Services</h2>
