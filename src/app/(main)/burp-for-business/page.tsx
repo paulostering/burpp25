@@ -133,7 +133,35 @@ export default function BurppForBusiness() {
 
           {/* Section 3: Ready to meet customers */}
           <div className="max-w-7xl mx-auto px-4 pb-16">
-            <div className="relative min-h-[500px] bg-cover bg-center bg-no-repeat rounded-lg" style={{ backgroundImage: "url('/images/burpp-for-business-3.jpg')" }}>
+            {/* Mobile: Stacked Layout */}
+            <div className="md:hidden space-y-6">
+              <div className="relative h-64 rounded-lg overflow-hidden">
+                <Image 
+                  src="/images/burpp-for-business-3.jpg"
+                  alt="Ready to meet customers"
+                  fill
+                  className="object-cover"
+                />
+                <div className="absolute bottom-4 right-4 text-white border-l-4 border-primary pl-3 pr-3 py-2 bg-black/40 backdrop-blur-sm">
+                  <div className="text-sm font-semibold">Drumming Teacher</div>
+                  <div className="text-xs font-bold">Brooklyn, NY</div>
+                </div>
+              </div>
+              <div className="bg-white rounded-lg">
+                <h2 className="text-2xl font-bold text-black mb-3">Ready to meet your new customers?</h2>
+                <p className="text-base text-black mb-6">It&apos;s free, easy, and only takes a few minutes.</p>
+                <Button 
+                  onClick={() => router.push('/vendor-registration')}
+                  size="lg"
+                  className="w-full text-base px-6 py-3"
+                >
+                  Meet Your Next Customer
+                </Button>
+              </div>
+            </div>
+
+            {/* Desktop: Overlay Layout */}
+            <div className="hidden md:block relative min-h-[500px] bg-cover bg-center bg-no-repeat rounded-lg overflow-hidden" style={{ backgroundImage: "url('/images/burpp-for-business-3.jpg')" }}>
               <div className="absolute left-8 top-1/2 -translate-y-1/2 bg-white rounded-lg p-8 max-w-md">
                 <h2 className="text-3xl font-bold text-black mb-4">Ready to meet your new customers?</h2>
                 <p className="text-xl text-black mb-8">It&apos;s free, easy, and only takes a few minutes.</p>
@@ -145,7 +173,7 @@ export default function BurppForBusiness() {
                   Meet Your Next Customer
                 </Button>
               </div>
-              <div className="absolute bottom-10 right-10 text-white border-l-4 border-primary pl-4 pr-4 py-2 bg-black/30">
+              <div className="absolute bottom-10 right-10 text-white border-l-4 border-primary pl-4 pr-4 py-2 bg-black/40 backdrop-blur-sm">
                 <div className="text-lg font-semibold">Drumming Teacher</div>
                 <div className="text-sm font-bold">Brooklyn, NY</div>
               </div>
