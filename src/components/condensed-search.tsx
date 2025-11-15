@@ -38,11 +38,33 @@ export function CondensedSearch() {
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1)
   const [highlightedCategoryIndex, setHighlightedCategoryIndex] = useState<number>(-1)
   const hasAttemptedGeolocation = useRef(false)
+  const hasLoadedFromStorage = useRef(false)
   const locationContainerRef = useRef<HTMLDivElement>(null)
   const categoryContainerRef = useRef<HTMLDivElement>(null)
   const categoryInputRef = useRef<HTMLInputElement>(null)
   const locationInputRef = useRef<HTMLInputElement>(null)
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Load location and category from localStorage on mount
+  useEffect(() => {
+    if (!hasLoadedFromStorage.current) {
+      const savedLocation = localStorage.getItem('burpp_search_location')
+      if (savedLocation) {
+        setLocation(savedLocation)
+        hasAttemptedGeolocation.current = true // Don't auto-detect if we have a saved location
+      }
+      
+      const savedCategoryId = localStorage.getItem('burpp_search_category_id')
+      const savedCategoryName = localStorage.getItem('burpp_search_category_name')
+      if (savedCategoryId && savedCategoryName) {
+        setSelectedCategory(savedCategoryId)
+        setSelectedCategoryName(savedCategoryName)
+        setCategorySearch(savedCategoryName)
+      }
+      
+      hasLoadedFromStorage.current = true
+    }
+  }, [])
 
   // Check if mobile
   useEffect(() => {
@@ -140,6 +162,7 @@ export function CondensedSearch() {
               const place = data.features[0]
               const locationText = `${place.text}, ${place.context?.find((c: {id: string; text: string}) => c.id.startsWith('region'))?.text || ''}`
               setLocation(locationText)
+              localStorage.setItem('burpp_search_location', locationText)
             }
           } catch {
             // Silently fail if reverse geocoding fails
@@ -206,6 +229,8 @@ export function CondensedSearch() {
     setCategorySearch(categoryName)
     setIsCategoryOpen(false)
     setHighlightedCategoryIndex(-1)
+    localStorage.setItem('burpp_search_category_id', categoryId)
+    localStorage.setItem('burpp_search_category_name', categoryName)
   }, [])
 
   // Handle keyboard navigation for category suggestions
@@ -246,6 +271,7 @@ export function CondensedSearch() {
   // Clear location
   const clearLocation = useCallback(() => {
     setLocation('')
+    localStorage.removeItem('burpp_search_location')
     setIsLocationOpen(false)
     setHighlightedIndex(-1)
   }, [])
@@ -268,7 +294,9 @@ export function CondensedSearch() {
       case 'Enter':
         e.preventDefault()
         if (highlightedIndex >= 0 && highlightedIndex < locationSuggestions.length) {
-          setLocation(locationSuggestions[highlightedIndex].place_name)
+          const newLocation = locationSuggestions[highlightedIndex].place_name
+          setLocation(newLocation)
+          localStorage.setItem('burpp_search_location', newLocation)
           setIsLocationOpen(false)
           setHighlightedIndex(-1)
         }
@@ -296,19 +324,19 @@ export function CondensedSearch() {
     }
   }, [selectedCategory, location, router, isMobile])
 
-  // Search form component (reusable for both desktop and mobile)
+  // Search form component for desktop
   const searchForm = useMemo(() => (
     <div className="relative w-full">
       {/* Unified Search Field */}
-      <div className="flex items-center bg-white border border-gray-200 rounded-md pl-4 pr-2 py-1 h-10">
+      <div className="hidden md:flex items-center bg-white border-2 border-gray-200 rounded-lg pl-5 pr-3 py-2.5 h-14 shadow-[0_2px_8px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] transition-shadow">
         {/* Category Section */}
         <div className="flex-1 min-w-0 relative" ref={categoryContainerRef}>
           <div className="flex items-center">
-            <LayoutGrid className="h-3 w-3 text-gray-400 mr-2 flex-shrink-0" />
+            <LayoutGrid className="h-4 w-4 text-gray-500 mr-3 flex-shrink-0" />
             <Input
               ref={categoryInputRef}
               type="text"
-              placeholder="Category"
+              placeholder="What are you looking for?"
               value={categorySearch}
               onChange={(e) => {
                 setCategorySearch(e.target.value)
@@ -316,11 +344,13 @@ export function CondensedSearch() {
                 if (!selectedCategory || e.target.value !== selectedCategoryName) {
                   setSelectedCategory('')
                   setSelectedCategoryName('')
+                  localStorage.removeItem('burpp_search_category_id')
+                  localStorage.removeItem('burpp_search_category_name')
                 }
               }}
               onFocus={() => setIsCategoryOpen(true)}
               onKeyDown={handleCategoryKeyDown}
-              className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 text-sm text-gray-600 placeholder:text-gray-400 pr-6"
+              className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 text-base font-medium text-gray-900 placeholder:text-gray-500 placeholder:font-normal pr-6"
             />
           </div>
           {categorySearch && (
@@ -329,17 +359,19 @@ export function CondensedSearch() {
                 setCategorySearch('')
                 setSelectedCategory('')
                 setSelectedCategoryName('')
+                localStorage.removeItem('burpp_search_category_id')
+                localStorage.removeItem('burpp_search_category_name')
               }}
-              className="absolute right-1 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
             >
-              <X className="h-3 w-3" />
+              <X className="h-4 w-4" />
             </button>
           )}
           
           {/* Category Dropdown */}
           {isCategoryOpen && filteredCategories.length > 0 && (
             <div className={cn(
-              "absolute top-full left-0 z-50 mt-2 bg-white border border-gray-200 rounded-2xl shadow-lg max-h-60 overflow-y-auto",
+              "absolute top-full left-0 z-50 mt-2 bg-white rounded-xl shadow-xl max-h-60 overflow-y-auto",
               isMobile ? "w-full" : "w-96"
             )}>
               {filteredCategories.map((category, index) => (
@@ -351,11 +383,11 @@ export function CondensedSearch() {
                   }}
                   onMouseEnter={() => setHighlightedCategoryIndex(index)}
                   className={cn(
-                    "w-full px-4 py-3 text-left focus:outline-none first:rounded-t-2xl last:rounded-b-2xl transition-colors",
+                    "w-full px-4 py-3 text-left focus:outline-none first:rounded-t-xl last:rounded-b-xl transition-colors",
                     highlightedCategoryIndex === index ? "bg-primary text-white" : "hover:bg-primary hover:text-white"
                   )}
                 >
-                  <div className="font-medium text-sm">
+                  <div className="font-medium" style={{ fontSize: '16px' }}>
                     {highlightText(category.name, categorySearch)}
                   </div>
                 </button>
@@ -365,7 +397,7 @@ export function CondensedSearch() {
         </div>
 
         {/* Divider */}
-        <div className="w-px h-6 bg-gray-300 mx-3" />
+        <div className="w-px h-8 bg-gray-300 mx-4" />
 
         {/* Location Section */}
         <div className="flex-1 min-w-0 relative" ref={locationContainerRef}>
@@ -385,6 +417,7 @@ export function CondensedSearch() {
                           const place = data.features[0]
                           const locationText = `${place.text}, ${place.context?.find((c: {id: string; text: string}) => c.id.startsWith('region'))?.text || ''}`
                           setLocation(locationText)
+                          localStorage.setItem('burpp_search_location', locationText)
                         }
                       } catch {
                         // Silently fail if reverse geocoding fails
@@ -405,14 +438,14 @@ export function CondensedSearch() {
                   )
                 }
               }}
-              className="mr-2 text-gray-400 hover:text-gray-600"
+              className="mr-3 text-gray-500 hover:text-gray-700"
             >
-              <MapPin className="h-3 w-3" />
+              <MapPin className="h-4 w-4" />
             </button>
             <Input
               ref={locationInputRef}
               type="text"
-              placeholder="Location"
+              placeholder="Near"
               value={location}
               onChange={(e) => {
                 setLocation(e.target.value)
@@ -420,14 +453,14 @@ export function CondensedSearch() {
               }}
               onFocus={() => setIsLocationOpen(true)}
               onKeyDown={handleLocationKeyDown}
-              className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 focus:ring-0 focus:outline-none text-sm text-gray-600 placeholder:text-gray-400 pr-6"
+              className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 focus:ring-0 focus:outline-none text-base font-medium text-gray-900 placeholder:text-gray-500 placeholder:font-normal pr-6"
             />
             {location && (
               <button
                 onClick={clearLocation}
-                className="absolute right-1 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
-                <X className="h-3 w-3" />
+                <X className="h-4 w-4" />
               </button>
             )}
           </div>
@@ -435,7 +468,7 @@ export function CondensedSearch() {
           {/* Location Suggestions Dropdown */}
           {isLocationOpen && locationSuggestions.length > 0 && (
             <div className={cn(
-              "absolute top-full right-0 z-50 mt-2 bg-white border border-gray-200 rounded-2xl shadow-lg max-h-60 overflow-y-auto",
+              "absolute top-full right-0 z-50 mt-2 bg-white border-2 border-gray-200 rounded-xl shadow-xl max-h-60 overflow-y-auto",
               isMobile ? "w-full" : "w-96"
             )}>
               {locationSuggestions.map((suggestion, index) => (
@@ -444,12 +477,13 @@ export function CondensedSearch() {
                   onMouseDown={(e) => {
                     e.preventDefault()
                     setLocation(suggestion.place_name)
+                    localStorage.setItem('burpp_search_location', suggestion.place_name)
                     setIsLocationOpen(false)
                     setHighlightedIndex(-1)
                   }}
                   onMouseEnter={() => setHighlightedIndex(index)}
                   className={cn(
-                    "w-full px-4 py-3 text-left focus:outline-none flex items-start gap-3 first:rounded-t-2xl last:rounded-b-2xl transition-colors",
+                    "w-full px-4 py-3 text-left focus:outline-none flex items-start gap-3 first:rounded-t-xl last:rounded-b-xl transition-colors",
                     highlightedIndex === index ? "bg-primary text-white" : "hover:bg-primary hover:text-white"
                   )}
                 >
@@ -480,10 +514,191 @@ export function CondensedSearch() {
         <Button
           onClick={handleSearchSubmit}
           disabled={!selectedCategory || !location}
-          size="sm"
-          className="ml-3 h-6 w-6 p-0 rounded-full bg-primary hover:bg-primary/90"
+          size="lg"
+          className="ml-3 h-10 px-5 rounded-lg bg-primary hover:bg-primary/90 disabled:bg-gray-300 disabled:cursor-not-allowed shadow-sm font-semibold"
         >
-          <Search className="h-3 w-3" />
+          <Search className="h-5 w-5" />
+        </Button>
+      </div>
+
+      {/* Mobile Stacked Layout */}
+      <div className="md:hidden space-y-3">
+        {/* Row 1: Category */}
+        <div className="relative">
+          <div className="bg-white border border-gray-300 rounded-lg px-4 py-3">
+            <div className="flex items-center">
+              <LayoutGrid className="h-4 w-4 text-gray-400 mr-3 flex-shrink-0" />
+              <Input
+                ref={categoryInputRef}
+                type="text"
+                placeholder="What are you looking for?"
+                value={categorySearch}
+                onChange={(e) => {
+                  setCategorySearch(e.target.value)
+                  setIsCategoryOpen(true)
+                  if (!selectedCategory || e.target.value !== selectedCategoryName) {
+                    setSelectedCategory('')
+                    setSelectedCategoryName('')
+                    localStorage.removeItem('burpp_search_category_id')
+                    localStorage.removeItem('burpp_search_category_name')
+                  }
+                }}
+                onKeyDown={handleCategoryKeyDown}
+                className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 font-medium text-gray-900 placeholder:text-gray-500 pr-8"
+              />
+            </div>
+            {categorySearch && (
+              <button
+                onClick={() => {
+                  setCategorySearch('')
+                  setSelectedCategory('')
+                  setSelectedCategoryName('')
+                  localStorage.removeItem('burpp_search_category_id')
+                  localStorage.removeItem('burpp_search_category_name')
+                }}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          
+          {/* Category Dropdown */}
+          {isCategoryOpen && filteredCategories.length > 0 && (
+            <div className="absolute top-full left-0 right-0 z-50 mt-2 bg-white rounded-xl shadow-xl max-h-60 overflow-y-auto">
+              {filteredCategories.map((category, index) => (
+                <button
+                  key={category.id}
+                  onMouseDown={(e) => {
+                    e.preventDefault()
+                    handleCategorySelect(category.id, category.name)
+                  }}
+                  onMouseEnter={() => setHighlightedCategoryIndex(index)}
+                  className={cn(
+                    "w-full px-4 py-3 text-left focus:outline-none first:rounded-t-xl last:rounded-b-xl transition-colors",
+                    highlightedCategoryIndex === index ? "bg-primary text-white" : "hover:bg-primary hover:text-white"
+                  )}
+                >
+                  <div className="font-medium" style={{ fontSize: '16px' }}>
+                    {highlightText(category.name, categorySearch)}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Row 2: Location */}
+        <div className="relative">
+          <div className="bg-white border border-gray-300 rounded-lg px-4 py-3">
+            <div className="flex items-center">
+              <button
+                onClick={() => {
+                  if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                      async (position) => {
+                        const { latitude, longitude } = position.coords
+                        try {
+                          const response = await fetch(
+                            `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}&types=place`
+                          )
+                          const data = await response.json()
+                          if (data.features && data.features.length > 0) {
+                            const place = data.features[0]
+                            const locationText = `${place.text}, ${place.context?.find((c: {id: string; text: string}) => c.id.startsWith('region'))?.text || ''}`
+                            setLocation(locationText)
+                            localStorage.setItem('burpp_search_location', locationText)
+                          }
+                        } catch {
+                          // Silently fail if reverse geocoding fails
+                        }
+                      },
+                      (error) => {
+                        console.error('Error getting location:', error)
+                        if (error.code === 2) {
+                          toast.error('Location unavailable. Please enter your location manually.')
+                        } else if (error.code === 3) {
+                          toast.error('Location request timed out. Please try again or enter manually.')
+                        }
+                      }
+                    )
+                  }
+                }}
+                className="mr-3 text-gray-400 hover:text-gray-600"
+              >
+                <MapPin className="h-4 w-4" />
+              </button>
+              <Input
+                ref={locationInputRef}
+                type="text"
+                placeholder="Near"
+                value={location}
+                onChange={(e) => handleLocationSearch(e.target.value)}
+                onKeyDown={handleLocationKeyDown}
+                className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 font-medium text-gray-900 placeholder:text-gray-500 pr-8"
+              />
+            </div>
+            {location && (
+              <button
+                onClick={clearLocation}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+
+          {/* Location Dropdown */}
+          {isLocationOpen && locationSuggestions.length > 0 && (
+            <div className="absolute top-full left-0 right-0 z-50 mt-2 bg-white rounded-xl shadow-xl max-h-60 overflow-y-auto">
+              {locationSuggestions.map((suggestion, index) => (
+                <button
+                  key={index}
+                  onMouseDown={(e) => {
+                    e.preventDefault()
+                    setLocation(suggestion.place_name)
+                    localStorage.setItem('burpp_search_location', suggestion.place_name)
+                    setIsLocationOpen(false)
+                    setHighlightedIndex(-1)
+                  }}
+                  onMouseEnter={() => setHighlightedIndex(index)}
+                  className={cn(
+                    "w-full px-4 py-3 text-left focus:outline-none first:rounded-t-xl last:rounded-b-xl transition-colors flex items-start gap-3",
+                    highlightedIndex === index ? "bg-primary text-white" : "hover:bg-primary hover:text-white"
+                  )}
+                >
+                  <MapPin className={cn(
+                    "mt-0.5 h-4 w-4 flex-shrink-0",
+                    highlightedIndex === index ? "text-white" : "text-gray-400"
+                  )} />
+                  <div>
+                    <div className="font-medium text-sm">
+                      {highlightText(suggestion.place_name, location)}
+                    </div>
+                    {suggestion.context && suggestion.context.length > 0 && (
+                      <div className={cn(
+                        "text-xs",
+                        highlightedIndex === index ? "text-white/80" : "text-gray-500"
+                      )}>
+                        {suggestion.context.map((c) => c.text).join(', ')}
+                      </div>
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Row 3: Search Button */}
+        <Button
+          onClick={handleSearchSubmit}
+          disabled={!selectedCategory || !location}
+          size="lg"
+          className="w-full h-12 rounded-lg bg-primary hover:bg-primary/90 disabled:bg-gray-300 disabled:cursor-not-allowed font-semibold"
+        >
+          <Search className="h-5 w-5 mr-2" />
+          Search
         </Button>
       </div>
     </div>

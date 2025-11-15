@@ -35,10 +35,32 @@ export function SearchHero() {
   const [isLocationOpen, setIsLocationOpen] = useState(false)
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1)
   const hasAttemptedGeolocation = useRef(false)
+  const hasLoadedFromStorage = useRef(false)
   const locationInputRef = useRef<HTMLInputElement>(null)
   const locationContainerRef = useRef<HTMLDivElement>(null)
   const categoryInputRef = useRef<HTMLInputElement>(null)
   const categoryContainerRef = useRef<HTMLDivElement>(null)
+
+  // Load location and category from localStorage on mount
+  useEffect(() => {
+    if (!hasLoadedFromStorage.current) {
+      const savedLocation = localStorage.getItem('burpp_search_location')
+      if (savedLocation) {
+        setLocation(savedLocation)
+        hasAttemptedGeolocation.current = true // Don't auto-detect if we have a saved location
+      }
+      
+      const savedCategoryId = localStorage.getItem('burpp_search_category_id')
+      const savedCategoryName = localStorage.getItem('burpp_search_category_name')
+      if (savedCategoryId && savedCategoryName) {
+        setSelectedCategory(savedCategoryId)
+        setSelectedCategoryName(savedCategoryName)
+        setCategorySearch(savedCategoryName)
+      }
+      
+      hasLoadedFromStorage.current = true
+    }
+  }, [])
 
   // Handle clicking outside to close dropdowns
   useEffect(() => {
@@ -176,6 +198,8 @@ export function SearchHero() {
     setCategorySearch(categoryName)
     setIsCategoryOpen(false)
     setHighlightedCategoryIndex(-1)
+    localStorage.setItem('burpp_search_category_id', categoryId)
+    localStorage.setItem('burpp_search_category_name', categoryName)
   }
 
   // Handle keyboard navigation for category suggestions
@@ -227,6 +251,7 @@ export function SearchHero() {
   // Clear location
   const clearLocation = () => {
     setLocation('')
+    localStorage.removeItem('burpp_search_location')
     setHighlightedIndex(-1)
     if (locationInputRef.current) {
       locationInputRef.current.focus()
@@ -251,7 +276,9 @@ export function SearchHero() {
       case 'Enter':
         e.preventDefault()
         if (highlightedIndex >= 0 && highlightedIndex < locationSuggestions.length) {
-          setLocation(locationSuggestions[highlightedIndex].place_name)
+          const newLocation = locationSuggestions[highlightedIndex].place_name
+          setLocation(newLocation)
+          localStorage.setItem('burpp_search_location', newLocation)
           setIsLocationOpen(false)
           setHighlightedIndex(-1)
         }
@@ -305,6 +332,8 @@ export function SearchHero() {
                     if (!selectedCategory || e.target.value !== selectedCategoryName) {
                       setSelectedCategory('')
                       setSelectedCategoryName('')
+                      localStorage.removeItem('burpp_search_category_id')
+                      localStorage.removeItem('burpp_search_category_name')
                     }
                   }}
                   onFocus={() => setIsCategoryOpen(true)}
@@ -319,6 +348,8 @@ export function SearchHero() {
                     setCategorySearch('')
                     setSelectedCategory('')
                     setSelectedCategoryName('')
+                    localStorage.removeItem('burpp_search_category_id')
+                    localStorage.removeItem('burpp_search_category_name')
                   }}
                   className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
@@ -328,7 +359,7 @@ export function SearchHero() {
               
               {/* Desktop Category Dropdown */}
               {isCategoryOpen && filteredCategories.length > 0 && (
-                <div className="absolute top-full left-0 w-96 z-50 mt-2 bg-white border border-gray-200 rounded-2xl shadow-lg max-h-60 overflow-y-auto">
+                <div className="absolute top-full left-0 w-96 z-50 mt-2 bg-white rounded-2xl shadow-lg max-h-60 overflow-y-auto">
                   {filteredCategories.map((category, index) => (
                     <button
                       key={category.id}
@@ -342,7 +373,7 @@ export function SearchHero() {
                         highlightedCategoryIndex === index ? "bg-primary text-white" : "hover:bg-primary hover:text-white"
                       )}
                     >
-                      <div className="font-medium text-sm">
+                      <div className="font-medium" style={{ fontSize: '16px' }}>
                         {highlightText(category.name, categorySearch)}
                       </div>
                     </button>
@@ -371,6 +402,7 @@ export function SearchHero() {
                               const place = data.features[0]
                               const locationText = `${place.text}, ${place.context?.find((c: {id: string; text: string}) => c.id.startsWith('region'))?.text || ''}`
                               setLocation(locationText)
+                              localStorage.setItem('burpp_search_location', locationText)
                             }
                           } catch (error) {
                             console.error('Error reverse geocoding:', error)
@@ -430,6 +462,7 @@ export function SearchHero() {
                       onMouseDown={(e) => {
                         e.preventDefault()
                         setLocation(suggestion.place_name)
+                        localStorage.setItem('burpp_search_location', suggestion.place_name)
                         setIsLocationOpen(false)
                         setHighlightedIndex(-1)
                       }}
@@ -489,9 +522,10 @@ export function SearchHero() {
                       if (!selectedCategory || e.target.value !== selectedCategoryName) {
                         setSelectedCategory('')
                         setSelectedCategoryName('')
+                        localStorage.removeItem('burpp_search_category_id')
+                        localStorage.removeItem('burpp_search_category_name')
                       }
                     }}
-                    onFocus={() => setIsCategoryOpen(true)}
                     onKeyDown={handleCategoryKeyDown}
                     className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 font-semibold text-gray-700 placeholder:text-gray-500 pr-8"
                     style={{ fontSize: '16px', fontFamily: 'Poppins, sans-serif' }}
@@ -503,6 +537,8 @@ export function SearchHero() {
                       setCategorySearch('')
                       setSelectedCategory('')
                       setSelectedCategoryName('')
+                      localStorage.removeItem('burpp_search_category_id')
+                      localStorage.removeItem('burpp_search_category_name')
                     }}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
@@ -513,7 +549,7 @@ export function SearchHero() {
               
               {/* Mobile Category Dropdown */}
               {isCategoryOpen && filteredCategories.length > 0 && (
-                <div className="absolute top-full left-0 right-0 z-50 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                <div className="absolute top-full left-0 right-0 z-50 mt-2 bg-white rounded-lg shadow-lg max-h-60 overflow-y-auto">
                   {filteredCategories.map((category, index) => (
                     <button
                       key={category.id}
@@ -527,7 +563,7 @@ export function SearchHero() {
                         highlightedCategoryIndex === index ? "bg-primary text-white" : "hover:bg-primary hover:text-white"
                       )}
                     >
-                      <div className="font-medium text-sm">
+                      <div className="font-medium" style={{ fontSize: '16px' }}>
                         {highlightText(category.name, categorySearch)}
                       </div>
                     </button>
@@ -555,6 +591,7 @@ export function SearchHero() {
                                 const place = data.features[0]
                                 const locationText = `${place.text}, ${place.context?.find((c: {id: string; text: string}) => c.id.startsWith('region'))?.text || ''}`
                                 setLocation(locationText)
+                                localStorage.setItem('burpp_search_location', locationText)
                               }
                             } catch (error) {
                               console.error('Error reverse geocoding:', error)
@@ -604,6 +641,7 @@ export function SearchHero() {
                       onMouseDown={(e) => {
                         e.preventDefault()
                         setLocation(suggestion.place_name)
+                        localStorage.setItem('burpp_search_location', suggestion.place_name)
                         setIsLocationOpen(false)
                         setHighlightedIndex(-1)
                       }}

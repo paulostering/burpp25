@@ -36,10 +36,32 @@ export function MobileSearchHero() {
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1)
   const [userLocation, setUserLocation] = useState<string>('')
   const hasAttemptedGeolocation = useRef(false)
+  const hasLoadedFromStorage = useRef(false)
   const locationInputRef = useRef<HTMLInputElement>(null)
   const locationContainerRef = useRef<HTMLDivElement>(null)
   const categoryInputRef = useRef<HTMLInputElement>(null)
   const categoryContainerRef = useRef<HTMLDivElement>(null)
+
+  // Load location and category from localStorage on mount
+  useEffect(() => {
+    if (!hasLoadedFromStorage.current) {
+      const savedLocation = localStorage.getItem('burpp_search_location')
+      if (savedLocation) {
+        setLocation(savedLocation)
+        hasAttemptedGeolocation.current = true // Don't auto-detect if we have a saved location
+      }
+      
+      const savedCategoryId = localStorage.getItem('burpp_search_category_id')
+      const savedCategoryName = localStorage.getItem('burpp_search_category_name')
+      if (savedCategoryId && savedCategoryName) {
+        setSelectedCategory(savedCategoryId)
+        setSelectedCategoryName(savedCategoryName)
+        setCategorySearch(savedCategoryName)
+      }
+      
+      hasLoadedFromStorage.current = true
+    }
+  }, [])
 
   // Handle clicking outside to close dropdowns
   useEffect(() => {
@@ -173,6 +195,8 @@ export function MobileSearchHero() {
     setCategorySearch(categoryName)
     setIsCategoryOpen(false)
     setHighlightedCategoryIndex(-1)
+    localStorage.setItem('burpp_search_category_id', categoryId)
+    localStorage.setItem('burpp_search_category_name', categoryName)
   }
 
   // Handle keyboard navigation for category suggestions
@@ -303,9 +327,10 @@ export function MobileSearchHero() {
                       if (!selectedCategory || e.target.value !== selectedCategoryName) {
                         setSelectedCategory('')
                         setSelectedCategoryName('')
+                        localStorage.removeItem('burpp_search_category_id')
+                        localStorage.removeItem('burpp_search_category_name')
                       }
                     }}
-                    onFocus={() => setIsCategoryOpen(true)}
                     onKeyDown={handleCategoryKeyDown}
                     className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 font-semibold text-gray-700 placeholder:text-gray-500 pr-8"
                     style={{ fontSize: '16px', fontFamily: 'Poppins, sans-serif' }}
@@ -317,6 +342,8 @@ export function MobileSearchHero() {
                       setCategorySearch('')
                       setSelectedCategory('')
                       setSelectedCategoryName('')
+                      localStorage.removeItem('burpp_search_category_id')
+                      localStorage.removeItem('burpp_search_category_name')
                     }}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
@@ -340,7 +367,7 @@ export function MobileSearchHero() {
                         highlightedCategoryIndex === index ? 'bg-primary text-white' : 'hover:bg-primary hover:text-white'
                       }`}
                     >
-                      <div className="font-medium text-sm">
+                      <div className="font-medium" style={{ fontSize: '16px' }}>
                         {highlightText(category.name, categorySearch)}
                       </div>
                     </button>

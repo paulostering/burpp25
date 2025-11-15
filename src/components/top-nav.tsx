@@ -11,6 +11,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
 import { usePathname, useRouter } from "next/navigation"
 import { CondensedSearch } from "@/components/condensed-search"
 import { InboxIcon } from "@/components/inbox-icon"
@@ -18,7 +20,7 @@ import { FavoritesIcon } from "@/components/favorites-icon"
 import { useAuth } from "@/contexts/auth-context"
 import { createClient } from "@/lib/supabase/client"
 import { useEffect, useState } from "react"
-import { User, Settings, LayoutDashboard, LogOut } from "lucide-react"
+import { User, Settings, LayoutDashboard, LogOut, Menu, X } from "lucide-react"
 
 export function TopNav() {
   const pathname = usePathname()
@@ -27,6 +29,7 @@ export function TopNav() {
   const [isVendor, setIsVendor] = useState(false)
   const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null)
   const [roleLoading, setRoleLoading] = useState(true)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   // Check user role and get profile photo
   useEffect(() => {
@@ -88,16 +91,16 @@ export function TopNav() {
   }
 
   return (
-    <header className="border-b">
-      <div className="mx-auto flex h-14 items-center justify-between px-10">
-        <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center gap-2 font-semibold">
+    <header className="border-b bg-white">
+      <div className="mx-auto flex h-20 items-center justify-between px-8 md:px-12 py-5">
+        <div className="flex items-center gap-8 flex-1">
+          <Link href="/" className="flex items-center gap-2 font-semibold flex-shrink-0">
             <Image 
               src="/images/burpp_logo.png" 
               alt="Burpp Logo" 
-              width={60} 
-              height={24} 
-              className="h-8 w-auto"
+              width={72} 
+              height={28} 
+              className="h-5 md:h-9 w-auto"
               style={{ width: 'auto', height: 'auto' }}
               priority
             />
@@ -105,7 +108,7 @@ export function TopNav() {
           
           {/* Condensed Search - Desktop only */}
           {showCondensedSearch && (
-            <div className="max-w-lg hidden md:block">
+            <div className="max-w-3xl w-full hidden md:block">
               <CondensedSearch />
             </div>
           )}
@@ -158,15 +161,76 @@ export function TopNav() {
             </>
           ) : !isRegistrationPage ? (
             <>
-              <Link href="/burp-for-business" className="hidden md:block text-base hover:underline px-4">
-                Join as a Pro
-              </Link>
-              <Button asChild variant="ghost" size="sm" className="text-base border border-gray-300 px-6">
-                <Link href="/login">Login</Link>
-              </Button>
-              <Button asChild size="sm" className="text-base px-6">
-                <Link href="/signup">Sign Up</Link>
-              </Button>
+              {/* Desktop Navigation */}
+              <div className="hidden md:flex items-center gap-3">
+                <Link href="/burp-for-business" className="text-base hover:underline px-4">
+                  Join as a Pro
+                </Link>
+                <Button asChild variant="ghost" size="sm" className="text-base border border-gray-300 px-6">
+                  <Link href="/login">Login</Link>
+                </Button>
+                <Button asChild size="sm" className="text-base px-6">
+                  <Link href="/signup">Sign Up</Link>
+                </Button>
+              </div>
+
+              {/* Mobile Menu */}
+              <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="md:hidden">
+                    <Menu className="h-6 w-6" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-full p-8 [&>button.absolute]:hidden">
+                  <VisuallyHidden>
+                    <SheetTitle>Navigation Menu</SheetTitle>
+                  </VisuallyHidden>
+                  <div className="flex items-center justify-between mb-8">
+                    <Link href="/" onClick={() => setMobileMenuOpen(false)}>
+                      <Image 
+                        src="/images/burpp_logo.png" 
+                        alt="Burpp Logo" 
+                        width={100} 
+                        height={39} 
+                        className="h-10 w-auto"
+                        style={{ width: 'auto', height: 'auto' }}
+                        priority
+                      />
+                    </Link>
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="h-12 w-12"
+                    >
+                      <X className="h-8 w-8" />
+                    </Button>
+                  </div>
+                  <nav className="flex flex-col gap-6">
+                    <Link 
+                      href="/burp-for-business" 
+                      className="text-xl font-medium py-4 pr-6 hover:bg-gray-100 rounded-lg transition-colors"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Join as a Pro
+                    </Link>
+                    <Link 
+                      href="/login" 
+                      className="text-xl font-medium py-4 pr-6 hover:bg-gray-100 rounded-lg transition-colors"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Login
+                    </Link>
+                    <Link 
+                      href="/signup" 
+                      className="text-xl font-medium py-4 pr-6 bg-primary text-white hover:bg-primary/90 rounded-lg transition-colors text-center"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Sign Up
+                    </Link>
+                  </nav>
+                </SheetContent>
+              </Sheet>
             </>
           ) : null}
         </nav>
