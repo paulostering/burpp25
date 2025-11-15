@@ -10,27 +10,35 @@ const CACHE_TTL = 3600000 // 1 hour
 async function geocodeSearchLocation(q: string) {
   const cached = searchLocationCache.get(q)
   if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    console.log(`[Geocode] Using cached coords for "${q}":`, cached.coords)
     return cached.coords
   }
 
   try {
     const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}`
+    console.log(`[Geocode] Fetching from Nominatim:`, url)
     const res = await fetch(url, {
       headers: { "User-Agent": "burpp-web/1.0" },
       cache: "force-cache",
     })
     
-    if (!res.ok) return null
+    if (!res.ok) {
+      console.log(`[Geocode] Nominatim request failed with status:`, res.status)
+      return null
+    }
     
     const data = await res.json()
+    console.log(`[Geocode] Nominatim response for "${q}":`, data.slice(0, 2)) // Log first 2 results
+    
     const coords = (!Array.isArray(data) || data.length === 0) 
       ? null 
       : { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) }
     
+    console.log(`[Geocode] Extracted coords for "${q}":`, coords)
     searchLocationCache.set(q, { coords, timestamp: Date.now() })
     return coords
   } catch (error) {
-    console.error(`Geocoding error for ${q}:`, error)
+    console.error(`[Geocode] Error for "${q}":`, error)
     return null
   }
 }
@@ -58,11 +66,12 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '12')
     const offset = (page - 1) * limit
 
-    console.log(`[Search] Starting search for: ${q}, category: ${category}`)
+    console.log(`[Search] Starting search for: "${q}", category: ${category}`)
     
     const geocodeStart = Date.now()
     const searchCoords = q ? await geocodeSearchLocation(q) : null
     console.log(`[Search] Geocoding took: ${Date.now() - geocodeStart}ms`)
+    console.log(`[Search] Search coordinates:`, searchCoords)
     
     const supabase = createAdminSupabase()
     let vendors: VendorProfile[] = []
@@ -90,44 +99,50 @@ export async function GET(request: NextRequest) {
       )
       
       const locationBasedVendors = vendors.filter(
-        v => v.offers_in_person_services && v.service_radius && v.zip_code
+        v => v.offers_in_person_services && v.service_radius && v.latitude && v.longitude
       )
       
       console.log(`[Search] Virtual-only: ${virtualOnlyVendors.length}, Location-based: ${locationBasedVendors.length}`)
 
-      // Process ALL location-based vendors in parallel using the cache
+      // Process ALL location-based vendors using stored coordinates (INSTANT!)
       const filterStart = Date.now()
       
-      // Get or geocode all vendor locations in parallel (cache makes this fast)
-      const vendorLocationPromises = locationBasedVendors.map(async (vendor) => {
+      // Log first few vendors for debugging
+      console.log(`[Search] First 3 location-based vendors:`, locationBasedVendors.slice(0, 3).map(v => ({
+        id: v.id,
+        business_name: v.business_name,
+        coordinates: { lat: v.latitude, lng: v.longitude },
+        service_radius: v.service_radius
+      })))
+      
+      // Filter vendors based on distance using their stored coordinates (no geocoding needed!)
+      const filteredLocationVendors = locationBasedVendors.filter((vendor, index) => {
         try {
-          const location = await vendorLocationCache.getVendorLocation(
-            vendor.id,
-            vendor.zip_code!,
-            vendor.service_radius!
-          )
-          
-          if (!location) return null
-          
           const distance = calculateDistance(
             searchCoords.lat,
             searchCoords.lng,
-            location.lat,
-            location.lng
+            vendor.latitude!,
+            vendor.longitude!
           )
           
-          // Check if within service radius
-          if (distance <= location.serviceRadius) {
-            return vendor
+          // Log first few vendors
+          if (index < 3) {
+            console.log(`[Search] Vendor ${vendor.business_name}:`, {
+              vendor_coords: { lat: vendor.latitude, lng: vendor.longitude },
+              search_coords: { lat: searchCoords.lat, lng: searchCoords.lng },
+              distance: distance.toFixed(2) + ' miles',
+              service_radius: vendor.service_radius + ' miles',
+              within_radius: distance <= vendor.service_radius!
+            })
           }
+          
+          // Check if within service radius
+          return distance <= vendor.service_radius!
         } catch (error) {
           console.error(`Error processing vendor ${vendor.id}:`, error)
+          return false
         }
-        return null
       })
-
-      const vendorResults = await Promise.all(vendorLocationPromises)
-      const filteredLocationVendors = vendorResults.filter((v): v is VendorProfile => v !== null)
       
       console.log(`[Search] Filtering took: ${Date.now() - filterStart}ms, found ${filteredLocationVendors.length} matching vendors`)
       

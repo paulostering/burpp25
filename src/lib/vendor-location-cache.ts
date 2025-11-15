@@ -22,8 +22,12 @@ class VendorLocationCache {
     }
 
     // Geocode and cache it
+    console.log(`[VendorCache] Geocoding vendor location for zip: ${zipCode}`)
     const coords = await this.geocode(zipCode)
-    if (!coords) return null
+    if (!coords) {
+      console.log(`[VendorCache] Failed to geocode zip: ${zipCode}`)
+      return null
+    }
 
     const location: VendorLocation = {
       vendorId,
@@ -33,6 +37,7 @@ class VendorLocationCache {
       zipCode
     }
 
+    console.log(`[VendorCache] Cached location for zip ${zipCode}:`, { lat: coords.lat, lng: coords.lng })
     this.cache.set(vendorId, location)
     return location
   }
@@ -40,22 +45,40 @@ class VendorLocationCache {
   private async geocode(zipCode: string): Promise<{ lat: number; lng: number } | null> {
     try {
       const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(zipCode)}`
+      
+      // Add timeout to prevent hanging
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout per request
+      
       const res = await fetch(url, {
         headers: { "User-Agent": "burpp-web/1.0" },
         cache: "force-cache", // Cache geocoding results
+        signal: controller.signal
       })
       
-      if (!res.ok) return null
+      clearTimeout(timeoutId)
+      
+      if (!res.ok) {
+        console.log(`[VendorCache] Nominatim returned status ${res.status} for ${zipCode}`)
+        return null
+      }
       
       const data = await res.json()
-      if (!Array.isArray(data) || data.length === 0) return null
+      if (!Array.isArray(data) || data.length === 0) {
+        console.log(`[VendorCache] No results from Nominatim for ${zipCode}`)
+        return null
+      }
       
       return { 
         lat: parseFloat(data[0].lat), 
         lng: parseFloat(data[0].lon) 
       }
     } catch (error) {
-      console.error(`Geocoding error for ${zipCode}:`, error)
+      if ((error as Error).name === 'AbortError') {
+        console.error(`[VendorCache] Geocoding timeout for ${zipCode}`)
+      } else {
+        console.error(`[VendorCache] Geocoding error for ${zipCode}:`, error)
+      }
       return null
     }
   }

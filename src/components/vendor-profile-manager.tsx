@@ -144,12 +144,38 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
     setIsLoading(true)
     
     try {
+      // Geocode zip code if it changed and in-person services are offered
+      let latitude: number | undefined
+      let longitude: number | undefined
+      
+      if (formData.offers_in_person_services && formData.zip_code && formData.zip_code !== vendor.zip_code) {
+        console.log(`🌍 Geocoding updated zip code: ${formData.zip_code}`)
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(formData.zip_code)}&limit=1`,
+            { headers: { 'User-Agent': 'burpp-web/1.0' } }
+          )
+          if (response.ok) {
+            const data = await response.json()
+            if (Array.isArray(data) && data.length > 0) {
+              latitude = parseFloat(data[0].lat)
+              longitude = parseFloat(data[0].lon)
+              console.log(`✅ Geocoded ${formData.zip_code} to:`, { lat: latitude, lng: longitude })
+            }
+          }
+        } catch (error) {
+          console.warn('⚠️ Geocoding failed, updating without coordinates:', error)
+        }
+      }
+
       const updateData = {
         business_name: formData.business_name,
         profile_title: formData.profile_title || null,
         about: formData.about || null,
         hourly_rate: formData.hourly_rate ? parseFloat(formData.hourly_rate) : null,
         zip_code: formData.zip_code || null,
+        latitude: latitude !== undefined ? latitude : undefined,
+        longitude: longitude !== undefined ? longitude : undefined,
         service_radius: formData.service_radius ? parseInt(formData.service_radius) : null,
         phone_number: formData.phone_number || null,
         service_categories: formData.service_categories.length > 0 ? formData.service_categories : null,
@@ -159,7 +185,7 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
         updated_at: new Date().toISOString()
       }
 
-      const { data, error } = await supabase
+      const { data, error} = await supabase
         .from('vendor_profiles')
         .update(updateData)
         .eq('id', vendor.id)

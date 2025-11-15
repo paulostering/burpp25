@@ -138,14 +138,12 @@ export function SearchHero() {
     }
 
     console.log('Searching for location:', query)
-    console.log('Mapbox token:', process.env.NEXT_PUBLIC_MAPBOX_TOKEN)
 
     try {
       const response = await fetch(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}&types=place,locality,neighborhood,postcode&country=us`
       )
       const data = await response.json()
-      console.log('Mapbox response:', data)
       setLocationSuggestions(data.features || [])
       setHighlightedIndex(-1) // Reset highlighted index when new suggestions arrive
     } catch (error) {

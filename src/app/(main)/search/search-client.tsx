@@ -26,7 +26,7 @@ export function SearchClient() {
         setLoading(false)
         setVendors([])
         setCount(0)
-      }, 5000) // 5 second timeout on client side
+      }, 30000) // 30 second timeout on client side
       
       try {
         const params = new URLSearchParams()

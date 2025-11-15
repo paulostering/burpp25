@@ -521,6 +521,30 @@ export default function VendorRegisterPage() {
   }, [profilePhotoUrl, coverPhotoUrl])
 
 
+  const geocodeZipCode = async (zipCode: string): Promise<{ lat: number; lng: number } | null> => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(zipCode)}&limit=1`,
+        {
+          headers: { 'User-Agent': 'burpp-web/1.0' }
+        }
+      )
+      
+      if (!response.ok) return null
+      
+      const data = await response.json()
+      if (!Array.isArray(data) || data.length === 0) return null
+      
+      return {
+        lat: parseFloat(data[0].lat),
+        lng: parseFloat(data[0].lon)
+      }
+    } catch (error) {
+      console.error('Geocoding error:', error)
+      return null
+    }
+  }
+
   const submit = async () => {
     // Validate step 5 first
     const newErrors: Record<string, string> = {}
@@ -651,6 +675,22 @@ export default function VendorRegisterPage() {
           return
         }
 
+        // Geocode zip code if in-person services are offered
+        let latitude: number | undefined
+        let longitude: number | undefined
+        
+        if (offersInPerson && zipCode) {
+          console.log(`🌍 Geocoding zip code: ${zipCode}`)
+          const coords = await geocodeZipCode(zipCode)
+          if (coords) {
+            latitude = coords.lat
+            longitude = coords.lng
+            console.log(`✅ Geocoded ${zipCode} to:`, coords)
+          } else {
+            console.warn(`⚠️ Failed to geocode ${zipCode}, profile will be created without coordinates`)
+          }
+        }
+
         // Then create vendor profile
         const payload: Partial<VendorProfile> & {
           user_id: string
@@ -660,6 +700,8 @@ export default function VendorRegisterPage() {
           offers_virtual_services?: boolean
           offers_in_person_services?: boolean
           zip_code?: string
+          latitude?: number
+          longitude?: number
           service_radius?: number
           hourly_rate?: number
           profile_photo_url?: string
@@ -678,6 +720,8 @@ export default function VendorRegisterPage() {
           offers_virtual_services: offersVirtual,
           offers_in_person_services: offersInPerson,
           zip_code: zipCode || undefined,
+          latitude,
+          longitude,
           service_radius: radius,
           hourly_rate: hourlyRate,
           profile_photo_url,

@@ -10,6 +10,8 @@ export interface VendorProfile {
   offers_in_person_services?: boolean | null
   hourly_rate?: number | null
   zip_code?: string | null
+  latitude?: number | null
+  longitude?: number | null
   service_radius?: number | null
   service_categories?: string[] | null
   first_name?: string | null
