@@ -1,6 +1,5 @@
 'use client'
 
-import Image from 'next/image'
 import Link from 'next/link'
 import { Facebook, Instagram, Twitter } from 'lucide-react'
 
@@ -9,20 +8,8 @@ export function Footer() {
     <footer className="bg-gray-100 text-gray-900">
       {/* Top Section */}
       <div className="mx-auto max-w-6xl px-6 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center md:text-left">
-          {/* Column 1: Logo */}
-          <div className="space-y-4 flex justify-center md:justify-start">
-            <Image
-              src="/images/burpp_logo.webp"
-              alt="Burpp Logo"
-              width={120}
-              height={40}
-              className="h-8 w-auto"
-              style={{ width: 'auto', height: 'auto' }}
-            />
-          </div>
-
-          {/* Column 2: Burpp */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left">
+          {/* Column 1: Company */}
           <div className="space-y-4">
             <h3 className="font-normal text-base">Company</h3>
             <div className="space-y-3">
