@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Search, MapPin, X, ChevronLeft } from 'lucide-react'
+import { Search, MapPin, X } from 'lucide-react'
 import { getCategories } from '@/lib/categories-cache'
 import { toast } from 'sonner'
 
@@ -24,12 +24,12 @@ export function MobileSearchHero() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [categories, setCategories] = useState<Category[]>([])
+  const [filteredCategories, setFilteredCategories] = useState<Category[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string>('')
   const [selectedCategoryName, setSelectedCategoryName] = useState<string>('')
   const [categorySearch, setCategorySearch] = useState<string>('')
-  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false)
-  const [modalCategorySearch, setModalCategorySearch] = useState<string>('')
-  const [filteredModalCategories, setFilteredModalCategories] = useState<Category[]>([])
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false)
+  const [highlightedCategoryIndex, setHighlightedCategoryIndex] = useState<number>(-1)
   const [location, setLocation] = useState('')
   const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([])
   const [isLocationOpen, setIsLocationOpen] = useState(false)
@@ -37,13 +37,17 @@ export function MobileSearchHero() {
   const [userLocation, setUserLocation] = useState<string>('')
   const locationInputRef = useRef<HTMLInputElement>(null)
   const locationContainerRef = useRef<HTMLDivElement>(null)
-  const modalSearchInputRef = useRef<HTMLInputElement>(null)
+  const categoryInputRef = useRef<HTMLInputElement>(null)
+  const categoryContainerRef = useRef<HTMLDivElement>(null)
 
   // Handle clicking outside to close dropdowns
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (locationContainerRef.current && !locationContainerRef.current.contains(event.target as Node)) {
         setIsLocationOpen(false)
+      }
+      if (categoryContainerRef.current && !categoryContainerRef.current.contains(event.target as Node)) {
+        setIsCategoryOpen(false)
       }
     }
 
@@ -78,28 +82,18 @@ export function MobileSearchHero() {
     }
   }, [categories.length])
 
-  // Filter modal categories based on search
+  // Filter categories based on search
   useEffect(() => {
-    if (!modalCategorySearch) {
-      setFilteredModalCategories(categories)
+    if (!categorySearch) {
+      setFilteredCategories(categories)
     } else {
       const filtered = categories.filter(category =>
-        category.name.toLowerCase().includes(modalCategorySearch.toLowerCase())
+        category.name.toLowerCase().includes(categorySearch.toLowerCase())
       )
-      setFilteredModalCategories(filtered)
+      setFilteredCategories(filtered)
     }
-  }, [modalCategorySearch, categories])
-
-  // Initialize modal categories when modal opens
-  useEffect(() => {
-    if (isCategoryModalOpen) {
-      setFilteredModalCategories(categories)
-      setModalCategorySearch('')
-      setTimeout(() => {
-        modalSearchInputRef.current?.focus()
-      }, 100)
-    }
-  }, [isCategoryModalOpen, categories])
+    setHighlightedCategoryIndex(-1) // Reset highlight when filter changes
+  }, [categorySearch, categories])
 
   // Removed automatic geolocation - only request on user gesture
 
@@ -146,12 +140,43 @@ export function MobileSearchHero() {
     setSelectedCategory(categoryId)
     setSelectedCategoryName(categoryName)
     setCategorySearch(categoryName)
-    setIsCategoryModalOpen(false)
+    setIsCategoryOpen(false)
+    setHighlightedCategoryIndex(-1)
   }
 
-  // Open category modal
-  const openCategoryModal = () => {
-    setIsCategoryModalOpen(true)
+  // Handle keyboard navigation for category suggestions
+  const handleCategoryKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!isCategoryOpen || filteredCategories.length === 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        setIsCategoryOpen(true)
+      }
+      return
+    }
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault()
+        setHighlightedCategoryIndex((prev) => 
+          prev < filteredCategories.length - 1 ? prev + 1 : prev
+        )
+        break
+      case 'ArrowUp':
+        e.preventDefault()
+        setHighlightedCategoryIndex((prev) => prev > 0 ? prev - 1 : -1)
+        break
+      case 'Enter':
+        e.preventDefault()
+        if (highlightedCategoryIndex >= 0 && highlightedCategoryIndex < filteredCategories.length) {
+          const category = filteredCategories[highlightedCategoryIndex]
+          handleCategorySelect(category.id, category.name)
+        }
+        break
+      case 'Escape':
+        setIsCategoryOpen(false)
+        setHighlightedCategoryIndex(-1)
+        break
+    }
   }
 
   // Handle search submission
@@ -232,23 +257,24 @@ export function MobileSearchHero() {
         <div className="relative w-full max-w-md">
           <div className="space-y-3">
             {/* Row 1: Category */}
-            <div className="relative">
+            <div className="relative" ref={categoryContainerRef}>
               <div className="bg-white border border-gray-300 rounded-lg px-4 py-3">
                 <Input
+                  ref={categoryInputRef}
                   type="text"
                   placeholder="Category"
                   value={categorySearch}
                   onChange={(e) => {
                     setCategorySearch(e.target.value)
+                    setIsCategoryOpen(true)
                     if (!selectedCategory || e.target.value !== selectedCategoryName) {
                       setSelectedCategory('')
                       setSelectedCategoryName('')
                     }
                   }}
-                  onClick={openCategoryModal}
-                  onFocus={openCategoryModal}
-                  readOnly
-                  className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 font-semibold text-gray-700 placeholder:text-gray-500 pr-8 cursor-pointer"
+                  onFocus={() => setIsCategoryOpen(true)}
+                  onKeyDown={handleCategoryKeyDown}
+                  className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 font-semibold text-gray-700 placeholder:text-gray-500 pr-8"
                   style={{ fontSize: '16px', fontFamily: 'Poppins, sans-serif' }}
                 />
                 {categorySearch && (
@@ -264,6 +290,26 @@ export function MobileSearchHero() {
                   </button>
                 )}
               </div>
+              
+              {/* Category Dropdown */}
+              {isCategoryOpen && filteredCategories.length > 0 && (
+                <div className="absolute top-full left-0 right-0 z-50 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  {filteredCategories.map((category, index) => (
+                    <button
+                      key={category.id}
+                      onClick={() => handleCategorySelect(category.id, category.name)}
+                      onMouseEnter={() => setHighlightedCategoryIndex(index)}
+                      className={`w-full px-4 py-3 text-left focus:outline-none first:rounded-t-lg last:rounded-b-lg transition-colors ${
+                        highlightedCategoryIndex === index ? 'bg-gray-100' : 'hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="font-medium text-sm">
+                        {highlightText(category.name, categorySearch)}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Row 2: Location */}
@@ -397,66 +443,6 @@ export function MobileSearchHero() {
         </div>
       </div>
 
-      {/* Category Selection Modal */}
-      {isCategoryModalOpen && (
-        <div className="fixed inset-0 z-50 bg-white">
-          <div className="flex flex-col h-full">
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <button
-                onClick={() => setIsCategoryModalOpen(false)}
-                className="flex items-center text-gray-600 hover:text-gray-800"
-              >
-                <ChevronLeft className="h-6 w-6 mr-1" />
-                Back
-              </button>
-              <h2 className="text-lg font-semibold text-gray-900">Select Category</h2>
-              <div className="w-16" />
-            </div>
-
-            {/* Search Input */}
-            <div className="p-4 border-b border-gray-200">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <Input
-                  ref={modalSearchInputRef}
-                  type="text"
-                  placeholder="Search categories..."
-                  value={modalCategorySearch}
-                  onChange={(e) => setModalCategorySearch(e.target.value)}
-                  className="pl-10 pr-4 py-3 text-base border-gray-300 focus:border-primary focus:ring-primary"
-                  style={{ fontSize: '16px', fontFamily: 'Poppins, sans-serif' }}
-                />
-              </div>
-            </div>
-
-            {/* Categories List */}
-            <div className="flex-1 overflow-y-auto">
-              {filteredModalCategories.length > 0 ? (
-                <div className="p-4">
-                  {filteredModalCategories.map((category) => (
-                    <button
-                      key={category.id}
-                      onClick={() => handleCategorySelect(category.id, category.name)}
-                      className="w-full px-4 py-4 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none border-b border-gray-100 last:border-b-0 transition-colors"
-                    >
-                      <div className="font-medium text-base text-gray-900">
-                        {highlightText(category.name, modalCategorySearch)}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                  <Search className="h-12 w-12 mb-4 text-gray-300" />
-                  <p className="text-lg font-medium mb-2">No categories found</p>
-                  <p className="text-sm">Try searching for something else</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

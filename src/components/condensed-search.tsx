@@ -29,17 +29,16 @@ export function CondensedSearch() {
   const [selectedCategoryName, setSelectedCategoryName] = useState<string>('')
   const [categorySearch, setCategorySearch] = useState<string>('')
   const [isCategoryOpen, setIsCategoryOpen] = useState(false)
-  const [modalCategorySearch, setModalCategorySearch] = useState<string>('')
-  const [filteredModalCategories, setFilteredModalCategories] = useState<Category[]>([])
   const [location, setLocation] = useState('')
   const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([])
   const [isLocationOpen, setIsLocationOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1)
+  const [highlightedCategoryIndex, setHighlightedCategoryIndex] = useState<number>(-1)
   const locationContainerRef = useRef<HTMLDivElement>(null)
   const categoryContainerRef = useRef<HTMLDivElement>(null)
-  const modalSearchInputRef = useRef<HTMLInputElement>(null)
+  const categoryInputRef = useRef<HTMLInputElement>(null)
   const locationInputRef = useRef<HTMLInputElement>(null)
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -118,31 +117,8 @@ export function CondensedSearch() {
       )
       setFilteredCategories(filtered)
     }
+    setHighlightedCategoryIndex(-1) // Reset highlight when filter changes
   }, [categorySearch, categories])
-
-  // Filter modal categories based on modal search
-  useEffect(() => {
-    if (modalCategorySearch) {
-      const filtered = categories.filter(cat => 
-        cat.name.toLowerCase().includes(modalCategorySearch.toLowerCase())
-      )
-      setFilteredModalCategories(filtered)
-    } else {
-      setFilteredModalCategories(categories)
-    }
-  }, [modalCategorySearch, categories])
-
-  // Initialize modal categories when modal opens
-  useEffect(() => {
-    if (isCategoryOpen) {
-      setFilteredModalCategories(categories)
-      setModalCategorySearch('')
-      // Focus the search input when modal opens
-      setTimeout(() => {
-        modalSearchInputRef.current?.focus()
-      }, 100)
-    }
-  }, [isCategoryOpen, categories])
 
   // Removed automatic geolocation - only request on user gesture
 
@@ -198,7 +174,43 @@ export function CondensedSearch() {
     setSelectedCategoryName(categoryName)
     setCategorySearch(categoryName)
     setIsCategoryOpen(false)
+    setHighlightedCategoryIndex(-1)
   }, [])
+
+  // Handle keyboard navigation for category suggestions
+  const handleCategoryKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!isCategoryOpen || filteredCategories.length === 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        setIsCategoryOpen(true)
+      }
+      return
+    }
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault()
+        setHighlightedCategoryIndex((prev) => 
+          prev < filteredCategories.length - 1 ? prev + 1 : prev
+        )
+        break
+      case 'ArrowUp':
+        e.preventDefault()
+        setHighlightedCategoryIndex((prev) => prev > 0 ? prev - 1 : -1)
+        break
+      case 'Enter':
+        e.preventDefault()
+        if (highlightedCategoryIndex >= 0 && highlightedCategoryIndex < filteredCategories.length) {
+          const category = filteredCategories[highlightedCategoryIndex]
+          handleCategorySelect(category.id, category.name)
+        }
+        break
+      case 'Escape':
+        setIsCategoryOpen(false)
+        setHighlightedCategoryIndex(-1)
+        break
+    }
+  }, [isCategoryOpen, filteredCategories, highlightedCategoryIndex, handleCategorySelect])
 
   // Clear location
   const clearLocation = useCallback(() => {
@@ -261,20 +273,21 @@ export function CondensedSearch() {
         {/* Category Section */}
         <div className="flex-1 min-w-0 relative" ref={categoryContainerRef}>
           <Input
+            ref={categoryInputRef}
             type="text"
             placeholder="Category"
             value={categorySearch}
             onChange={(e) => {
               setCategorySearch(e.target.value)
+              setIsCategoryOpen(true)
               if (!selectedCategory || e.target.value !== selectedCategoryName) {
                 setSelectedCategory('')
                 setSelectedCategoryName('')
               }
             }}
-            onClick={() => setIsCategoryOpen(true)}
             onFocus={() => setIsCategoryOpen(true)}
-            readOnly
-            className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 text-sm text-gray-600 placeholder:text-gray-400 pr-6 cursor-pointer"
+            onKeyDown={handleCategoryKeyDown}
+            className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 text-sm text-gray-600 placeholder:text-gray-400 pr-6"
           />
           {categorySearch && (
             <button
@@ -289,45 +302,27 @@ export function CondensedSearch() {
             </button>
           )}
           
-          {/* Category Modal Dropdown */}
-          {isCategoryOpen && (
+          {/* Category Dropdown */}
+          {isCategoryOpen && filteredCategories.length > 0 && (
             <div className={cn(
               "absolute top-full left-0 z-50 mt-2 bg-white border border-gray-200 rounded-2xl shadow-lg max-h-60 overflow-y-auto",
               isMobile ? "w-full" : "w-96"
             )}>
-              <div className="p-4 border-b border-gray-200">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    ref={modalSearchInputRef}
-                    type="text"
-                    placeholder="Search categories..."
-                    value={modalCategorySearch}
-                    onChange={(e) => setModalCategorySearch(e.target.value)}
-                    className="pl-8 pr-4 py-2 text-sm border-gray-300 focus:border-primary focus:ring-primary"
-                  />
-                </div>
-              </div>
-              <div className="max-h-48 overflow-y-auto">
-                {filteredModalCategories.length > 0 ? (
-                  filteredModalCategories.map((category) => (
-                    <button
-                      key={category.id}
-                      onClick={() => handleCategorySelect(category.id, category.name)}
-                      className="w-full px-4 py-3 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none first:rounded-t-2xl last:rounded-b-2xl"
-                    >
-                      <div className="font-medium text-sm">
-                        {highlightText(category.name, modalCategorySearch)}
-                      </div>
-                    </button>
-                  ))
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-8 text-gray-500">
-                    <Search className="h-8 w-8 mb-2 text-gray-300" />
-                    <p className="text-sm font-medium">No categories found</p>
+              {filteredCategories.map((category, index) => (
+                <button
+                  key={category.id}
+                  onClick={() => handleCategorySelect(category.id, category.name)}
+                  onMouseEnter={() => setHighlightedCategoryIndex(index)}
+                  className={cn(
+                    "w-full px-4 py-3 text-left focus:outline-none first:rounded-t-2xl last:rounded-b-2xl transition-colors",
+                    highlightedCategoryIndex === index ? "bg-gray-100" : "hover:bg-gray-50"
+                  )}
+                >
+                  <div className="font-medium text-sm">
+                    {highlightText(category.name, categorySearch)}
                   </div>
-                )}
-              </div>
+                </button>
+              ))}
             </div>
           )}
         </div>
@@ -454,14 +449,15 @@ export function CondensedSearch() {
     selectedCategory,
     selectedCategoryName,
     isCategoryOpen,
-    filteredModalCategories,
-    modalCategorySearch,
+    filteredCategories,
     location,
     isLocationOpen,
     locationSuggestions,
     isMobile,
     highlightedIndex,
+    highlightedCategoryIndex,
     handleCategorySelect,
+    handleCategoryKeyDown,
     highlightText,
     handleLocationSearch,
     handleLocationKeyDown,
