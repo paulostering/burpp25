@@ -147,15 +147,16 @@ export function AdminVendorProfileManager({ vendor, stats: _stats, categories, o
       if (formData.offers_in_person_services && formData.zip_code && formData.zip_code !== vendor.zip_code) {
         console.log(`🌍 Geocoding updated zip code: ${formData.zip_code}`)
         try {
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(formData.zip_code)}&limit=1`,
-            { headers: { 'User-Agent': 'burpp-web/1.0' } }
-          )
+          const response = await fetch('/api/geocode', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ zipCode: formData.zip_code })
+          })
           if (response.ok) {
             const data = await response.json()
-            if (Array.isArray(data) && data.length > 0) {
-              latitude = parseFloat(data[0].lat)
-              longitude = parseFloat(data[0].lon)
+            if (data.lat && data.lng) {
+              latitude = data.lat
+              longitude = data.lng
               console.log(`✅ Geocoded ${formData.zip_code} to:`, { lat: latitude, lng: longitude })
             }
           }

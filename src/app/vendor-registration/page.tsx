@@ -523,22 +523,20 @@ export default function VendorRegisterPage() {
 
   const geocodeZipCode = async (zipCode: string): Promise<{ lat: number; lng: number } | null> => {
     try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(zipCode)}&limit=1`,
-        {
-          headers: { 'User-Agent': 'burpp-web/1.0' }
-        }
-      )
+      const response = await fetch('/api/geocode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ zipCode })
+      })
       
       if (!response.ok) return null
       
       const data = await response.json()
-      if (!Array.isArray(data) || data.length === 0) return null
-      
-      return {
-        lat: parseFloat(data[0].lat),
-        lng: parseFloat(data[0].lon)
+      if (data.lat && data.lng) {
+        return { lat: data.lat, lng: data.lng }
       }
+      
+      return null
     } catch (error) {
       console.error('Geocoding error:', error)
       return null

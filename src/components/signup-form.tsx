@@ -162,7 +162,6 @@ export function SignupForm({
             <Input 
               id="firstName" 
               type="text" 
-              placeholder="John"
               {...form.register('firstName')}
               disabled={isLoading}
             />
@@ -175,7 +174,6 @@ export function SignupForm({
             <Input 
               id="lastName" 
               type="text" 
-              placeholder="Doe"
               {...form.register('lastName')}
               disabled={isLoading}
             />
@@ -189,7 +187,6 @@ export function SignupForm({
           <Input 
             id="email" 
             type="email" 
-            placeholder="m@example.com"
             {...form.register('email')}
             disabled={isLoading}
           />

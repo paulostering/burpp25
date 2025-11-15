@@ -100,7 +100,6 @@ export function LoginForm({
           <Input 
             id="email" 
             type="email" 
-            placeholder="m@example.com" 
             {...form.register('email')}
             disabled={isLoading}
           />
