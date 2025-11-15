@@ -54,13 +54,12 @@ export default function PrivacyPolicy() {
                 <Link href="#information-we-collect" className="block text-primary hover:underline">1. Information We Collect and How We Use It</Link>
                 <Link href="#cookies" className="block text-primary hover:underline">2. Cookies and Tracking</Link>
                 <Link href="#third-parties" className="block text-primary hover:underline">3. Third Parties</Link>
-                <Link href="#controlling-data" className="block text-primary hover:underline">4. Controlling Your Personal Data</Link>
+                <Link href="#data-retention" className="block text-primary hover:underline">4. Data Retention and Account Termination</Link>
               </div>
               <div className="space-y-2">
-                <Link href="#data-retention" className="block text-primary hover:underline">5. Data Retention and Account Termination</Link>
-                <Link href="#children" className="block text-primary hover:underline">6. Children's Privacy</Link>
-                <Link href="#security" className="block text-primary hover:underline">7. Security</Link>
-                <Link href="#contact" className="block text-primary hover:underline">8. Contact Information</Link>
+                <Link href="#children" className="block text-primary hover:underline">5. Children's Privacy</Link>
+                <Link href="#security" className="block text-primary hover:underline">6. Security</Link>
+                <Link href="#contact" className="block text-primary hover:underline">7. Contact Information</Link>
               </div>
             </div>
           </div>
@@ -204,61 +203,6 @@ export default function PrivacyPolicy() {
                   We may disclose information when required by law, to protect our rights, or to prevent fraud and abuse.
                 </p>
               </div>
-            </div>
-          </div>
-
-          {/* Controlling Your Data */}
-          <div id="controlling-data" className="mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-6">Controlling Your Personal Data</h2>
-            <p className="text-lg text-gray-600 mb-6">
-              You have several options for controlling your personal information:
-            </p>
-            
-            <div className="grid gap-6 md:grid-cols-2">
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="text-lg font-semibold mb-3">Account Settings</h3>
-                  <p className="text-gray-600 text-sm mb-4">
-                    Update your profile information, privacy settings, and communication preferences.
-                  </p>
-                  <Button variant="outline" size="sm">
-                    Manage Account
-                  </Button>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="text-lg font-semibold mb-3">Data Export</h3>
-                  <p className="text-gray-600 text-sm mb-4">
-                    Request a copy of your personal data in a portable format.
-                  </p>
-                  <Button variant="outline" size="sm">
-                    Request Data
-                  </Button>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="text-lg font-semibold mb-3">Data Deletion</h3>
-                  <p className="text-gray-600 text-sm mb-4">
-                    Request deletion of your personal data, subject to legal requirements.
-                  </p>
-                  <Button variant="outline" size="sm">
-                    Delete Account
-                  </Button>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="text-lg font-semibold mb-3">Marketing Opt-out</h3>
-                  <p className="text-gray-600 text-sm mb-4">
-                    Unsubscribe from marketing communications while keeping essential service messages.
-                  </p>
-                  <Button variant="outline" size="sm">
-                    Unsubscribe
-                  </Button>
-                </CardContent>
-              </Card>
             </div>
           </div>
 
