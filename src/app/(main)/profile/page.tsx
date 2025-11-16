@@ -13,17 +13,62 @@ export default function UserProfilePage() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isVendor, setIsVendor] = useState(false)
+  const [roleLoading, setRoleLoading] = useState(true)
 
   const { user, loading: authLoading } = useAuth()
   const router = useRouter()
   const supabase = createClient()
 
+  // Check if user is a vendor and redirect if so
   useEffect(() => {
-    const loadUserProfile = async () => {
+    const checkUserRole = async () => {
       if (authLoading) return
 
       if (!user) {
         router.push('/login')
+        return
+      }
+
+      try {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single()
+
+        const userIsVendor = profile?.role === 'vendor' ||
+                           user.user_metadata?.role === 'vendor' ||
+                           (user as any).raw_user_meta_data?.role === 'vendor'
+
+        setIsVendor(userIsVendor)
+        
+        // Redirect vendors away from profile page
+        if (userIsVendor) {
+          router.push('/dashboard')
+          return
+        }
+      } catch (error) {
+        console.error('Error checking user role:', error)
+      } finally {
+        setRoleLoading(false)
+      }
+    }
+
+    checkUserRole()
+  }, [user, authLoading, router, supabase])
+
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      if (authLoading || roleLoading) return
+
+      if (!user) {
+        router.push('/login')
+        return
+      }
+
+      // Don't load profile if user is a vendor (they'll be redirected)
+      if (isVendor) {
         return
       }
 
@@ -68,13 +113,14 @@ export default function UserProfilePage() {
     }
 
     loadUserProfile()
-  }, [user, authLoading, router, supabase])
+  }, [user, authLoading, roleLoading, isVendor, router, supabase])
 
   const handleProfileUpdate = (updatedProfile: UserProfile) => {
     setUserProfile(updatedProfile)
   }
 
-  if (loading || authLoading) {
+  // Show loading while checking role or loading profile
+  if (loading || authLoading || roleLoading || isVendor) {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
