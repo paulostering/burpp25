@@ -28,7 +28,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
-import { Check, MapPin, Loader2, Camera, Sparkles, RefreshCw } from 'lucide-react'
+import { Check, MapPin, Loader2, Camera, Sparkles, RefreshCw, DollarSign, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Area } from 'react-easy-crop'
 import { ImageCropModal } from '@/components/image-crop-modal'
@@ -109,6 +109,21 @@ export default function VendorRegisterPage() {
   const [cropType, setCropType] = useState<'profile' | 'cover'>('profile')
   const [cropModalOpen, setCropModalOpen] = useState(false)
 
+  // Step 4 products
+  const [products, setProducts] = useState<Array<{
+    title: string
+    description: string
+    starting_price: string
+    imageFile: File | null
+    imageUrl: string | null
+    croppedImageBlob: Blob | null
+  }>>([])
+  const [editingProductIndex, setEditingProductIndex] = useState<number | null>(null)
+  const [productCropModalOpen, setProductCropModalOpen] = useState(false)
+  const [productImageToCrop, setProductImageToCrop] = useState<string>('')
+  const [currentProductImageIndex, setCurrentProductImageIndex] = useState<number | null>(null)
+  const [productErrors, setProductErrors] = useState<Record<number, { title?: string; description?: string }>>({})
+
   // Step 5 auth
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
@@ -188,6 +203,37 @@ export default function VendorRegisterPage() {
             newErrors.general = issue.message
           }
         })
+      }
+    }
+
+    if (step === 4) {
+      // Validate products - if any products exist, they must have title and description
+      const newProductErrors: Record<number, { title?: string; description?: string }> = {}
+      let hasProductErrors = false
+
+      products.forEach((product, index) => {
+        const productError: { title?: string; description?: string } = {}
+        
+        if (!product.title.trim()) {
+          productError.title = 'Title is required'
+          hasProductErrors = true
+        }
+        
+        if (!product.description.trim()) {
+          productError.description = 'Description is required'
+          hasProductErrors = true
+        }
+
+        if (Object.keys(productError).length > 0) {
+          newProductErrors[index] = productError
+        }
+      })
+
+      if (hasProductErrors) {
+        setProductErrors(newProductErrors)
+        return false
+      } else {
+        setProductErrors({})
       }
     }
     
@@ -508,6 +554,24 @@ export default function VendorRegisterPage() {
     setCropModalOpen(false)
   }
 
+  const handleProductCropComplete = async (croppedBlob: Blob) => {
+    if (currentProductImageIndex === null) return
+
+    const previewUrl = URL.createObjectURL(croppedBlob)
+    const updated = [...products]
+    updated[currentProductImageIndex].croppedImageBlob = croppedBlob
+    updated[currentProductImageIndex].imageUrl = previewUrl
+    setProducts(updated)
+    setProductCropModalOpen(false)
+    setCurrentProductImageIndex(null)
+  }
+
+  const handleProductCropCancel = () => {
+    setProductCropModalOpen(false)
+    setCurrentProductImageIndex(null)
+    setProductImageToCrop('')
+  }
+
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase()
   }
@@ -730,11 +794,74 @@ export default function VendorRegisterPage() {
           phone_number: phone,
           admin_approved: true, // Auto-approve vendors on registration
         }
-        const { error: insErr } = await supabase.from('vendor_profiles').insert(payload)
+        const { error: insErr, data: vendorProfile } = await supabase.from('vendor_profiles').insert(payload).select().single()
         if (insErr) {
           console.error('Profile insertion error:', insErr)
           toast.error(`Profile creation failed: ${insErr.message}`)
           return
+        }
+
+        // Save products if any were added
+        if (products.length > 0 && vendorProfile?.id) {
+          for (let i = 0; i < products.length; i++) {
+            const product = products[i]
+            
+            // Skip products without title and description
+            if (!product.title.trim() || !product.description.trim()) {
+              continue
+            }
+
+            let productImageUrl: string | null = null
+
+            // Upload product image if exists
+            if (product.croppedImageBlob) {
+              try {
+                // Use the same pattern as vendor dashboard: vendor bucket with vendorId/product/ path
+                const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`
+                const filePath = `${vendorProfile.id}/product/${fileName}`
+                const file = new File([product.croppedImageBlob], fileName, { type: 'image/jpeg' })
+                
+                const { data: uploadData, error: uploadError } = await supabase.storage
+                  .from('vendor')
+                  .upload(filePath, file, {
+                    cacheControl: '3600',
+                    upsert: false,
+                    contentType: 'image/jpeg',
+                  })
+
+                if (uploadError) {
+                  console.error('Error uploading product image:', uploadError)
+                  toast.error(`Failed to upload product image: ${uploadError.message}`)
+                  // Continue without image
+                } else if (uploadData) {
+                  const { data: { publicUrl } } = supabase.storage
+                    .from('vendor')
+                    .getPublicUrl(uploadData.path)
+                  productImageUrl = publicUrl
+                }
+              } catch (error) {
+                console.error('Error uploading product image:', error)
+                toast.error('Failed to upload product image')
+                // Continue without image
+              }
+            }
+
+            // Insert product
+            const { error: productError } = await supabase.from('vendor_products').insert({
+              vendor_id: vendorProfile.id,
+              title: product.title.trim(),
+              description: product.description.trim(),
+              starting_price: product.starting_price ? parseFloat(product.starting_price) : null,
+              image_url: productImageUrl,
+              is_active: true,
+              display_order: i,
+            })
+
+            if (productError) {
+              console.error('Error creating product:', productError)
+              // Don't fail registration if product creation fails
+            }
+          }
         }
 
         // Send vendor welcome email (non-blocking)
@@ -789,7 +916,7 @@ export default function VendorRegisterPage() {
         <div className="flex flex-1 items-center justify-center">
           <div className="w-full max-w-md">
             <div className="mb-6 flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">Step {step} of 5</div>
+              <div className="text-sm text-muted-foreground">Step {step} of 6</div>
             </div>
 
       {step === 1 && (
@@ -1165,6 +1292,242 @@ export default function VendorRegisterPage() {
       {step === 4 && (
         <section className="space-y-6">
           <div>
+            <h2 className="text-2xl font-semibold">Add Your First Product</h2>
+            <p className="text-muted-foreground">Adding your first product helps potential clients understand the services you offer and what sets you apart.</p>
+          </div>
+
+          {products.length === 0 ? (
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+              <p className="text-gray-600 mb-4">No products added yet. You can skip this step and add products later from your dashboard.</p>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setProducts([{
+                    title: '',
+                    description: '',
+                    starting_price: '',
+                    imageFile: null,
+                    imageUrl: null,
+                    croppedImageBlob: null
+                  }])
+                  setEditingProductIndex(0)
+                }}
+              >
+                Add Product
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {products.map((product, index) => (
+                <div key={index} className="border border-gray-200 rounded-lg p-6 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold">Product {index + 1}</h3>
+                    {products.length > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setProducts(products.filter((_, i) => i !== index))
+                          if (editingProductIndex === index) {
+                            setEditingProductIndex(null)
+                          } else if (editingProductIndex !== null && editingProductIndex > index) {
+                            setEditingProductIndex(editingProductIndex - 1)
+                          }
+                        }}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        Remove
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="space-y-2">
+                      <Label htmlFor={`product-title-${index}`}>Title *</Label>
+                      <Input
+                        id={`product-title-${index}`}
+                        value={product.title}
+                        onChange={(e) => {
+                          const updated = [...products]
+                          updated[index].title = e.target.value
+                          setProducts(updated)
+                          // Clear error when user starts typing
+                          if (productErrors[index]?.title) {
+                            const updatedErrors = { ...productErrors }
+                            delete updatedErrors[index]?.title
+                            if (Object.keys(updatedErrors[index] || {}).length === 0) {
+                              delete updatedErrors[index]
+                            }
+                            setProductErrors(updatedErrors)
+                          }
+                        }}
+                        className={productErrors[index]?.title ? 'border-red-500' : ''}
+                        placeholder="e.g., Professional Wedding Photography Package"
+                      />
+                      {productErrors[index]?.title && (
+                        <p className="text-sm text-red-500">{productErrors[index].title}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor={`product-description-${index}`}>Description *</Label>
+                      <Textarea
+                        id={`product-description-${index}`}
+                        value={product.description}
+                        onChange={(e) => {
+                          const updated = [...products]
+                          updated[index].description = e.target.value
+                          setProducts(updated)
+                          // Clear error when user starts typing
+                          if (productErrors[index]?.description) {
+                            const updatedErrors = { ...productErrors }
+                            delete updatedErrors[index]?.description
+                            if (Object.keys(updatedErrors[index] || {}).length === 0) {
+                              delete updatedErrors[index]
+                            }
+                            setProductErrors(updatedErrors)
+                          }
+                        }}
+                        className={productErrors[index]?.description ? 'border-red-500' : ''}
+                        rows={4}
+                        placeholder="Describe what's included, the process, timeline, and what makes your service unique..."
+                      />
+                      {productErrors[index]?.description && (
+                        <p className="text-sm text-red-500">{productErrors[index].description}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor={`product-price-${index}`}>Starting Price (optional)</Label>
+                      <div className="relative">
+                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                        <Input
+                          id={`product-price-${index}`}
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="99.99"
+                          value={product.starting_price}
+                          onChange={(e) => {
+                            const updated = [...products]
+                            updated[index].starting_price = e.target.value
+                            setProducts(updated)
+                          }}
+                          className="pl-9"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Product Image (optional)</Label>
+                      <div className="flex items-center gap-3">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            const input = document.createElement('input')
+                            input.type = 'file'
+                            input.accept = 'image/*'
+                            input.onchange = (e) => {
+                              const file = (e.target as HTMLInputElement).files?.[0]
+                              if (!file) return
+
+                              if (!file.type.startsWith('image/')) {
+                                toast.error('Please select an image file')
+                                return
+                              }
+
+                              if (file.size > 5 * 1024 * 1024) {
+                                toast.error('Image must be less than 5MB')
+                                return
+                              }
+
+                              const reader = new FileReader()
+                              reader.onloadend = () => {
+                                const imageUrl = reader.result as string
+                                // Set state in the correct order to ensure modal opens
+                                setCurrentProductImageIndex(index)
+                                setProductImageToCrop(imageUrl)
+                                // Use setTimeout to ensure state is set before opening modal
+                                setTimeout(() => {
+                                  setProductCropModalOpen(true)
+                                }, 0)
+                              }
+                              reader.readAsDataURL(file)
+                            }
+                            input.click()
+                          }}
+                        >
+                          <Camera className="h-4 w-4 mr-2" />
+                          {product.imageUrl ? 'Change Image' : 'Upload Image'}
+                        </Button>
+                        {product.imageUrl && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              const updated = [...products]
+                              updated[index].imageUrl = null
+                              updated[index].imageFile = null
+                              updated[index].croppedImageBlob = null
+                              setProducts(updated)
+                            }}
+                            className="text-red-600"
+                          >
+                            Remove
+                          </Button>
+                        )}
+                      </div>
+                      {product.imageUrl && (
+                        <div className="relative h-48 border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
+                          <img
+                            src={product.imageUrl}
+                            alt="Product preview"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              <Button
+                variant="outline"
+                onClick={() => {
+                  // Validate existing products before adding a new one
+                  const hasIncompleteProducts = products.some(p => !p.title.trim() || !p.description.trim())
+                  if (hasIncompleteProducts) {
+                    toast.error('Please complete the title and description for all products before adding another')
+                    return
+                  }
+                  setProducts([...products, {
+                    title: '',
+                    description: '',
+                    starting_price: '',
+                    imageFile: null,
+                    imageUrl: null,
+                    croppedImageBlob: null
+                  }])
+                }}
+                className="w-full"
+              >
+                Add Another Product
+              </Button>
+            </div>
+          )}
+
+          <div className="flex justify-between gap-2">
+            <Button variant="outline" onClick={back}>Back</Button>
+            <Button onClick={next}>Next</Button>
+          </div>
+        </section>
+      )}
+
+      {step === 5 && (
+        <section className="space-y-6">
+          <div>
             <h2 className="text-2xl font-semibold">Add Profile & Cover Photos</h2>
             <p className="text-muted-foreground">Upload optional profile and cover photos to make your profile stand out.</p>
           </div>
@@ -1265,21 +1628,6 @@ export default function VendorRegisterPage() {
             </div>
           </div>
           
-          {/* Image Crop Modal */}
-          <ImageCropModal
-            open={cropModalOpen}
-            onOpenChange={(open) => {
-              if (!open) {
-                handleCropCancel()
-              }
-            }}
-            imageSrc={cropType === 'profile' ? (profilePhotoUrl || '') : (coverPhotoUrl || '')}
-            onCropComplete={handleCropComplete}
-            aspectRatio={cropType === 'profile' ? 1 : 2.5}
-            title={`Crop ${cropType === 'profile' ? 'Profile' : 'Cover'} Photo`}
-            description={`Crop your ${cropType} photo to the desired size. This will be displayed on your vendor profile.`}
-          />
-          
           <div className="flex justify-between gap-2">
             <Button variant="outline" onClick={back}>Back</Button>
             <Button onClick={next}>Next</Button>
@@ -1287,7 +1635,37 @@ export default function VendorRegisterPage() {
         </section>
       )}
 
-      {step === 5 && (
+      {/* Image Crop Modal for Profile/Cover Photos */}
+      <ImageCropModal
+        open={cropModalOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleCropCancel()
+          }
+        }}
+        imageSrc={cropType === 'profile' ? (profilePhotoUrl || '') : (coverPhotoUrl || '')}
+        onCropComplete={handleCropComplete}
+        aspectRatio={cropType === 'profile' ? 1 : 2.5}
+        title={`Crop ${cropType === 'profile' ? 'Profile' : 'Cover'} Photo`}
+        description={`Crop your ${cropType} photo to the desired size. This will be displayed on your vendor profile.`}
+      />
+
+      {/* Product Image Crop Modal - Always rendered */}
+      <ImageCropModal
+        open={productCropModalOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleProductCropCancel()
+          }
+        }}
+        imageSrc={productImageToCrop}
+        onCropComplete={handleProductCropComplete}
+        aspectRatio={16/9}
+        title="Crop Product Image"
+        description="Crop your product image to the desired size. This will be displayed on your vendor profile."
+      />
+
+      {step === 6 && (
         <section className="space-y-6">
           <div>
             <h2 className="text-2xl font-semibold">Create Account</h2>
