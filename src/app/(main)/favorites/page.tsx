@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, Heart } from 'lucide-react'
+import { ArrowLeft, Heart, MapPin, CircleDollarSign, Star } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { toast } from 'sonner'
@@ -22,7 +22,10 @@ interface FavoriteVendor {
     profile_title: string
     profile_photo_url: string
     zip_code: string
-    hourly_rate: number
+    hourly_rate: number | null
+    service_radius: number | null
+    averageRating?: number
+    totalReviews?: number
     service_categories: string[]
     offers_virtual_services: boolean
     offers_in_person_services: boolean
@@ -90,6 +93,59 @@ export default function FavoritesPage() {
     loadFavorites()
   }, [user, supabase])
 
+  // Load review stats for favorited vendors to match search card styling
+  useEffect(() => {
+    const loadReviewStats = async () => {
+      const vendorIds = favorites
+        .map((fav) => fav.vendor_profiles?.id)
+        .filter((id): id is string => Boolean(id))
+
+      if (vendorIds.length === 0) return
+
+      const { data: reviews } = await supabase
+        .from('reviews')
+        .select('vendor_id, rating')
+        .in('vendor_id', vendorIds)
+        .eq('approved', true)
+
+      if (!reviews) return
+
+      const statsMap = new Map<string, { totalReviews: number; averageRating: number }>()
+
+      reviews.forEach((review) => {
+        const existing = statsMap.get(review.vendor_id) || { totalReviews: 0, averageRating: 0 }
+        existing.totalReviews += 1
+        existing.averageRating += review.rating
+        statsMap.set(review.vendor_id, existing)
+      })
+
+      statsMap.forEach((stats, vendorId) => {
+        stats.averageRating = stats.averageRating / stats.totalReviews
+        statsMap.set(vendorId, stats)
+      })
+
+      setFavorites((prev) =>
+        prev.map((fav) => {
+          const vendor = fav.vendor_profiles
+          if (!vendor) return fav
+          const stats = statsMap.get(vendor.id)
+          if (!stats) return fav
+
+          return {
+            ...fav,
+            vendor_profiles: {
+              ...vendor,
+              totalReviews: stats.totalReviews,
+              averageRating: stats.averageRating,
+            },
+          }
+        })
+      )
+    }
+
+    loadReviewStats()
+  }, [favorites.length, supabase])
+
   const handleRemoveFavorite = async (favoriteId: string) => {
     try {
       const { error } = await supabase
@@ -129,19 +185,15 @@ export default function FavoritesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto p-6">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" size="icon" onClick={() => router.back()}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold">My Favorites</h1>
-            <p className="text-gray-600">Vendors you've saved for later</p>
-          </div>
+    <div className="min-h-screen bg-background">
+      <div className="mx-auto max-w-7xl px-4 py-8">
+        {/* Header - match search page container/typography */}
+        <div className="mb-8 flex flex-col gap-1">
+          <p className="text-xs md:text-sm text-gray-700">Favorites</p>
+          <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-black">
+            My Saved Pros
+          </h1>
         </div>
-
 
         {/* Content */}
         {isLoading ? (
@@ -167,7 +219,7 @@ export default function FavoritesPage() {
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-8">
             {favorites.map((favorite) => {
               const vendor = favorite.vendor_profiles
               if (!vendor) {
@@ -199,9 +251,9 @@ export default function FavoritesPage() {
                   </Button>
 
                   <Link href={`/vendor/${vendor.id}`}>
-                    <Card className="overflow-hidden hover:shadow-md transition-shadow duration-200 border-0 shadow-sm cursor-pointer h-full">
+                    <Card className="overflow-hidden border border-neutral-200 shadow-none cursor-pointer h-full bg-white pt-0">
                       {/* Image */}
-                      <div className="aspect-square relative bg-muted rounded-lg overflow-hidden">
+                      <div className="relative h-[200px] w-full bg-neutral-100 overflow-hidden">
                         {vendor.profile_photo_url ? (
                           <Image
                             src={vendor.profile_photo_url}
@@ -212,25 +264,93 @@ export default function FavoritesPage() {
                             loading="lazy"
                           />
                         ) : (
-                          <div className="flex items-center justify-center h-full text-4xl font-semibold text-muted-foreground">
+                          <div className="flex h-full w-full items-center justify-center text-4xl font-semibold text-muted-foreground">
                             {vendor.business_name?.[0] ?? "V"}
                           </div>
                         )}
                       </div>
 
                       {/* Content */}
-                      <div className="p-4 space-y-2">
+                      <div className="bg-white px-5 py-4 space-y-3">
                         {/* Business Name */}
-                        <h3 className="font-semibold text-base leading-tight line-clamp-1 text-gray-900">
+                        <h3 className="font-semibold text-lg leading-tight line-clamp-1 text-black">
                           {vendor.business_name}
                         </h3>
 
-                        {/* Rate */}
-                        {typeof vendor.hourly_rate === "number" && (
-                          <div className="text-sm text-primary font-medium">
-                            From ${vendor.hourly_rate} / hour
+                        {/* Reviews - match search result style */}
+                        <div className="flex items-center gap-3">
+                          {/* Star Icons */}
+                          <div className="flex items-center gap-1">
+                            {[1, 2, 3, 4, 5].map((starIndex) => {
+                              const rating = vendor.averageRating || 0
+                              const hasReviews = !!vendor.totalReviews && vendor.totalReviews > 0
+                              const isFilled = hasReviews && starIndex <= Math.round(rating)
+
+                              let containerClass = "flex h-7 w-7 items-center justify-center rounded-md"
+                              let iconClass = "h-4 w-4"
+
+                              if (!hasReviews) {
+                                containerClass += " bg-gray-200"
+                                iconClass += " text-gray-400"
+                              } else if (isFilled) {
+                                containerClass += " bg-[#5C3CD7]"
+                                iconClass += " text-white"
+                              } else {
+                                containerClass += " bg-[#E5DDFD]"
+                                iconClass += " text-[#5C3CD7]"
+                              }
+
+                              return (
+                                <div key={starIndex} className={containerClass}>
+                                  <Star className={iconClass} />
+                                </div>
+                              )
+                            })}
+                          </div>
+
+                          {/* Rating and Review Count */}
+                          {vendor.totalReviews && vendor.totalReviews > 0 ? (
+                            <span className="text-xs text-black">
+                              {vendor.averageRating?.toFixed(1)} ({vendor.totalReviews} {vendor.totalReviews === 1 ? 'Review' : 'Reviews'})
+                            </span>
+                          ) : (
+                            <span className="text-xs text-gray-500">No reviews</span>
+                          )}
+                        </div>
+
+                        {/* In-person radius / location */}
+                        {vendor.offers_in_person_services && vendor.zip_code && (
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-black" />
+                            <p className="text-sm text-black">
+                              <span>In Person Up to </span>
+                              <span className="font-semibold">
+                                {vendor.service_radius ?? 0}
+                              </span>
+                              <span> miles From </span>
+                              <span className="font-semibold">
+                                {vendor.zip_code}
+                              </span>
+                            </p>
                           </div>
                         )}
+
+                        {/* Rate line */}
+                        <div className="flex items-center gap-2">
+                          <CircleDollarSign className="h-4 w-4 text-black" />
+                          <p className="text-sm text-black">
+                            <span>Rates starting from </span>
+                            {typeof vendor.hourly_rate === "number" ? (
+                              <span className="font-semibold">
+                                ${vendor.hourly_rate.toFixed(2)} /hr
+                              </span>
+                            ) : (
+                              <span className="font-semibold">
+                                Contact for rates
+                              </span>
+                            )}
+                          </p>
+                        </div>
 
                         {/* Service Type Badge */}
                         <div>
@@ -239,14 +359,9 @@ export default function FavoritesPage() {
                               🔮 Virtual
                             </Badge>
                           )}
-                          {vendor.offers_in_person_services && !vendor.offers_virtual_services && (
-                            <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700 hover:bg-purple-100">
-                              👤 In-Person
-                            </Badge>
-                          )}
                           {vendor.offers_virtual_services && vendor.offers_in_person_services && (
                             <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700 hover:bg-purple-100">
-                              🔮 Virtual
+                              🔮 Virtual &amp; In-Person
                             </Badge>
                           )}
                         </div>

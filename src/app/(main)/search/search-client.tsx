@@ -6,12 +6,15 @@ import { InfiniteScrollVendors } from '@/components/infinite-scroll-vendors'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card } from '@/components/ui/card'
 import type { VendorProfile } from '@/types/db'
+import { getCategories } from '@/lib/categories-cache'
 
 export function SearchClient() {
   const searchParams = useSearchParams()
   const [vendors, setVendors] = useState<VendorProfile[]>([])
   const [loading, setLoading] = useState(true)
   const [count, setCount] = useState(0)
+  const [sortBy, setSortBy] = useState<'rating' | 'hourly'>('rating')
+  const [categoryName, setCategoryName] = useState<string | undefined>()
 
   const category = searchParams.get('category') || undefined
   const q = searchParams.get('q') || undefined
@@ -51,6 +54,26 @@ export function SearchClient() {
 
     fetchVendors()
   }, [category, q])
+
+  // Resolve category id to human-readable name for header
+  useEffect(() => {
+    const loadCategoryName = async () => {
+      if (!category) {
+        setCategoryName(undefined)
+        return
+      }
+
+      try {
+        const categories = await getCategories()
+        const match = categories.find((c) => c.id === category)
+        setCategoryName(match?.name)
+      } catch {
+        setCategoryName(undefined)
+      }
+    }
+
+    loadCategoryName()
+  }, [category])
 
   if (loading) {
     return (
@@ -94,27 +117,36 @@ export function SearchClient() {
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-7xl px-4 py-8">
-        {/* Search Results Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">
-            {count > 0 
-              ? `${count} professional${count === 1 ? '' : 's'} found` 
-              : 'No professionals found'
-            }
-          </h1>
-          {q && count > 0 && (
-            <p className="text-muted-foreground text-lg">
-              Showing vendors who service "{q}" based on their service radius
+        {/* Search Results Header + Sort */}
+        <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            {/* Small label line (category / count) */}
+            <p className="text-xs md:text-sm text-gray-700 mb-1">
+              {categoryName || (q ? 'Search results' : 'Browse professionals')}
             </p>
-          )}
-          {count === 0 && q && (
-            <div className="mt-4 p-6 bg-gray-50 rounded-lg border border-gray-200">
-              <p className="text-lg text-gray-700 mb-2">
-                We couldn't find any professionals serving <strong>"{q}"</strong> in this category.
-              </p>
-              <p className="text-gray-600">
-                Try searching in a different location or browse all professionals in this category.
-              </p>
+
+            {/* Main heading inspired by Figma header */}
+            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-black">
+              {categoryName && q
+                ? `Best ${categoryName}s Near ${q}`
+                : q
+                  ? `Best Pros Near ${q}`
+                  : 'Find the best pros near you'}
+            </h1>
+          </div>
+
+          {/* Sort controls (Rating, Hourly rate) */}
+          {count > 0 && (
+            <div className="flex items-center gap-2 text-sm text-gray-700">
+              <span className="hidden md:inline">Sort By:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as 'rating' | 'hourly')}
+                className="bg-transparent px-1 py-1 text-sm font-semibold shadow-none focus:outline-none focus:ring-0 border-none"
+              >
+                <option value="rating">Rating</option>
+                <option value="hourly">Hourly rate</option>
+              </select>
             </div>
           )}
         </div>
@@ -124,6 +156,7 @@ export function SearchClient() {
           <InfiniteScrollVendors
             initialVendors={vendors}
             searchParams={{ category, q }}
+            sortBy={sortBy}
           />
         )}
       </div>

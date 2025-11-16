@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Star } from "lucide-react"
+import { Star, MapPin, CircleDollarSign } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import type { VendorProfile } from "@/types/db"
@@ -21,11 +21,39 @@ interface InfiniteScrollVendorsProps {
     category?: string
     q?: string
   }
+  sortBy?: 'rating' | 'hourly'
 }
 
 const VENDORS_PER_PAGE = 12
 
-export function InfiniteScrollVendors({ initialVendors, searchParams }: InfiniteScrollVendorsProps) {
+function sortVendors(vendors: VendorWithReviews[], sortBy?: 'rating' | 'hourly') {
+  const list = [...vendors]
+
+  if (sortBy === 'rating') {
+    return list.sort((a, b) => {
+      const ratingA = a.averageRating || 0
+      const ratingB = b.averageRating || 0
+
+      // Higher rating first; if equal rating, more reviews first
+      if (ratingB !== ratingA) return ratingB - ratingA
+      const reviewsA = a.totalReviews || 0
+      const reviewsB = b.totalReviews || 0
+      return reviewsB - reviewsA
+    })
+  }
+
+  if (sortBy === 'hourly') {
+    return list.sort((a, b) => {
+      const rateA = typeof a.hourly_rate === 'number' ? a.hourly_rate : Number.POSITIVE_INFINITY
+      const rateB = typeof b.hourly_rate === 'number' ? b.hourly_rate : Number.POSITIVE_INFINITY
+      return rateA - rateB
+    })
+  }
+
+  return list
+}
+
+export function InfiniteScrollVendors({ initialVendors, searchParams, sortBy }: InfiniteScrollVendorsProps) {
   const [vendors, setVendors] = useState<VendorWithReviews[]>(initialVendors)
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(initialVendors.length === VENDORS_PER_PAGE)
@@ -123,7 +151,12 @@ export function InfiniteScrollVendors({ initialVendors, searchParams }: Infinite
     return () => observer.disconnect()
   }, [loadMore, hasMore, loading])
 
-  if (!vendors?.length) {
+  const displayedVendors = useMemo(
+    () => sortVendors(vendors, sortBy),
+    [vendors, sortBy]
+  )
+
+  if (!displayedVendors?.length) {
     return (
       <div className="text-center py-12">
         <div className="mx-auto max-w-md">
@@ -142,12 +175,12 @@ export function InfiniteScrollVendors({ initialVendors, searchParams }: Infinite
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {vendors.map((vendor) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-8">
+        {displayedVendors.map((vendor) => (
           <Link key={vendor.id} href={`/vendor/${vendor.id}`}>
-            <Card className="overflow-hidden hover:shadow-md transition-shadow duration-200 border-0 shadow-sm cursor-pointer h-full">
+            <Card className="overflow-hidden border border-neutral-200 shadow-none cursor-pointer h-full bg-white pt-0">
               {/* Image */}
-              <div className="aspect-square relative bg-muted rounded-lg overflow-hidden">
+              <div className="relative h-[200px] w-full bg-neutral-100 overflow-hidden">
                 {vendor.profile_photo_url ? (
                   <Image
                     src={vendor.profile_photo_url}
@@ -158,44 +191,93 @@ export function InfiniteScrollVendors({ initialVendors, searchParams }: Infinite
                     loading="lazy"
                   />
                 ) : (
-                  <div className="flex items-center justify-center h-full text-4xl font-semibold text-muted-foreground">
+                  <div className="flex h-full w-full items-center justify-center text-4xl font-semibold text-muted-foreground">
                     {vendor.business_name?.[0] ?? "V"}
                   </div>
                 )}
               </div>
 
               {/* Content */}
-              <div className="p-4 space-y-2">
+              <div className="bg-white px-5 py-4 space-y-3">
                 {/* Business Name */}
-                <h3 className="font-semibold text-base leading-tight line-clamp-1 text-gray-900">
+                <h3 className="font-semibold text-lg leading-tight line-clamp-1 text-black">
                   {vendor.business_name}
                 </h3>
 
                 {/* Reviews */}
-                {vendor.totalReviews && vendor.totalReviews > 0 ? (
+                <div className="flex items-center gap-3">
+                  {/* Star Icons */}
                   <div className="flex items-center gap-1">
-                    <div className="flex items-center">
-                      <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-                      <span className="text-sm font-medium text-gray-900 ml-1">
-                        {vendor.averageRating?.toFixed(1)}
-                      </span>
-                    </div>
-                    <span className="text-sm text-gray-500">
-                      ({vendor.totalReviews} {vendor.totalReviews === 1 ? 'review' : 'reviews'})
-                    </span>
+                    {[1, 2, 3, 4, 5].map((starIndex) => {
+                      const rating = vendor.averageRating || 0
+                      const hasReviews = !!vendor.totalReviews && vendor.totalReviews > 0
+                      const isFilled = hasReviews && starIndex <= Math.round(rating)
+
+                      let containerClass = "flex h-7 w-7 items-center justify-center rounded-md"
+                      let iconClass = "h-4 w-4"
+
+                      if (!hasReviews) {
+                        containerClass += " bg-gray-200"
+                        iconClass += " text-gray-400"
+                      } else if (isFilled) {
+                        containerClass += " bg-[#5C3CD7]"
+                        iconClass += " text-white"
+                      } else {
+                        containerClass += " bg-[#E5DDFD]"
+                        iconClass += " text-[#5C3CD7]"
+                      }
+
+                      return (
+                        <div key={starIndex} className={containerClass}>
+                          <Star className={iconClass} />
+                        </div>
+                      )
+                    })}
                   </div>
-                ) : (
-                  <div className="text-sm text-gray-500">
-                    No reviews yet
+                  
+                  {/* Rating and Review Count */}
+                  {vendor.totalReviews && vendor.totalReviews > 0 ? (
+                    <span className="text-xs text-black">
+                      {vendor.averageRating?.toFixed(1)} ({vendor.totalReviews} {vendor.totalReviews === 1 ? 'Review' : 'Reviews'})
+                    </span>
+                  ) : (
+                    <span className="text-xs text-gray-500">No reviews</span>
+                  )}
+                </div>
+
+                {/* In-person radius / location */}
+                {vendor.offers_in_person_services && vendor.zip_code && (
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-black" />
+                    <p className="text-sm text-black">
+                      <span>In Person Up to </span>
+                      <span className="font-semibold">
+                        {vendor.service_radius ?? 0}
+                      </span>
+                      <span> miles From </span>
+                      <span className="font-semibold">
+                        {vendor.zip_code}
+                      </span>
+                    </p>
                   </div>
                 )}
 
-                {/* Rate */}
-                {typeof vendor.hourly_rate === "number" && (
-                  <div className="text-sm text-primary font-medium">
-                    From ${vendor.hourly_rate} / hour
-                  </div>
-                )}
+                {/* Rate line */}
+                <div className="flex items-center gap-2">
+                  <CircleDollarSign className="h-4 w-4 text-black" />
+                  <p className="text-sm text-black">
+                    <span>Rates starting from </span>
+                    {typeof vendor.hourly_rate === "number" ? (
+                      <span className="font-semibold">
+                        ${vendor.hourly_rate.toFixed(2)} /hr
+                      </span>
+                    ) : (
+                      <span className="font-semibold">
+                        Contact for rates
+                      </span>
+                    )}
+                  </p>
+                </div>
 
                 {/* Service Type Badge */}
                 <div>
@@ -204,14 +286,9 @@ export function InfiniteScrollVendors({ initialVendors, searchParams }: Infinite
                       🔮 Virtual
                     </Badge>
                   )}
-                  {vendor.offers_in_person_services && !vendor.offers_virtual_services && (
-                    <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700 hover:bg-purple-100">
-                      👤 In-Person
-                    </Badge>
-                  )}
                   {vendor.offers_virtual_services && vendor.offers_in_person_services && (
                     <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700 hover:bg-purple-100">
-                      🔮 Virtual
+                      🔮 Virtual &amp; In-Person
                     </Badge>
                   )}
                 </div>
