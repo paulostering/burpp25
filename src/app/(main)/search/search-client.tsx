@@ -1,22 +1,33 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
+import Image from 'next/image'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { InfiniteScrollVendors } from '@/components/infinite-scroll-vendors'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card } from '@/components/ui/card'
+import { Footer } from '@/components/footer'
 import type { VendorProfile } from '@/types/db'
 import { getCategories } from '@/lib/categories-cache'
 
+type Category = {
+  id: string
+  name: string
+  icon_url?: string | null
+}
+
 export function SearchClient() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const [vendors, setVendors] = useState<VendorProfile[]>([])
   const [loading, setLoading] = useState(true)
   const [count, setCount] = useState(0)
   const [sortBy, setSortBy] = useState<'rating' | 'hourly'>('rating')
   const [categoryName, setCategoryName] = useState<string | undefined>()
+  const [categories, setCategories] = useState<Category[]>([])
+  const [activeCategoryId, setActiveCategoryId] = useState<string | undefined>()
 
-  const category = searchParams.get('category') || undefined
+  const categoryParam = searchParams.get('category') || undefined
   const q = searchParams.get('q') || undefined
 
   useEffect(() => {
@@ -33,9 +44,9 @@ export function SearchClient() {
       
       try {
         const params = new URLSearchParams()
-        if (category) params.set('category', category)
         if (q) params.set('q', q)
-        
+        if (activeCategoryId) params.set('category', activeCategoryId)
+
         const response = await fetch(`/api/search-vendors?${params.toString()}`)
         const data = await response.json()
         
@@ -53,27 +64,33 @@ export function SearchClient() {
     }
 
     fetchVendors()
-  }, [category, q])
+  }, [activeCategoryId, q])
 
-  // Resolve category id to human-readable name for header
+  // Sync active category with URL param
   useEffect(() => {
-    const loadCategoryName = async () => {
-      if (!category) {
-        setCategoryName(undefined)
-        return
-      }
+    setActiveCategoryId(categoryParam || undefined)
+  }, [categoryParam])
 
+  // Load categories and resolve category id to human-readable name for header
+  useEffect(() => {
+    const loadCategories = async () => {
       try {
-        const categories = await getCategories()
-        const match = categories.find((c) => c.id === category)
-        setCategoryName(match?.name)
+        const data = await getCategories()
+        setCategories(data as Category[])
+
+        if (activeCategoryId) {
+          const match = (data as Category[]).find((c) => c.id === activeCategoryId)
+          setCategoryName(match?.name)
+        } else {
+          setCategoryName(undefined)
+        }
       } catch {
         setCategoryName(undefined)
       }
     }
 
-    loadCategoryName()
-  }, [category])
+    loadCategories()
+  }, [activeCategoryId])
 
   if (loading) {
     return (
@@ -128,7 +145,7 @@ export function SearchClient() {
             {/* Main heading inspired by Figma header */}
             <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-black">
               {categoryName && q
-                ? `Best ${categoryName}s Near ${q}`
+                ? `Best ${categoryName} Pros Near ${q}`
                 : q
                   ? `Best Pros Near ${q}`
                   : 'Find the best pros near you'}
@@ -151,15 +168,74 @@ export function SearchClient() {
           )}
         </div>
 
+        {/* Category chips row for filtering */}
+        {categories.length > 0 && (
+          <div className="mb-6 -mx-4 px-4">
+            <div className="flex items-center gap-3">
+              <span className="text-xs md:text-sm font-semibold text-gray-800 whitespace-nowrap">
+                Popular categories:
+              </span>
+              <div className="flex gap-3 overflow-x-auto pb-1">
+              {categories.map((cat) => {
+                const isSelected = activeCategoryId === cat.id
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => {
+                      const newActive =
+                        activeCategoryId === cat.id ? undefined : cat.id
+                      setActiveCategoryId(newActive)
+
+                      const params = new URLSearchParams(window.location.search)
+                      if (q) {
+                        params.set('q', q)
+                      }
+                      if (newActive) {
+                        params.set('category', newActive)
+                      } else {
+                        params.delete('category')
+                      }
+                      router.push(`/search?${params.toString()}`, { scroll: false })
+                    }}
+                    className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors ${
+                      isSelected
+                        ? 'border-primary text-primary bg-primary/5'
+                        : 'border-gray-200 text-gray-700 bg-white hover:border-primary/60 hover:text-primary'
+                    }`}
+                  >
+                    {cat.icon_url && (
+                      <div className="relative h-5 w-5">
+                        <Image
+                          src={cat.icon_url}
+                          alt={cat.name}
+                          fill
+                          sizes="20px"
+                          className="object-contain"
+                        />
+                      </div>
+                    )}
+                    <span>{cat.name}</span>
+                  </button>
+                )
+              })}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Vendor Results */}
         {count > 0 && (
           <InfiniteScrollVendors
             initialVendors={vendors}
-            searchParams={{ category, q }}
+            searchParams={{ category: activeCategoryId, q }}
             sortBy={sortBy}
           />
         )}
       </div>
+      
+      {/* Footer */}
+      <Footer />
     </div>
   )
 }

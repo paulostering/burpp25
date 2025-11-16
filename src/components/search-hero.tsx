@@ -239,10 +239,12 @@ export function SearchHero() {
 
   // Handle search submission
   const handleSearch = () => {
-    if (!selectedCategory || !location) return
+    if (!location) return
 
     const params = new URLSearchParams()
-    params.set('category', selectedCategory)
+    if (selectedCategory) {
+      params.set('category', selectedCategory)
+    }
     params.set('q', location)
 
     router.push(`/search?${params.toString()}`)

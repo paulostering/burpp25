@@ -20,7 +20,7 @@ import { FavoritesIcon } from "@/components/favorites-icon"
 import { useAuth } from "@/contexts/auth-context"
 import { createClient } from "@/lib/supabase/client"
 import { useEffect, useState } from "react"
-import { User, Settings, LayoutDashboard, LogOut, Menu, X } from "lucide-react"
+import { User, LayoutDashboard, LogOut, Menu, X } from "lucide-react"
 
 export function TopNav() {
   const pathname = usePathname()
@@ -91,9 +91,9 @@ export function TopNav() {
   }
 
   return (
-    <header className="border-b bg-white">
-      <div className="mx-auto flex h-20 items-center justify-between px-8 md:px-12 py-5">
-        <div className="flex items-center gap-8 flex-1">
+    <header className="border-b bg-white sticky top-0 z-50">
+      <div className="flex h-20 items-center justify-between px-6 py-5">
+        <div className="flex items-center gap-4 md:gap-8 flex-1 min-w-0">
           <Link href="/" className="flex items-center gap-2 font-semibold flex-shrink-0">
             <Image 
               src="/images/burpp_logo.png" 
@@ -108,13 +108,13 @@ export function TopNav() {
           
           {/* Condensed Search - Desktop only */}
           {showCondensedSearch && (
-            <div className="max-w-3xl w-full hidden md:block">
+            <div className="max-w-3xl w-full hidden md:block flex-1">
               <CondensedSearch />
             </div>
           )}
         </div>
         
-        <nav className="flex items-center gap-3">
+        <nav className="flex items-center gap-2 md:gap-3 flex-shrink-0">
           {/* Condensed Search Icon - Mobile only */}
           {showCondensedSearch && (
             <div className="md:hidden">
@@ -163,13 +163,13 @@ export function TopNav() {
             <>
               {/* Desktop Navigation */}
               <div className="hidden md:flex items-center gap-3">
-                <Link href="/burp-for-business" className="text-base hover:underline px-4">
+                <Link href="/burp-for-business" className="text-base hover:underline px-4 whitespace-nowrap">
                   Join as a Pro
                 </Link>
-                <Button asChild variant="ghost" size="sm" className="text-base border border-gray-300 px-6">
+                <Button asChild variant="ghost" size="sm" className="text-base border border-gray-300 px-6 whitespace-nowrap">
                   <Link href="/login">Login</Link>
                 </Button>
-                <Button asChild size="sm" className="text-base px-6">
+                <Button asChild size="sm" className="text-base px-6 whitespace-nowrap">
                   <Link href="/signup">Sign Up</Link>
                 </Button>
               </div>
@@ -181,7 +181,7 @@ export function TopNav() {
                     <Menu className="h-6 w-6" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="right" className="w-full p-8 [&>button.absolute]:hidden">
+                <SheetContent side="right" className="w-full p-6 [&>button.absolute]:hidden">
                   <VisuallyHidden>
                     <SheetTitle>Navigation Menu</SheetTitle>
                   </VisuallyHidden>
@@ -201,29 +201,29 @@ export function TopNav() {
                       variant="ghost" 
                       size="icon"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="h-12 w-12"
+                      className="h-10 w-10"
                     >
-                      <X className="h-8 w-8" />
+                      <X className="h-6 w-6" />
                     </Button>
                   </div>
-                  <nav className="flex flex-col gap-6">
+                  <nav className="flex flex-col gap-4">
                     <Link 
                       href="/burp-for-business" 
-                      className="text-xl font-medium py-4 pr-6 hover:bg-gray-100 rounded-lg transition-colors"
+                      className="text-lg font-medium py-3 px-4 hover:bg-gray-100 rounded-lg transition-colors"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       Join as a Pro
                     </Link>
                     <Link 
                       href="/login" 
-                      className="text-xl font-medium py-4 pr-6 hover:bg-gray-100 rounded-lg transition-colors"
+                      className="text-lg font-medium py-3 px-4 hover:bg-gray-100 rounded-lg transition-colors"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       Login
                     </Link>
                     <Link 
                       href="/signup" 
-                      className="text-xl font-medium py-4 pr-6 bg-primary text-white hover:bg-primary/90 rounded-lg transition-colors text-center"
+                      className="text-lg font-medium py-3 px-4 bg-primary text-white hover:bg-primary/90 rounded-lg transition-colors text-center"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       Sign Up

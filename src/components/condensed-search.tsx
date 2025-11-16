@@ -310,10 +310,12 @@ export function CondensedSearch() {
 
   // Handle search submission
   const handleSearchSubmit = useCallback(() => {
-    if (!selectedCategory || !location) return
+    if (!location) return
 
     const params = new URLSearchParams()
-    params.set('category', selectedCategory)
+    if (selectedCategory) {
+      params.set('category', selectedCategory)
+    }
     params.set('q', location)
 
     router.push(`/search?${params.toString()}`)
@@ -513,7 +515,7 @@ export function CondensedSearch() {
         {/* Search Button */}
         <Button
           onClick={handleSearchSubmit}
-          disabled={!selectedCategory || !location}
+          disabled={!location}
           size="lg"
           className="ml-3 h-10 px-5 rounded-lg bg-primary hover:bg-primary/90 disabled:bg-gray-300 disabled:cursor-not-allowed shadow-sm font-semibold"
         >
@@ -693,7 +695,7 @@ export function CondensedSearch() {
         {/* Row 3: Search Button */}
         <Button
           onClick={handleSearchSubmit}
-          disabled={!selectedCategory || !location}
+          disabled={!location}
           size="lg"
           className="w-full h-12 rounded-lg bg-primary hover:bg-primary/90 disabled:bg-gray-300 disabled:cursor-not-allowed font-semibold"
         >
