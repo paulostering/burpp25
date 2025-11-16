@@ -71,6 +71,8 @@ export function TopNav() {
   const isRegistrationPage = pathname?.includes('/vendor-registration')
   // Hide navigation on auth pages
   const isAuthPage = pathname?.includes('/login') || pathname?.includes('/signup')
+  // Check if on messages page
+  const isMessagesPage = pathname?.includes('/messages')
   // Hide condensed search on vendor dashboard pages to prevent API call issues
   const isVendorDashboard = pathname?.includes('/vendor/') && pathname?.includes('/dashboard')
   // Show condensed search on non-homepage pages, but not for vendors
@@ -91,7 +93,7 @@ export function TopNav() {
   }
 
   return (
-    <header className="border-b bg-white sticky top-0 z-50">
+    <header className={`border-b bg-white ${isMessagesPage ? '' : 'sticky top-0'} z-50`}>
       <div className="flex h-20 items-center justify-between px-6 py-5">
         <div className="flex items-center gap-4 md:gap-8 flex-1 min-w-0">
           <Link href="/" className="flex items-center gap-2 font-semibold flex-shrink-0">
