@@ -138,9 +138,20 @@ export function ConversationsList({ onConversationSelect, selectedConversationId
         }
       : {
           email: conversation.customer_email,
-          name: conversation.customer_first_name && conversation.customer_last_name
-            ? `${conversation.customer_first_name} ${conversation.customer_last_name}`
-            : conversation.customer_first_name || conversation.customer_email?.split('@')[0] || 'User',
+          name: (() => {
+            const firstName = conversation.customer_first_name?.trim()
+            const lastName = conversation.customer_last_name?.trim()
+            if (firstName && lastName) {
+              return `${firstName} ${lastName}`
+            }
+            if (firstName) {
+              return firstName
+            }
+            if (lastName) {
+              return lastName
+            }
+            return conversation.customer_email?.split('@')[0] || 'User'
+          })(),
           photo: conversation.customer_photo || null,
           firstName: conversation.customer_first_name,
           lastName: conversation.customer_last_name

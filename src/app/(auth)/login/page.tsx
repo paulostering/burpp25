@@ -33,11 +33,13 @@ export default async function LoginPage() {
         <div className="flex justify-center gap-2 md:justify-start">
           <Link href="/" className="flex items-center gap-2 font-medium">
             <Image
-              src="/images/burpp_logo.webp"
+              src="/images/burpp_logo.png"
               alt="Burpp Logo"
-              width={120}
-              height={40}
-              className="h-8 w-auto"
+              width={72}
+              height={28}
+              className="h-5 md:h-9 w-auto"
+              style={{ width: 'auto', height: 'auto' }}
+              priority
             />
           </Link>
         </div>

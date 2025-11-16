@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { ArrowLeft, Check } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { MessageComposer } from './message-composer'
 import type { Message, Conversation } from '@/types/db'
@@ -202,9 +203,20 @@ export function ConversationView({ conversationId, onBack }: ConversationViewPro
       : {
           id: conversation.customer_id,
           email: conversation.customer_email,
-          name: conversation.customer_first_name && conversation.customer_last_name
-            ? `${conversation.customer_first_name} ${conversation.customer_last_name}`
-            : conversation.customer_first_name || conversation.customer_email?.split('@')[0] || 'User',
+          name: (() => {
+            const firstName = conversation.customer_first_name?.trim()
+            const lastName = conversation.customer_last_name?.trim()
+            if (firstName && lastName) {
+              return `${firstName} ${lastName}`
+            }
+            if (firstName) {
+              return firstName
+            }
+            if (lastName) {
+              return lastName
+            }
+            return conversation.customer_email?.split('@')[0] || 'User'
+          })(),
           photo: conversation.customer_photo || null,
           firstName: conversation.customer_first_name,
           lastName: conversation.customer_last_name
@@ -292,12 +304,12 @@ export function ConversationView({ conversationId, onBack }: ConversationViewPro
                     <p className="text-sm">{message.content}</p>
                   </div>
                   
-                  <p className="mt-1 text-xs text-gray-500">
+                  <p className="mt-1 text-xs text-gray-500 flex items-center gap-2">
                     {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
-                    {isOwn && (
-                      <span className="ml-1">
-                        {message.is_read ? '✓✓' : '✓'}
-                      </span>
+                    {isOwn && message.is_read && (
+                      <Badge variant="secondary" className="h-4 w-4 p-0 flex items-center justify-center">
+                        <Check className="h-2.5 w-2.5" />
+                      </Badge>
                     )}
                   </p>
                 </div>
