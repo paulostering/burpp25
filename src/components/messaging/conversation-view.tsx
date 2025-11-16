@@ -174,8 +174,17 @@ export function ConversationView({ conversationId, onBack }: ConversationViewPro
     scrollToBottom()
   }, [messages])
 
-  const getInitials = (email: string) => {
-    return email.split('@')[0].substring(0, 2).toUpperCase()
+  const getInitials = (email?: string, firstName?: string, lastName?: string) => {
+    if (firstName && lastName) {
+      return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase()
+    }
+    if (firstName) {
+      return firstName.substring(0, 2).toUpperCase()
+    }
+    if (email) {
+      return email.split('@')[0].substring(0, 2).toUpperCase()
+    }
+    return '??'
   }
 
   const getOtherUser = () => {
@@ -186,13 +195,19 @@ export function ConversationView({ conversationId, onBack }: ConversationViewPro
           id: conversation.vendor_id,
           email: conversation.vendor_email,
           name: conversation.business_name,
-          photo: conversation.vendor_photo
+          photo: conversation.vendor_photo,
+          firstName: conversation.vendor_first_name,
+          lastName: conversation.vendor_last_name
         }
       : {
           id: conversation.customer_id,
           email: conversation.customer_email,
-          name: conversation.customer_email?.split('@')[0],
-          photo: null
+          name: conversation.customer_first_name && conversation.customer_last_name
+            ? `${conversation.customer_first_name} ${conversation.customer_last_name}`
+            : conversation.customer_first_name || conversation.customer_email?.split('@')[0] || 'User',
+          photo: conversation.customer_photo || null,
+          firstName: conversation.customer_first_name,
+          lastName: conversation.customer_last_name
         }
   }
 
@@ -227,7 +242,7 @@ export function ConversationView({ conversationId, onBack }: ConversationViewPro
         <Avatar className="h-10 w-10">
           <AvatarImage src={otherUser.photo || undefined} />
           <AvatarFallback>
-            {getInitials(otherUser.email || '')}
+            {getInitials(otherUser.email, otherUser.firstName, otherUser.lastName)}
           </AvatarFallback>
         </Avatar>
         
@@ -260,7 +275,7 @@ export function ConversationView({ conversationId, onBack }: ConversationViewPro
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={otherUser.photo || undefined} />
                       <AvatarFallback className="text-xs">
-                        {getInitials(otherUser.email || '')}
+                        {getInitials(otherUser.email, otherUser.firstName, otherUser.lastName)}
                       </AvatarFallback>
                     </Avatar>
                   )}

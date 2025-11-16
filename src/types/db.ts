@@ -71,7 +71,12 @@ export interface Conversation {
   updated_at: string
   // Joined data
   customer_email?: string
+  customer_first_name?: string
+  customer_last_name?: string
+  customer_photo?: string
   vendor_email?: string
+  vendor_first_name?: string
+  vendor_last_name?: string
   business_name?: string
   vendor_photo?: string
   last_message_content?: string
