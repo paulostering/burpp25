@@ -326,7 +326,7 @@ export function SearchHero() {
                 <Input
                   ref={categoryInputRef}
                   type="text"
-                  placeholder="What would you like to do?"
+                  placeholder="What gig do you need help with?"
                   value={categorySearch}
                   onChange={(e) => {
                     setCategorySearch(e.target.value)
@@ -516,7 +516,7 @@ export function SearchHero() {
                   <LayoutGrid className="h-4 w-4 text-gray-400 mr-3 flex-shrink-0" />
                   <Input
                     type="text"
-                    placeholder="What would you like to do?"
+                    placeholder="What gig do you need help with?"
                     value={categorySearch}
                     onChange={(e) => {
                       setCategorySearch(e.target.value)

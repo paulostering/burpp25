@@ -161,9 +161,9 @@ export function InfiniteScrollVendors({ initialVendors, searchParams, sortBy }: 
       <div className="text-center py-12">
         <div className="mx-auto max-w-md">
           <div className="text-6xl mb-4">🔍</div>
-          <h3 className="text-xl font-semibold mb-2">No professionals found</h3>
+          <h3 className="text-xl font-semibold mb-2">No BurpPros available in your area…yet</h3>
           <p className="text-muted-foreground mb-6">
-            Try adjusting your search criteria or expanding your search radius.
+            We couldn't find any providers for your search. Please try expanding your radius or check back soon as new pros join regularly.
           </p>
           <Button onClick={() => window.history.back()}>
             Adjust Search

@@ -135,25 +135,25 @@ export function SearchClient() {
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-7xl px-4 py-8">
         {/* Search Results Header + Sort */}
-        <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div>
-            {/* Small label line (category / count) */}
-            <p className="text-xs md:text-sm text-gray-700 mb-1">
-              {categoryName || (q ? 'Search results' : 'Browse professionals')}
-            </p>
+        {count > 0 ? (
+          <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              {/* Small label line (category / count) */}
+              <p className="text-xs md:text-sm text-gray-700 mb-1">
+                {categoryName || (q ? 'Search results' : 'Browse professionals')}
+              </p>
 
-            {/* Main heading inspired by Figma header */}
-            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-black">
-              {categoryName && q
-                ? `Best ${categoryName} Pros Near ${q}`
-                : q
-                  ? `Best Pros Near ${q}`
-                  : 'Find the best pros near you'}
-            </h1>
-          </div>
+              {/* Main heading inspired by Figma header */}
+              <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-black">
+                {categoryName && q
+                  ? `Best ${categoryName} Pros Near ${q}`
+                  : q
+                    ? `Best Pros Near ${q}`
+                    : 'Find the best pros near you'}
+              </h1>
+            </div>
 
-          {/* Sort controls (Rating, Hourly rate) */}
-          {count > 0 && (
+            {/* Sort controls (Rating, Hourly rate) */}
             <div className="flex items-center gap-2 text-sm text-gray-700">
               <span className="hidden md:inline">Sort By:</span>
               <select
@@ -165,8 +165,17 @@ export function SearchClient() {
                 <option value="hourly">Hourly rate</option>
               </select>
             </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div className="mb-8 py-12">
+            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-black mb-4">
+              No Burpp Pros available in your area…yet
+            </h1>
+            <p className="text-lg text-muted-foreground">
+              We couldn't find any providers for your search. Please try expanding your radius or check back soon as new pros join regularly.
+            </p>
+          </div>
+        )}
 
         {/* Category chips row for filtering */}
         {categories.length > 0 && (
