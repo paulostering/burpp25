@@ -1,65 +1,101 @@
+'use client'
+
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ClientsDataTable } from '@/components/admin/clients-data-table'
-import { createAdminSupabase } from '@/lib/supabase/server'
+import { Skeleton } from '@/components/ui/skeleton'
+import type { UserProfile } from '@/types/db'
 
-async function getClients() {
-  const supabase = createAdminSupabase()
-  
-  // Get all auth users and their profiles (if they exist)
-  const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers()
-  
-  if (authError) {
-    console.error('Error fetching auth users:', authError)
-    return { clients: [] }
-  }
-  
-  // Get all user profiles
-  const { data: profiles, error: profilesError } = await supabase
-    .from('user_profiles')
-    .select('*')
-  
-  if (profilesError) {
-    console.error('Error fetching user profiles:', profilesError)
-    return { clients: [] }
-  }
-  
-  // Create a map of profiles by user ID
-  const profilesMap = new Map(profiles?.map(p => [p.id, p]) || [])
-  
-  // Filter and transform users to show only customers
-  const clients = authUsers.users
-    .map(user => {
-      const profile = profilesMap.get(user.id)
+export default function AdminClientsPage() {
+  const [clients, setClients] = useState<UserProfile[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchClients = async () => {
+    setLoading(true)
+    setError(null)
+    
+    try {
+      const response = await fetch('/api/admin/clients', {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      })
+      const data = await response.json()
       
-      // If user has a profile, use the profile data
-      if (profile) {
-        return profile
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch clients')
       }
       
-      // If no profile exists, create a virtual profile for display
-      // (users without profiles are considered customers by default)
-      return {
-        id: user.id,
-        email: user.email || '',
-        first_name: user.user_metadata?.first_name || null,
-        last_name: user.user_metadata?.last_name || null,
-        role: 'customer' as const,
-        is_active: true,
-        created_at: user.created_at,
-        updated_at: user.updated_at
-      }
-    })
-    .filter(client => 
-      // Only show customers (either explicit role or no profile)
-      client.role === 'customer'
+      setClients(data.clients || [])
+    } catch (err) {
+      console.error('Error fetching clients:', err)
+      setError(err instanceof Error ? err.message : 'Failed to fetch clients')
+      setClients([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchClients()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Manage Clients</h1>
+          <p className="text-gray-600 mt-1">
+            View and manage customer accounts
+          </p>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Customer Accounts</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-64 w-full" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     )
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-  
-  return { clients }
-}
+  }
 
-export default async function AdminClientsPage() {
-  const { clients } = await getClients()
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Manage Clients</h1>
+          <p className="text-gray-600 mt-1">
+            View and manage customer accounts
+          </p>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Customer Accounts</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-12">
+              <p className="text-red-600 mb-4">{error}</p>
+              <button
+                onClick={fetchClients}
+                className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90"
+              >
+                Retry
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
