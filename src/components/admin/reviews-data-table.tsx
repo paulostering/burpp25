@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import {
   Table,
   TableBody,
@@ -69,6 +69,11 @@ export function ReviewsDataTable({ reviews: initialReviews }: ReviewsDataTablePr
   const [isUpdating, setIsUpdating] = useState(false)
   const [reviewToDelete, setReviewToDelete] = useState<Review | null>(null)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+
+  // Update reviews when props change
+  useEffect(() => {
+    setReviews(initialReviews)
+  }, [initialReviews])
 
   const formatDate = (dateString: string) => {
     if (!dateString) return 'N/A'
