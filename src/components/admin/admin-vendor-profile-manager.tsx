@@ -17,7 +17,10 @@ import {
   Camera,
   Check,
   ChevronsUpDown,
-  AlertCircle
+  AlertCircle,
+  Search,
+  CheckCircle2,
+  XCircle
 } from 'lucide-react'
 import { toast } from 'sonner'
 import Image from 'next/image'
@@ -53,6 +56,10 @@ export function AdminVendorProfileManager({ vendor, stats: _stats, categories, o
   const [isEditing, setIsEditing] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [uploadingPhoto, setUploadingPhoto] = useState<'profile' | 'cover' | null>(null)
+  const [searchDebug, setSearchDebug] = useState<any>(null)
+  const [searchDebugLoading, setSearchDebugLoading] = useState(false)
+  const [searchLocation, setSearchLocation] = useState('11219')
+  const [searchCategory, setSearchCategory] = useState('')
   const [formData, setFormData] = useState({
     business_name: vendor.business_name || '',
     profile_title: vendor.profile_title || '',
@@ -773,6 +780,246 @@ export function AdminVendorProfileManager({ vendor, stats: _stats, categories, o
           </Card>
         </div>
       </div>
+
+      {/* Search Diagnostic Card */}
+      <Card className="border border-gray-200 shadow-none">
+        <CardHeader>
+          <CardTitle className="text-xl flex items-center gap-2">
+            <Search className="h-5 w-5" />
+            Search Visibility Diagnostic
+          </CardTitle>
+          <CardDescription>
+            Check why this vendor may not appear in search results
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex gap-2">
+            <Input
+              placeholder="Search location (e.g., 11219)"
+              value={searchLocation}
+              onChange={(e) => setSearchLocation(e.target.value)}
+              className="flex-1"
+            />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  className="w-[200px] justify-between"
+                >
+                  {searchCategory
+                    ? categories.find((cat) => cat.id === searchCategory)?.name
+                    : "Select category..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[200px] p-0">
+                <Command>
+                  <CommandInput placeholder="Search category..." />
+                  <CommandList>
+                    <CommandEmpty>No category found.</CommandEmpty>
+                    <CommandGroup>
+                      <CommandItem
+                        value=""
+                        onSelect={() => setSearchCategory('')}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            searchCategory === '' ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        All Categories
+                      </CommandItem>
+                      {categories.map((category) => (
+                        <CommandItem
+                          key={category.id}
+                          value={category.id}
+                          onSelect={() => setSearchCategory(category.id)}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              searchCategory === category.id ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {category.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+            <Button
+              onClick={async () => {
+                if (!searchLocation) {
+                  toast.error('Please enter a search location')
+                  return
+                }
+                setSearchDebugLoading(true)
+                try {
+                  const params = new URLSearchParams()
+                  params.set('location', searchLocation)
+                  if (searchCategory) {
+                    params.set('category', searchCategory)
+                  }
+                  const response = await fetch(`/api/admin/vendors/${vendor.id}/search-debug?${params.toString()}`)
+                  const data = await response.json()
+                  setSearchDebug(data)
+                } catch (error) {
+                  toast.error('Failed to run diagnostic')
+                  console.error(error)
+                } finally {
+                  setSearchDebugLoading(false)
+                }
+              }}
+              disabled={searchDebugLoading}
+            >
+              {searchDebugLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Checking...
+                </>
+              ) : (
+                <>
+                  <Search className="mr-2 h-4 w-4" />
+                  Run Diagnostic
+                </>
+              )}
+            </Button>
+          </div>
+
+          {searchDebug && (
+            <div className="space-y-4 mt-4 p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold text-lg">Diagnostic Results</h3>
+                  {searchDebug.will_appear_in_search ? (
+                    <Badge className="bg-green-500">
+                      <CheckCircle2 className="h-3 w-3 mr-1" />
+                      Will Appear
+                    </Badge>
+                  ) : (
+                    <Badge variant="destructive">
+                      <XCircle className="h-3 w-3 mr-1" />
+                      Won't Appear
+                    </Badge>
+                  )}
+                </div>
+                {vendor.zip_code && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      try {
+                        const response = await fetch('/api/geocode', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ zipCode: vendor.zip_code })
+                        })
+                        const data = await response.json()
+                        if (response.ok && data.lat && data.lng) {
+                          // Update vendor coordinates
+                          const updateResponse = await fetch(`/api/admin/vendors/${vendor.id}/profile`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              latitude: data.lat,
+                              longitude: data.lng
+                            })
+                          })
+                          if (updateResponse.ok) {
+                            toast.success('Coordinates updated successfully!')
+                            // Refresh the diagnostic
+                            const params = new URLSearchParams()
+                            params.set('location', searchLocation)
+                            if (searchCategory) {
+                              params.set('category', searchCategory)
+                            }
+                            const diagResponse = await fetch(`/api/admin/vendors/${vendor.id}/search-debug?${params.toString()}`)
+                            const diagData = await diagResponse.json()
+                            setSearchDebug(diagData)
+                            // Refresh vendor data
+                            onProfileUpdate({ ...vendor, latitude: data.lat, longitude: data.lng })
+                          } else {
+                            toast.error('Failed to update coordinates')
+                          }
+                        } else {
+                          toast.error('Failed to geocode zip code')
+                        }
+                      } catch (error) {
+                        toast.error('Error fixing coordinates')
+                        console.error(error)
+                      }
+                    }}
+                  >
+                    Fix Coordinates
+                  </Button>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                {Object.entries(searchDebug.checks || {}).map(([key, check]: [string, any]) => (
+                  <div key={key} className="flex items-start gap-2 text-sm">
+                    {check.pass ? (
+                      <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                    ) : (
+                      <XCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
+                    )}
+                    <span className={check.pass ? 'text-gray-700' : 'text-red-600 font-medium'}>
+                      {check.message}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {searchDebug.distance_check && (
+                <div className="mt-4 p-3 bg-white rounded border">
+                  <h4 className="font-semibold mb-2">Distance Check</h4>
+                  <div className="space-y-1 text-sm">
+                    <div>
+                      <span className="font-medium">Search Location:</span> {searchDebug.distance_check.search_location}
+                    </div>
+                    {searchDebug.distance_check.search_coords && (
+                      <div>
+                        <span className="font-medium">Search Coordinates:</span>{' '}
+                        {searchDebug.distance_check.search_coords.lat.toFixed(4)}, {searchDebug.distance_check.search_coords.lng.toFixed(4)}
+                      </div>
+                    )}
+                    {searchDebug.distance_check.vendor_coords && (
+                      <div>
+                        <span className="font-medium">Vendor Coordinates:</span>{' '}
+                        {searchDebug.distance_check.vendor_coords.lat.toFixed(4)}, {searchDebug.distance_check.vendor_coords.lng.toFixed(4)}
+                      </div>
+                    )}
+                    {searchDebug.distance_check.distance_miles && (
+                      <div>
+                        <span className="font-medium">Distance:</span> {searchDebug.distance_check.distance_miles} miles
+                      </div>
+                    )}
+                    {searchDebug.distance_check.service_radius && (
+                      <div>
+                        <span className="font-medium">Service Radius:</span> {searchDebug.distance_check.service_radius} miles
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 mt-2">
+                      {searchDebug.distance_check.within_radius ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <XCircle className="h-4 w-4 text-red-500" />
+                      )}
+                      <span className={searchDebug.distance_check.within_radius ? 'text-green-600' : 'text-red-600 font-medium'}>
+                        {searchDebug.distance_check.message}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Image Crop Modal */}
       <ImageCropModal

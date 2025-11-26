@@ -46,8 +46,16 @@ export function SearchClient() {
         const params = new URLSearchParams()
         if (q) params.set('q', q)
         if (activeCategoryId) params.set('category', activeCategoryId)
+        // Add timestamp to prevent caching and bypass geocoding cache for fresh results
+        params.set('_t', Date.now().toString())
+        params.set('bypass_cache', 'true') // Bypass geocoding cache to get fresh coordinates
 
-        const response = await fetch(`/api/search-vendors?${params.toString()}`)
+        const response = await fetch(`/api/search-vendors?${params.toString()}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache',
+          }
+        })
         const data = await response.json()
         
         clearTimeout(timeoutId)
