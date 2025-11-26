@@ -113,16 +113,42 @@ export function ConversationsList({ onConversationSelect, selectedConversationId
   }, [currentUser, supabase])
 
   const getInitials = (email?: string, firstName?: string, lastName?: string) => {
+    // Try to get initials from first and last name
     if (firstName && lastName) {
-      return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase()
+      const firstInitial = firstName.trim().charAt(0).toUpperCase()
+      const lastInitial = lastName.trim().charAt(0).toUpperCase()
+      if (firstInitial && lastInitial) {
+        return `${firstInitial}${lastInitial}`
+      }
     }
-    if (firstName) {
-      return firstName.substring(0, 2).toUpperCase()
+    // Try to get initials from first name only
+    if (firstName && firstName.trim()) {
+      const trimmed = firstName.trim()
+      if (trimmed.length >= 2) {
+        return trimmed.substring(0, 2).toUpperCase()
+      }
+      return trimmed.charAt(0).toUpperCase() + trimmed.charAt(0).toUpperCase()
     }
-    if (email) {
-      return email.split('@')[0].substring(0, 2).toUpperCase()
+    // Try to get initials from last name only
+    if (lastName && lastName.trim()) {
+      const trimmed = lastName.trim()
+      if (trimmed.length >= 2) {
+        return trimmed.substring(0, 2).toUpperCase()
+      }
+      return trimmed.charAt(0).toUpperCase() + trimmed.charAt(0).toUpperCase()
     }
-    return '??'
+    // Fallback to email
+    if (email && email.trim()) {
+      const emailPart = email.split('@')[0]
+      if (emailPart.length >= 2) {
+        return emailPart.substring(0, 2).toUpperCase()
+      }
+      if (emailPart.length === 1) {
+        return emailPart.toUpperCase() + emailPart.toUpperCase()
+      }
+    }
+    // Last resort: return single letter or default
+    return 'U'
   }
 
   const getOtherUser = (conversation: Conversation) => {
@@ -152,7 +178,7 @@ export function ConversationsList({ onConversationSelect, selectedConversationId
             }
             return conversation.customer_email?.split('@')[0] || 'User'
           })(),
-          photo: conversation.customer_photo || null,
+          photo: conversation.customer_photo,
           firstName: conversation.customer_first_name,
           lastName: conversation.customer_last_name
         }
@@ -203,7 +229,7 @@ export function ConversationsList({ onConversationSelect, selectedConversationId
             }`}
           >
             <Avatar className="h-12 w-12">
-              <AvatarImage src={otherUser.photo || undefined} />
+              <AvatarImage src={otherUser.photo || ''} alt="Profile photo" />
               <AvatarFallback>
                 {getInitials(otherUser.email, otherUser.firstName, otherUser.lastName)}
               </AvatarFallback>
