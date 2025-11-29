@@ -407,6 +407,36 @@ export default function VendorRegisterPage() {
     setHourlyRate(numValue)
   }
 
+  const handleProductPriceChange = (index: number, value: string) => {
+    // Remove all non-numeric characters except decimal point
+    const numericValue = value.replace(/[^\d.]/g, '')
+    
+    // Prevent multiple decimal points
+    const parts = numericValue.split('.')
+    let sanitized = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : numericValue
+    
+    // Limit to 2 decimal places but allow typing
+    if (sanitized.includes('.')) {
+      const [whole, decimal] = sanitized.split('.')
+      if (decimal && decimal.length > 2) {
+        sanitized = whole + '.' + decimal.slice(0, 2)
+      }
+    }
+    
+    // Parse the numeric value
+    const numValue = sanitized && sanitized !== '.' && sanitized !== '' ? parseFloat(sanitized) : undefined
+    
+    // Cap at 10,000
+    if (numValue !== undefined && numValue > 10000) {
+      sanitized = '10000'
+    }
+    
+    // Update the product price
+    const updated = [...products]
+    updated[index].starting_price = sanitized
+    setProducts(updated)
+  }
+
   const getCurrentLocation = async () => {
     if (!navigator.geolocation) {
       toast.error('Geolocation is not supported by this browser')
@@ -1403,19 +1433,18 @@ export default function VendorRegisterPage() {
                         <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
                         <Input
                           id={`product-price-${index}`}
-                          type="number"
-                          step="0.01"
-                          min="0"
+                          type="text"
+                          inputMode="decimal"
                           placeholder="99.99"
                           value={product.starting_price}
-                          onChange={(e) => {
-                            const updated = [...products]
-                            updated[index].starting_price = e.target.value
-                            setProducts(updated)
-                          }}
+                          onChange={(e) => handleProductPriceChange(index, e.target.value)}
                           className="pl-9"
+                          maxLength={8}
                         />
                       </div>
+                      <p className="text-xs text-muted-foreground">
+                        Maximum: $10,000.00
+                      </p>
                     </div>
 
                     <div className="space-y-2">

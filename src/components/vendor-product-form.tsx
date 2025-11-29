@@ -300,17 +300,43 @@ export function VendorProductForm({ vendorId, productId, initialData }: VendorPr
                   <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
                   <Input
                     id="starting_price"
-                    type="number"
-                    step="0.01"
-                    min="0"
+                    type="text"
+                    inputMode="decimal"
                     placeholder="99.99"
                     value={formData.starting_price}
-                    onChange={(e) => setFormData({ ...formData, starting_price: e.target.value })}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      // Remove all non-numeric characters except decimal point
+                      const numericValue = value.replace(/[^\d.]/g, '')
+                      
+                      // Prevent multiple decimal points
+                      const parts = numericValue.split('.')
+                      let sanitized = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : numericValue
+                      
+                      // Limit to 2 decimal places but allow typing
+                      if (sanitized.includes('.')) {
+                        const [whole, decimal] = sanitized.split('.')
+                        if (decimal && decimal.length > 2) {
+                          sanitized = whole + '.' + decimal.slice(0, 2)
+                        }
+                      }
+                      
+                      // Parse the numeric value
+                      const numValue = sanitized && sanitized !== '.' && sanitized !== '' ? parseFloat(sanitized) : undefined
+                      
+                      // Cap at 10,000
+                      if (numValue !== undefined && numValue > 10000) {
+                        sanitized = '10000'
+                      }
+                      
+                      setFormData({ ...formData, starting_price: sanitized })
+                    }}
                     className="pl-9 text-base"
+                    maxLength={8}
                   />
                 </div>
                 <p className="text-xs text-gray-500">
-                  Optional - Display a starting price. Leave blank if pricing varies or is available upon request.
+                  Optional - Display a starting price. Maximum: $10,000.00. Leave blank if pricing varies or is available upon request.
                 </p>
               </div>
 
