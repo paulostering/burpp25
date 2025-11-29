@@ -595,8 +595,11 @@ export function UserProfileManager({ userProfile, onProfileUpdate }: UserProfile
               ) : (
                 <div className="space-y-4 p-4 border border-destructive rounded-lg bg-destructive/5">
                   <div className="space-y-2">
-                    <Label htmlFor="deleteConfirm" className="text-destructive">
-                      This action cannot be undone. Type <strong>DELETE</strong> to confirm:
+                    <p className="text-destructive">
+                      This action cannot be undone. Type "DELETE" to confirm:
+                    </p>
+                    <Label htmlFor="deleteConfirm" className="sr-only">
+                      Delete confirmation
                     </Label>
                     <Input
                       id="deleteConfirm"
