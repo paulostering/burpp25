@@ -16,24 +16,38 @@ function HomeContent() {
   useEffect(() => {
     if (typeof window === 'undefined') return
     
+    console.log('🏠 [HOME PAGE] useEffect running')
+    console.log('🏠 [HOME PAGE] Current URL:', window.location.href)
+    console.log('🏠 [HOME PAGE] Hash:', window.location.hash)
+    
     // Aggressively check for hash in the URL
     // This handles cases where Supabase redirects to root/home instead of /reset-password
     const checkHash = () => {
       const hash = window.location.hash
-      if (!hash) return
+      console.log('🏠 [HOME PAGE] checkHash called, hash:', hash ? hash.substring(0, 100) + '...' : 'none')
+      
+      if (!hash) {
+        console.log('🏠 [HOME PAGE] No hash found')
+        return
+      }
       
       const hashParams = new URLSearchParams(hash.substring(1))
       const type = hashParams.get('type')
       const accessToken = hashParams.get('access_token')
       
+      console.log('🏠 [HOME PAGE] Hash params - type:', type, 'has access_token:', !!accessToken)
+      
       // If this looks like a recovery token, force redirect to /reset-password
       if (type === 'recovery' && accessToken) {
-        console.log('🔐 Recovery token detected on Home page. Redirecting to /reset-password...')
-        // Use window.location.assign to force a navigation event
-        window.location.assign(`/reset-password${hash}`)
+        console.log('🔐 [HOME PAGE] RECOVERY TOKEN DETECTED! Redirecting to /reset-password...')
+        const redirectUrl = `/reset-password${hash}`
+        console.log('🔐 [HOME PAGE] Redirect URL:', redirectUrl.substring(0, 100) + '...')
+        // Use window.location.replace to prevent back button issues
+        window.location.replace(redirectUrl)
       }
     }
     
+    // Run immediately
     checkHash()
     
     // Also listen for hash changes just in case

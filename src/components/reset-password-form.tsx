@@ -53,35 +53,33 @@ export function ResetPasswordForm({
       console.log('🔐 Starting password reset token verification...')
       const supabase = createClient()
       
-      // Parse hash parameters
+      // Parse URL parameters (both hash and query string)
+      const url = new URL(window.location.href)
       const hashParams = new URLSearchParams(window.location.hash.substring(1))
-      const error = hashParams.get('error')
-      const errorDescription = hashParams.get('error_description')
+      
+      // Check for token in hash (Supabase redirect method)
       const accessToken = hashParams.get('access_token')
       const refreshToken = hashParams.get('refresh_token')
+      const error = hashParams.get('error')
+      const errorDescription = hashParams.get('error_description')
       const type = hashParams.get('type')
       
-      console.log('Hash params:', {
-        error: error,
-        type: type,
-        hasAccessToken: !!accessToken,
-        hasRefreshToken: !!refreshToken
+      console.log('Reset params:', {
+        type,
+        accessToken: !!accessToken,
+        refreshToken: !!refreshToken,
+        error
       })
-      
+
       if (error) {
         console.error('Reset token error:', error, errorDescription)
         toast.error(errorDescription || 'Invalid or expired reset link. Please request a new one.')
         setIsVerifying(false)
         setIsValid(false)
-        console.log('⏱️  Setting redirect timeout (3 seconds) - REASON: Error in hash params')
-        redirectTimeoutRef.current = setTimeout(() => {
-          console.log('🔄 REDIRECTING to /forgot-password - REASON: Error in hash params')
-          router.push('/forgot-password')
-        }, 3000)
         return
       }
 
-      // If we have tokens, set the session explicitly
+      // Handle Hash Fragment (Supabase redirect method)
       if (accessToken && refreshToken) {
         console.log('🔑 Setting session from hash tokens...')
         const { data: sessionData, error: sessionError } = await supabase.auth.setSession({

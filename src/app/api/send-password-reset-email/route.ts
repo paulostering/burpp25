@@ -50,23 +50,11 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Use the Supabase-generated link but FORCE the correct redirect_to parameter
-    // Supabase sometimes ignores the options.redirectTo or defaults to the site URL
-    let resetLink = resetData.properties.action_link
-    
-    try {
-      const url = new URL(resetLink)
-      // Force the redirect_to parameter to point to /reset-password
-      // We use the detected siteUrl to ensure it matches the environment
-      // IMPORTANT: Supabase requires the Redirect URL to be in the Allow List in Auth settings
-      // If this URL is not in the list, Supabase will fall back to the Site URL (likely /home)
-      const redirectTarget = `${siteUrl}/reset-password`
-      url.searchParams.set('redirect_to', redirectTarget)
-      resetLink = url.toString()
-      console.log('✓ Forced redirect_to in link:', resetLink)
-    } catch (e) {
-      console.error('Failed to modify reset link params:', e)
-    }
+    // Use the Supabase-generated link as-is
+    // The link goes to Supabase's verify endpoint, which validates the token
+    // and redirects to our app with access_token in the hash fragment
+    const resetLink = resetData.properties.action_link
+    console.log('✓ Using Supabase reset link:', resetLink)
     
     // Send password reset email
     const result = await sendPasswordResetEmail(

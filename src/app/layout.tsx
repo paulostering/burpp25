@@ -46,8 +46,13 @@ export default function RootLayout({
                   var currentPath = window.location.pathname;
                   var hash = window.location.hash;
                   
+                  console.log('[LAYOUT SCRIPT] Running - path:', currentPath, 'hash:', hash ? 'present' : 'none');
+                  
                   // If already on reset-password, we're good
-                  if (currentPath === '/reset-password') return;
+                  if (currentPath === '/reset-password') {
+                    console.log('[LAYOUT SCRIPT] Already on reset-password, skipping');
+                    return;
+                  }
                   
                   // Check for password reset token in hash
                   if (hash) {
@@ -55,14 +60,17 @@ export default function RootLayout({
                     var type = hashParams.get('type');
                     var accessToken = hashParams.get('access_token');
                     
+                    console.log('[LAYOUT SCRIPT] Hash params - type:', type, 'has token:', !!accessToken);
+                    
                     // If this is a password reset link, redirect immediately
                     if (type === 'recovery' && accessToken) {
+                      console.log('[LAYOUT SCRIPT] REDIRECTING to /reset-password');
                       window.location.replace('/reset-password' + hash);
                       return; // Stop execution
                     }
                   }
                 } catch (e) {
-                  console.error('Password reset handler error:', e);
+                  console.error('[LAYOUT SCRIPT] Error:', e);
                 }
               })();
             `,
