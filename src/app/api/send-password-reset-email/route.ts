@@ -3,27 +3,17 @@ import { createAdminSupabase } from '@/lib/supabase/server'
 import { sendPasswordResetEmail } from '@/lib/email'
 
 export async function POST(request: NextRequest) {
-  console.log('\n')
-  console.log('═══════════════════════════════════════════')
-  console.log('🚀 API ROUTE: /api/send-password-reset-email')
-  console.log('═══════════════════════════════════════════')
-  
   try {
     const body = await request.json()
-    console.log('Received body:', body)
-    
     const { email } = body
 
     if (!email) {
-      console.error('❌ Missing email field')
       return NextResponse.json(
         { error: 'Email is required' },
         { status: 400 }
       )
     }
 
-    console.log('✓ Email field present')
-    
     const supabase = createAdminSupabase()
     
     // Get user profile for first name
@@ -34,14 +24,14 @@ export async function POST(request: NextRequest) {
       .maybeSingle()
 
     const firstName = profile?.first_name || 'User'
-    console.log('User first name:', firstName)
     
-    // Generate reset link with custom redirect URL
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+    // Get site URL for redirect
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 
+      (process.env.NODE_ENV === 'production' ? 'https://burpp.com' : 'http://localhost:3000')
+    
+    // Generate password reset link
+    // Supabase will redirect to this URL after verifying the token
     const redirectUrl = `${siteUrl}/reset-password`
-    
-    console.log('Generating password reset link...')
-    console.log('Redirect URL:', redirectUrl)
     
     const { data: resetData, error: resetError } = await supabase.auth.admin.generateLink({
       type: 'recovery',
@@ -51,53 +41,53 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    if (resetError || !resetData) {
-      console.error('❌ Failed to generate reset link:', resetError)
+    // For security, don't reveal if user exists or not (prevent email enumeration)
+    if (resetError || !resetData?.properties?.action_link) {
+      // Still return success to prevent email enumeration
       return NextResponse.json({ 
-        success: false, 
-        error: 'Failed to generate reset link' 
+        success: true,
+        message: 'If an account exists with this email, a password reset link has been sent.'
       })
     }
 
-    console.log('✓ Reset link generated')
-    console.log('Reset link:', resetData.properties.action_link)
+    // Use the Supabase-generated link but FORCE the correct redirect_to parameter
+    // Supabase sometimes ignores the options.redirectTo or defaults to the site URL
+    let resetLink = resetData.properties.action_link
     
-    // Verify we have a valid reset link
-    if (!resetData.properties.action_link) {
-      console.error('❌ No action link in reset data')
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Failed to generate reset link' 
-      })
+    try {
+      const url = new URL(resetLink)
+      // Force the redirect_to parameter to point to /reset-password
+      // We use the detected siteUrl to ensure it matches the environment
+      // IMPORTANT: Supabase requires the Redirect URL to be in the Allow List in Auth settings
+      // If this URL is not in the list, Supabase will fall back to the Site URL (likely /home)
+      const redirectTarget = `${siteUrl}/reset-password`
+      url.searchParams.set('redirect_to', redirectTarget)
+      resetLink = url.toString()
+      console.log('✓ Forced redirect_to in link:', resetLink)
+    } catch (e) {
+      console.error('Failed to modify reset link params:', e)
     }
     
-    console.log('Calling sendPasswordResetEmail with custom template...')
-    
-    // Send password reset email with our custom template
+    // Send password reset email
     const result = await sendPasswordResetEmail(
       email,
       firstName,
-      resetData.properties.action_link
+      resetLink
     )
 
     if (!result.success) {
-      console.error('❌ Failed to send password reset email:', result.error)
       return NextResponse.json({ 
         success: false, 
         error: result.error || 'Failed to send email'
       }, { status: 500 })
     }
 
-    console.log('✅ Custom branded password reset email sent successfully!')
-    console.log('═══════════════════════════════════════════\n')
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('❌ Error in POST /api/send-password-reset-email:', error)
-    console.log('═══════════════════════════════════════════\n')
+    console.error('Error in POST /api/send-password-reset-email:', error)
     return NextResponse.json({ 
       success: false, 
-      error: 'Email sending failed' 
-    })
+      error: error instanceof Error ? error.message : 'Email sending failed' 
+    }, { status: 500 })
   }
 }
-

@@ -3,6 +3,16 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
+  
+  // Always allow password reset page - users need to access it even when authenticated
+  if (pathname === '/reset-password' || pathname === '/forgot-password') {
+    console.log('🔐 [MIDDLEWARE] Allowing access to password reset page:', pathname)
+    return NextResponse.next()
+  }
+  
+  console.log('🔍 [MIDDLEWARE] Processing request for:', pathname)
+  
   const response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -29,6 +39,7 @@ export async function middleware(request: NextRequest) {
 
   // Check if user is authenticated
   const { data: { user } } = await supabase.auth.getUser()
+  console.log('🔍 [MIDDLEWARE] User authenticated:', !!user)
 
   // Get user profile if authenticated
   let userProfile = null
@@ -64,14 +75,15 @@ export async function middleware(request: NextRequest) {
       request.nextUrl.pathname.startsWith(route + '/')
     )
     
-    // Allow access to login/logout, admin routes, messages/inbox, and vendor public profiles
-    const allowedRoutes = ['/login', '/signup', '/logout', '/admin', '/messages', '/vendor']
+    // Allow access to login/logout, admin routes, messages/inbox, vendor public profiles, and password reset
+    const allowedRoutes = ['/login', '/signup', '/logout', '/admin', '/messages', '/vendor', '/reset-password', '/forgot-password']
     const isAllowedRoute = allowedRoutes.some(route => 
       request.nextUrl.pathname === route || 
       request.nextUrl.pathname.startsWith(route + '/')
     )
     
     if (isPublicRoute && !isAllowedRoute) {
+      console.log('🔄 [MIDDLEWARE] Redirecting admin user from', pathname, 'to /admin')
       // Redirect admin users to admin dashboard when they try to access public routes
       return NextResponse.redirect(new URL('/admin', request.url))
     }
@@ -86,14 +98,15 @@ export async function middleware(request: NextRequest) {
       request.nextUrl.pathname.startsWith(route + '/')
     )
     
-    // Allow access to login/logout, messages/inbox and vendor dashboard routes
-    const allowedRoutes = ['/login', '/signup', '/logout', '/messages', `/vendor/${user.id}/dashboard`]
+    // Allow access to login/logout, messages/inbox, vendor dashboard routes, and password reset
+    const allowedRoutes = ['/login', '/signup', '/logout', '/messages', `/vendor/${user.id}/dashboard`, '/reset-password', '/forgot-password']
     const isAllowedRoute = allowedRoutes.some(route => 
       request.nextUrl.pathname === route || 
       request.nextUrl.pathname.startsWith(route + '/')
     )
     
     if (isPublicRoute && !isAllowedRoute) {
+      console.log('🔄 [MIDDLEWARE] Redirecting vendor user from', pathname, 'to dashboard')
       // Redirect vendor users to their dashboard when they try to access public routes
       return NextResponse.redirect(new URL(`/vendor/${user.id}/dashboard`, request.url))
     }

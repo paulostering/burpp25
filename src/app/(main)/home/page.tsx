@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense } from "react"
+import { Suspense, useEffect } from "react"
 import { SearchHero } from "@/components/search-hero"
 import { MobileSearchHero } from "@/components/mobile-search-hero"
 import { Footer } from "@/components/footer"
@@ -11,6 +11,35 @@ import { useRouter } from "next/navigation"
 
 function HomeContent() {
   const router = useRouter()
+  
+  // Check for password reset token and redirect immediately
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    
+    // Aggressively check for hash in the URL
+    // This handles cases where Supabase redirects to root/home instead of /reset-password
+    const checkHash = () => {
+      const hash = window.location.hash
+      if (!hash) return
+      
+      const hashParams = new URLSearchParams(hash.substring(1))
+      const type = hashParams.get('type')
+      const accessToken = hashParams.get('access_token')
+      
+      // If this looks like a recovery token, force redirect to /reset-password
+      if (type === 'recovery' && accessToken) {
+        console.log('🔐 Recovery token detected on Home page. Redirecting to /reset-password...')
+        // Use window.location.assign to force a navigation event
+        window.location.assign(`/reset-password${hash}`)
+      }
+    }
+    
+    checkHash()
+    
+    // Also listen for hash changes just in case
+    window.addEventListener('hashchange', checkHash)
+    return () => window.removeEventListener('hashchange', checkHash)
+  }, [])
   
   return (
     <div className="space-y-24">

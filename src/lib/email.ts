@@ -47,8 +47,9 @@ export async function sendTemplateEmail(
   
   if (templateError || !template) {
     console.error('❌ Email template not found or inactive:', eventName)
-    console.error('Error:', templateError)
-    return { success: false, error: 'Template not found' }
+    console.error('Template error:', templateError)
+    console.error('Template error details:', JSON.stringify(templateError, null, 2))
+    return { success: false, error: templateError?.message || `Template "${eventName}" not found or inactive` }
   }
   
   console.log('✓ Template found:', template.event_label)
@@ -83,10 +84,11 @@ export async function sendTemplateEmail(
   
   // Send email with Resend
   if (!resend) {
-    console.log('⚠️  RESEND_API_KEY not found in environment variables')
-    console.log('⚠️  Email was prepared but not sent')
+    console.error('⚠️  RESEND_API_KEY not found in environment variables')
+    console.error('⚠️  Email was prepared but not sent')
+    console.error('⚠️  Check that RESEND_API_KEY is set in your environment variables')
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-    return { success: false, error: 'Resend not configured' }
+    return { success: false, error: 'Resend API key not configured. Please set RESEND_API_KEY environment variable.' }
   }
 
   try {
@@ -103,8 +105,9 @@ export async function sendTemplateEmail(
     
     if (result.error) {
       console.error('❌ Resend Error:', result.error)
+      console.error('Resend error details:', JSON.stringify(result.error, null, 2))
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-      return { success: false, error: result.error.message }
+      return { success: false, error: result.error.message || 'Failed to send email via Resend' }
     }
     
     console.log('✅ Email sent successfully via Resend!')
