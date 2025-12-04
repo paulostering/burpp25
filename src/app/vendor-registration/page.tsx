@@ -803,6 +803,7 @@ export default function VendorRegisterPage() {
           last_name: string
           email: string
           phone_number: string
+          allow_phone_contact?: boolean
         } = {
           user_id: uid,
           business_name: businessName,
@@ -822,6 +823,7 @@ export default function VendorRegisterPage() {
           last_name: lastName,
           email,
           phone_number: phone,
+          allow_phone_contact: true, // Allow phone contact by default for new vendors
           admin_approved: true, // Auto-approve vendors on registration
         }
         const { error: insErr, data: vendorProfile } = await supabase.from('vendor_profiles').insert(payload).select().single()
