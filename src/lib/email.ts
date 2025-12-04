@@ -23,9 +23,11 @@ export async function sendTemplateEmail(
   const supabase = createAdminSupabase()
   
   // Add siteUrl to variables automatically
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+  // Use production URL as fallback instead of localhost
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 
+    (process.env.NODE_ENV === 'production' ? 'https://burpp.com' : 'http://localhost:3000')
   // Use separate URL for email assets (must be publicly accessible)
-  const emailAssetsUrl = process.env.NEXT_PUBLIC_EMAIL_ASSETS_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://burpp.vercel.app'
+  const emailAssetsUrl = process.env.NEXT_PUBLIC_EMAIL_ASSETS_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://burpp.com'
   const allVariables = {
     ...variables,
     siteUrl,
@@ -119,7 +121,8 @@ export async function sendTemplateEmail(
 
 // Helper to get site URL with fallback
 function getSiteUrl(): string {
-  return process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+  return process.env.NEXT_PUBLIC_SITE_URL || 
+    (process.env.NODE_ENV === 'production' ? 'https://burpp.com' : 'http://localhost:3000')
 }
 
 // Example usage functions for each template
