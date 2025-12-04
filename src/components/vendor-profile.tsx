@@ -36,6 +36,7 @@ interface ReviewWithUser extends Review {
   user?: {
     first_name?: string | null
     last_name?: string | null
+    profile_photo_url?: string | null
   }
 }
 
@@ -231,7 +232,14 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
       }
       const { data, error } = await supabase
         .from('reviews')
-        .select('*')
+        .select(`
+          *,
+          user:user_id (
+            first_name,
+            last_name,
+            profile_photo_url
+          )
+        `)
         .eq('vendor_id', vendor.id)
         .eq('approved', true)
         .order('created_at', { ascending: false })
@@ -400,7 +408,8 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
           *,
           user:user_id (
             first_name,
-            last_name
+            last_name,
+            profile_photo_url
           )
         `)
         .eq('vendor_id', vendor.id)
@@ -432,9 +441,26 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
   }
 
   const getInitials = (firstName?: string | null, lastName?: string | null) => {
-    const first = firstName?.charAt(0)?.toUpperCase() || ''
-    const last = lastName?.charAt(0)?.toUpperCase() || ''
-    return `${first}${last}` || '??'
+    // Try to get initials from first and last name
+    if (firstName && lastName) {
+      const firstInitial = firstName.trim().charAt(0).toUpperCase()
+      const lastInitial = lastName.trim().charAt(0).toUpperCase()
+      if (firstInitial && lastInitial) {
+        return `${firstInitial}${lastInitial}`
+      }
+    }
+    // Try to get initial from first name only
+    if (firstName && firstName.trim()) {
+      const trimmed = firstName.trim()
+      return trimmed.charAt(0).toUpperCase() + trimmed.charAt(0).toUpperCase()
+    }
+    // Try to get initial from last name only
+    if (lastName && lastName.trim()) {
+      const trimmed = lastName.trim()
+      return trimmed.charAt(0).toUpperCase() + trimmed.charAt(0).toUpperCase()
+    }
+    // Last resort: return single letter
+    return 'U'
   }
 
   return (
@@ -693,6 +719,7 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
                     <div key={review.id} className="border-b border-gray-200 pb-4 last:border-b-0">
                       <div className="flex items-start gap-3">
                         <Avatar className="h-10 w-10">
+                          <AvatarImage src={review.user?.profile_photo_url || ''} alt="Profile photo" />
                           <AvatarFallback>
                             {getInitials(review.user?.first_name, review.user?.last_name)}
                           </AvatarFallback>

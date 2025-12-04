@@ -83,6 +83,9 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --success: oklch(0.55 0.15 150);
+  --success-foreground: oklch(1 0 0);
+  --success-border: oklch(0.5 0.15 150);
 }
 
 .dark {
@@ -117,6 +120,9 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  --success: oklch(0.6 0.15 150);
+  --success-foreground: oklch(1 0 0);
+  --success-border: oklch(0.55 0.15 150);
 }
 
 @layer base {
@@ -133,5 +139,23 @@
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
+  }
+}
+
+/* Sonner success toast styling */
+@layer utilities {
+  [data-sonner-toast][data-type="success"] {
+    background-color: var(--success) !important;
+    color: var(--success-foreground) !important;
+    border-color: var(--success-border) !important;
+  }
+  
+  [data-sonner-toast][data-type="success"] [data-title],
+  [data-sonner-toast][data-type="success"] [data-description] {
+    color: var(--success-foreground) !important;
+  }
+  
+  [data-sonner-toast][data-type="success"] [data-icon] {
+    color: var(--success-foreground) !important;
   }
 }
