@@ -393,6 +393,7 @@ export function MobileSearchHero() {
               <div className="bg-white border border-gray-300 rounded-lg px-4 py-3">
                 <div className="flex items-center">
                   <button
+                    type="button"
                     onClick={() => {
                       if (navigator.geolocation) {
                         navigator.geolocation.getCurrentPosition(
@@ -408,6 +409,7 @@ export function MobileSearchHero() {
                                 const locationText = `${place.text}, ${place.context?.find((c: any) => c.id.startsWith('region'))?.text || ''}`
                                 setUserLocation(locationText)
                                 setLocation(locationText)
+                                localStorage.setItem('burpp_search_location', locationText)
                               }
                             } catch (error) {
                               console.error('Error reverse geocoding:', error)
@@ -429,11 +431,12 @@ export function MobileSearchHero() {
                         )
                       }
                     }}
-                    className="mr-3 text-gray-400 hover:text-gray-600"
+                    className="mr-3 text-gray-400 hover:text-gray-600 flex-shrink-0"
+                    style={{ touchAction: 'manipulation' }}
                   >
                     <MapPin className="h-4 w-4" />
                   </button>
-                  <Input
+                  <input
                     ref={locationInputRef}
                     type="text"
                     inputMode="text"
@@ -450,13 +453,15 @@ export function MobileSearchHero() {
                     }}
                     onFocus={() => setIsLocationOpen(true)}
                     onKeyDown={handleLocationKeyDown}
-                    className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 font-semibold text-gray-700 placeholder:text-gray-500 pr-8 flex-1"
-                    style={{ fontSize: '16px', fontFamily: 'Poppins, sans-serif', touchAction: 'manipulation', WebkitUserSelect: 'text', userSelect: 'text' }}
+                    className="flex-1 min-w-0 border-0 p-0 h-auto shadow-none bg-transparent outline-none font-semibold text-gray-700 placeholder:text-gray-500"
+                    style={{ fontSize: '16px', fontFamily: 'Poppins, sans-serif', touchAction: 'manipulation', WebkitUserSelect: 'text', userSelect: 'text', WebkitAppearance: 'none' }}
                   />
                   {location && (
                     <button
+                      type="button"
                       onClick={clearLocation}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      className="ml-2 text-gray-400 hover:text-gray-600 flex-shrink-0"
+                      style={{ touchAction: 'manipulation' }}
                     >
                       <X className="h-4 w-4" />
                     </button>
