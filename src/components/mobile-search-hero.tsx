@@ -330,6 +330,7 @@ export function MobileSearchHero() {
                     autoCorrect="off"
                     autoCapitalize="off"
                     spellCheck={false}
+                    enterKeyHint="search"
                     placeholder="Category"
                     value={categorySearch}
                     onChange={(e) => {
@@ -344,8 +345,8 @@ export function MobileSearchHero() {
                     }}
                     onFocus={() => setIsCategoryOpen(true)}
                     onKeyDown={handleCategoryKeyDown}
-                    className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 font-semibold text-gray-700 placeholder:text-gray-500 pr-8"
-                    style={{ fontSize: '16px', fontFamily: 'Poppins, sans-serif' }}
+                    className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 font-semibold text-gray-700 placeholder:text-gray-500 pr-8 flex-1"
+                    style={{ fontSize: '16px', fontFamily: 'Poppins, sans-serif', touchAction: 'manipulation', WebkitUserSelect: 'text', userSelect: 'text' }}
                   />
                 </div>
                 {categorySearch && (
@@ -370,14 +371,13 @@ export function MobileSearchHero() {
                   {filteredCategories.map((category, index) => (
                     <button
                       key={category.id}
-                      onMouseDown={(e) => {
-                        e.preventDefault()
-                        handleCategorySelect(category.id, category.name)
-                      }}
+                      type="button"
+                      onClick={() => handleCategorySelect(category.id, category.name)}
                       onMouseEnter={() => setHighlightedCategoryIndex(index)}
                       className={`w-full px-4 py-3 text-left focus:outline-none first:rounded-t-lg last:rounded-b-lg transition-colors ${
                         highlightedCategoryIndex === index ? 'bg-primary text-white' : 'hover:bg-primary hover:text-white'
                       }`}
+                      style={{ touchAction: 'manipulation' }}
                     >
                       <div className="font-medium" style={{ fontSize: '16px' }}>
                         {highlightText(category.name, categorySearch)}
@@ -441,6 +441,7 @@ export function MobileSearchHero() {
                     autoCorrect="off"
                     autoCapitalize="off"
                     spellCheck={false}
+                    enterKeyHint="search"
                     placeholder="Location"
                     value={location}
                     onChange={(e) => {
@@ -449,8 +450,8 @@ export function MobileSearchHero() {
                     }}
                     onFocus={() => setIsLocationOpen(true)}
                     onKeyDown={handleLocationKeyDown}
-                    className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 font-semibold text-gray-700 placeholder:text-gray-500 pr-8"
-                    style={{ fontSize: '16px', fontFamily: 'Poppins, sans-serif' }}
+                    className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 font-semibold text-gray-700 placeholder:text-gray-500 pr-8 flex-1"
+                    style={{ fontSize: '16px', fontFamily: 'Poppins, sans-serif', touchAction: 'manipulation', WebkitUserSelect: 'text', userSelect: 'text' }}
                   />
                   {location && (
                     <button
@@ -469,16 +470,18 @@ export function MobileSearchHero() {
                   {locationSuggestions.map((suggestion, index) => (
                     <button
                       key={index}
-                      onMouseDown={(e) => {
-                        e.preventDefault()
+                      type="button"
+                      onClick={() => {
                         setLocation(suggestion.place_name)
                         setIsLocationOpen(false)
                         setHighlightedIndex(-1)
+                        localStorage.setItem('burpp_search_location', suggestion.place_name)
                       }}
                       onMouseEnter={() => setHighlightedIndex(index)}
                       className={`w-full px-4 py-3 text-left focus:outline-none flex items-start gap-3 first:rounded-t-lg last:rounded-b-lg transition-colors ${
                         highlightedIndex === index ? 'bg-primary text-white' : 'hover:bg-primary hover:text-white'
                       }`}
+                      style={{ touchAction: 'manipulation' }}
                     >
                       <MapPin className={`mt-0.5 h-4 w-4 flex-shrink-0 ${
                         highlightedIndex === index ? 'text-white' : 'text-gray-400'
