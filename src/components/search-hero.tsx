@@ -64,18 +64,22 @@ export function SearchHero() {
 
   // Handle clicking outside to close dropdowns
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (locationContainerRef.current && !locationContainerRef.current.contains(event.target as Node)) {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node
+      if (locationContainerRef.current && !locationContainerRef.current.contains(target)) {
         setIsLocationOpen(false)
       }
-      if (categoryContainerRef.current && !categoryContainerRef.current.contains(event.target as Node)) {
+      if (categoryContainerRef.current && !categoryContainerRef.current.contains(target)) {
         setIsCategoryOpen(false)
       }
     }
 
+    // Use both mousedown and touchend for cross-device compatibility
     document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('touchend', handleClickOutside)
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('touchend', handleClickOutside)
     }
   }, [])
 

@@ -65,18 +65,22 @@ export function MobileSearchHero() {
 
   // Handle clicking outside to close dropdowns
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (locationContainerRef.current && !locationContainerRef.current.contains(event.target as Node)) {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node
+      if (locationContainerRef.current && !locationContainerRef.current.contains(target)) {
         setIsLocationOpen(false)
       }
-      if (categoryContainerRef.current && !categoryContainerRef.current.contains(event.target as Node)) {
+      if (categoryContainerRef.current && !categoryContainerRef.current.contains(target)) {
         setIsCategoryOpen(false)
       }
     }
 
+    // Use both mousedown and touchend for cross-device compatibility
     document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('touchend', handleClickOutside)
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('touchend', handleClickOutside)
     }
   }, [])
 
@@ -321,6 +325,11 @@ export function MobileSearchHero() {
                   <Input
                     ref={categoryInputRef}
                     type="text"
+                    inputMode="text"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
                     placeholder="Category"
                     value={categorySearch}
                     onChange={(e) => {
@@ -333,6 +342,7 @@ export function MobileSearchHero() {
                         localStorage.removeItem('burpp_search_category_name')
                       }
                     }}
+                    onFocus={() => setIsCategoryOpen(true)}
                     onKeyDown={handleCategoryKeyDown}
                     className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 font-semibold text-gray-700 placeholder:text-gray-500 pr-8"
                     style={{ fontSize: '16px', fontFamily: 'Poppins, sans-serif' }}
@@ -426,6 +436,11 @@ export function MobileSearchHero() {
                   <Input
                     ref={locationInputRef}
                     type="text"
+                    inputMode="text"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
                     placeholder="Location"
                     value={location}
                     onChange={(e) => {
