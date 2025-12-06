@@ -9,15 +9,14 @@ import {
   Drawer,
   DrawerClose,
   DrawerContent,
-  DrawerDescription,
   DrawerFooter,
-  DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
 } from '@/components/ui/drawer'
 import { cn } from '@/lib/utils'
 import { getCategories } from '@/lib/categories-cache'
 import { toast } from 'sonner'
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 
 interface Category {
   id: string
@@ -748,12 +747,9 @@ export function CondensedSearch() {
           </DrawerTrigger>
           <DrawerContent className="max-h-[90vh]">
             <div className="mx-auto w-full max-w-md">
-              <DrawerHeader>
+              <VisuallyHidden>
                 <DrawerTitle>Search Services</DrawerTitle>
-                <DrawerDescription>
-                  Find local professionals for any service
-                </DrawerDescription>
-              </DrawerHeader>
+              </VisuallyHidden>
               
               <div className="p-4 space-y-4">
                 {/* Category Field */}
@@ -941,11 +937,6 @@ export function CondensedSearch() {
                   <Search className="h-5 w-5 mr-2" />
                   Search
                 </Button>
-                <DrawerClose asChild>
-                  <Button variant="outline" size="lg" className="w-full h-12">
-                    Cancel
-                  </Button>
-                </DrawerClose>
               </DrawerFooter>
             </div>
           </DrawerContent>

@@ -9,15 +9,14 @@ import {
   Drawer,
   DrawerClose,
   DrawerContent,
-  DrawerDescription,
   DrawerFooter,
-  DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
 } from '@/components/ui/drawer'
 import { Search, MapPin, X, LayoutGrid } from 'lucide-react'
 import { getCategories } from '@/lib/categories-cache'
 import { toast } from 'sonner'
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 
 interface Category {
   id: string
@@ -332,7 +331,7 @@ export function MobileSearchHero() {
           <DrawerTrigger asChild>
             <Button
               size="lg"
-              className="w-full max-w-md h-14 rounded-lg bg-white hover:bg-gray-50 text-gray-900 font-semibold text-lg shadow-lg"
+              className="w-full max-w-md h-14 rounded-lg bg-white hover:bg-gray-50 text-gray-900 font-semibold text-lg shadow-lg justify-start"
             >
               <Search className="h-5 w-5 mr-2" />
               Search Services
@@ -341,12 +340,9 @@ export function MobileSearchHero() {
           
           <DrawerContent className="max-h-[90vh]">
             <div className="mx-auto w-full max-w-md">
-              <DrawerHeader>
+              <VisuallyHidden>
                 <DrawerTitle>Search Services</DrawerTitle>
-                <DrawerDescription>
-                  Find local professionals for any service
-                </DrawerDescription>
-              </DrawerHeader>
+              </VisuallyHidden>
               
               <div className="p-4 space-y-4">
                 {/* Category Field */}
@@ -500,11 +496,6 @@ export function MobileSearchHero() {
                   <Search className="h-5 w-5 mr-2" />
                   Search
                 </Button>
-                <DrawerClose asChild>
-                  <Button variant="outline" size="lg" className="w-full h-12">
-                    Cancel
-                  </Button>
-                </DrawerClose>
               </DrawerFooter>
             </div>
           </DrawerContent>
