@@ -33,6 +33,8 @@ export function SearchClient() {
   useEffect(() => {
     const fetchVendors = async () => {
       setLoading(true)
+      setVendors([]) // Clear vendors immediately when search changes
+      setCount(0)
       
       // Set a timeout to show results even if API is slow
       const timeoutId = setTimeout(() => {

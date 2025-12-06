@@ -60,6 +60,13 @@ export function InfiniteScrollVendors({ initialVendors, searchParams, sortBy }: 
   const [page, setPage] = useState(1)
   const supabase = createClient()
 
+  // Reset vendors when initialVendors changes (new search)
+  useEffect(() => {
+    setVendors(initialVendors)
+    setPage(1)
+    setHasMore(initialVendors.length === VENDORS_PER_PAGE)
+  }, [initialVendors])
+
   // Fetch review stats for vendors
   useEffect(() => {
     const fetchReviewStats = async () => {
