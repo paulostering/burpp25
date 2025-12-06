@@ -1,10 +1,20 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from '@/components/ui/drawer'
 import { Search, MapPin, X, LayoutGrid } from 'lucide-react'
 import { getCategories } from '@/lib/categories-cache'
 import { toast } from 'sonner'
@@ -22,7 +32,7 @@ interface LocationSuggestion {
 
 export function MobileSearchHero() {
   const router = useRouter()
-  const searchParams = useSearchParams()
+  const [isOpen, setIsOpen] = useState(false)
   const [categories, setCategories] = useState<Category[]>([])
   const [filteredCategories, setFilteredCategories] = useState<Category[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string>('')
@@ -34,8 +44,6 @@ export function MobileSearchHero() {
   const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([])
   const [isLocationOpen, setIsLocationOpen] = useState(false)
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1)
-  const [userLocation, setUserLocation] = useState<string>('')
-  const hasAttemptedGeolocation = useRef(false)
   const hasLoadedFromStorage = useRef(false)
   const locationInputRef = useRef<HTMLInputElement>(null)
   const locationContainerRef = useRef<HTMLDivElement>(null)
@@ -48,7 +56,6 @@ export function MobileSearchHero() {
       const savedLocation = localStorage.getItem('burpp_search_location')
       if (savedLocation) {
         setLocation(savedLocation)
-        hasAttemptedGeolocation.current = true // Don't auto-detect if we have a saved location
       }
       
       const savedCategoryId = localStorage.getItem('burpp_search_category_id')
@@ -75,7 +82,6 @@ export function MobileSearchHero() {
       }
     }
 
-    // Use both mousedown and touchend for cross-device compatibility
     document.addEventListener('mousedown', handleClickOutside)
     document.addEventListener('touchend', handleClickOutside)
     return () => {
@@ -96,6 +102,7 @@ export function MobileSearchHero() {
         
         if (isMounted) {
           setCategories(data)
+          setFilteredCategories(data)
         }
       } catch (error) {
         console.error('Error loading categories:', error)
@@ -119,40 +126,8 @@ export function MobileSearchHero() {
       )
       setFilteredCategories(filtered)
     }
-    setHighlightedCategoryIndex(-1) // Reset highlight when filter changes
+    setHighlightedCategoryIndex(-1)
   }, [categorySearch, categories])
-
-  // Auto-detect user location on mount
-  useEffect(() => {
-    if (hasAttemptedGeolocation.current) return // Only attempt once
-    hasAttemptedGeolocation.current = true
-    
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const { latitude, longitude } = position.coords
-          try {
-            const response = await fetch(
-              `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}&types=place`
-            )
-            const data = await response.json()
-            if (data.features && data.features.length > 0) {
-              const place = data.features[0]
-              const locationText = `${place.text}, ${place.context?.find((c: {id: string; text: string}) => c.id.startsWith('region'))?.text || ''}`
-              setLocation(locationText)
-              setUserLocation(locationText)
-            }
-          } catch (error) {
-            console.error('Error reverse geocoding:', error)
-          }
-        },
-        (error) => {
-          // Silently fail if user denies or error occurs
-          console.log('Geolocation error:', error.code)
-        }
-      )
-    }
-  }, [])
 
   // Handle location search
   const handleLocationSearch = async (query: string) => {
@@ -168,7 +143,7 @@ export function MobileSearchHero() {
       )
       const data = await response.json()
       setLocationSuggestions(data.features || [])
-      setHighlightedIndex(-1) // Reset highlighted index when new suggestions arrive
+      setHighlightedIndex(-1)
     } catch (error) {
       console.error('Error searching locations:', error)
     }
@@ -240,7 +215,10 @@ export function MobileSearchHero() {
 
   // Handle search submission
   const handleSearch = () => {
-    if (!location) return
+    if (!location) {
+      toast.error('Please enter a location')
+      return
+    }
 
     const params = new URLSearchParams()
     if (selectedCategory) {
@@ -248,13 +226,14 @@ export function MobileSearchHero() {
     }
     params.set('q', location)
 
+    setIsOpen(false)
     router.push(`/search?${params.toString()}`)
   }
 
   // Clear location
   const clearLocation = () => {
     setLocation('')
-    setUserLocation('')
+    localStorage.removeItem('burpp_search_location')
     setHighlightedIndex(-1)
     if (locationInputRef.current) {
       locationInputRef.current.focus()
@@ -279,7 +258,9 @@ export function MobileSearchHero() {
       case 'Enter':
         e.preventDefault()
         if (highlightedIndex >= 0 && highlightedIndex < locationSuggestions.length) {
-          setLocation(locationSuggestions[highlightedIndex].place_name)
+          const newLocation = locationSuggestions[highlightedIndex].place_name
+          setLocation(newLocation)
+          localStorage.setItem('burpp_search_location', newLocation)
           setIsLocationOpen(false)
           setHighlightedIndex(-1)
         }
@@ -288,6 +269,38 @@ export function MobileSearchHero() {
         setIsLocationOpen(false)
         setHighlightedIndex(-1)
         break
+    }
+  }
+
+  const requestGeolocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords
+          try {
+            const response = await fetch(
+              `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}&types=place`
+            )
+            const data = await response.json()
+            if (data.features && data.features.length > 0) {
+              const place = data.features[0]
+              const locationText = `${place.text}, ${place.context?.find((c: any) => c.id.startsWith('region'))?.text || ''}`
+              setLocation(locationText)
+              localStorage.setItem('burpp_search_location', locationText)
+            }
+          } catch (error) {
+            console.error('Error reverse geocoding:', error)
+          }
+        },
+        (error) => {
+          console.error('Error getting location:', error)
+          if (error.code === 2) {
+            toast.error('Location unavailable. Please enter your location manually.')
+          } else if (error.code === 3) {
+            toast.error('Location request timed out. Please try again or enter manually.')
+          }
+        }
+      )
     }
   }
 
@@ -314,217 +327,191 @@ export function MobileSearchHero() {
           </p>
         </div>
 
-        {/* Mobile Search Form - 3 Rows */}
-        <div className="relative w-full max-w-md">
-          <div className="space-y-3">
-            {/* Row 1: Category */}
-            <div className="relative" ref={categoryContainerRef}>
-              <div className="bg-white border border-gray-300 rounded-lg px-4 py-3">
-                <div className="flex items-center">
-                  <LayoutGrid className="h-4 w-4 text-gray-400 mr-3 flex-shrink-0" />
-                  <Input
-                    ref={categoryInputRef}
-                    type="text"
-                    inputMode="text"
-                    autoComplete="off"
-                    autoCorrect="off"
-                    autoCapitalize="off"
-                    spellCheck={false}
-                    enterKeyHint="search"
-                    placeholder="Category"
-                    value={categorySearch}
-                    onChange={(e) => {
-                      setCategorySearch(e.target.value)
-                      setIsCategoryOpen(true)
-                      if (!selectedCategory || e.target.value !== selectedCategoryName) {
-                        setSelectedCategory('')
-                        setSelectedCategoryName('')
-                        localStorage.removeItem('burpp_search_category_id')
-                        localStorage.removeItem('burpp_search_category_name')
-                      }
-                    }}
-                    onFocus={() => setIsCategoryOpen(true)}
-                    onKeyDown={handleCategoryKeyDown}
-                    className="border-0 p-0 h-auto shadow-none bg-transparent focus-visible:ring-0 font-semibold text-gray-700 placeholder:text-gray-500 pr-8 flex-1"
-                    style={{ fontSize: '16px', fontFamily: 'Poppins, sans-serif', touchAction: 'manipulation', WebkitUserSelect: 'text', userSelect: 'text' }}
-                  />
-                </div>
-                {categorySearch && (
-                  <button
-                    onClick={() => {
-                      setCategorySearch('')
-                      setSelectedCategory('')
-                      setSelectedCategoryName('')
-                      localStorage.removeItem('burpp_search_category_id')
-                      localStorage.removeItem('burpp_search_category_name')
-                    }}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
+        {/* Search Button to Open Drawer */}
+        <Drawer open={isOpen} onOpenChange={setIsOpen} direction="top">
+          <DrawerTrigger asChild>
+            <Button
+              size="lg"
+              className="w-full max-w-md h-14 rounded-lg bg-white hover:bg-gray-50 text-gray-900 font-semibold text-lg shadow-lg"
+            >
+              <Search className="h-5 w-5 mr-2" />
+              Search Services
+            </Button>
+          </DrawerTrigger>
+          
+          <DrawerContent className="max-h-[90vh]">
+            <div className="mx-auto w-full max-w-md">
+              <DrawerHeader>
+                <DrawerTitle>Search Services</DrawerTitle>
+                <DrawerDescription>
+                  Find local professionals for any service
+                </DrawerDescription>
+              </DrawerHeader>
               
-              {/* Category Dropdown */}
-              {isCategoryOpen && filteredCategories.length > 0 && (
-                <div className="absolute top-full left-0 right-0 z-50 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                  {filteredCategories.map((category, index) => (
-                    <button
-                      key={category.id}
-                      type="button"
-                      onClick={() => handleCategorySelect(category.id, category.name)}
-                      onMouseEnter={() => setHighlightedCategoryIndex(index)}
-                      className={`w-full px-4 py-3 text-left focus:outline-none first:rounded-t-lg last:rounded-b-lg transition-colors ${
-                        highlightedCategoryIndex === index ? 'bg-primary text-white' : 'hover:bg-primary hover:text-white'
-                      }`}
-                      style={{ touchAction: 'manipulation' }}
-                    >
-                      <div className="font-medium" style={{ fontSize: '16px' }}>
-                        {highlightText(category.name, categorySearch)}
-                      </div>
-                    </button>
-                  ))}
+              <div className="p-4 space-y-4">
+                {/* Category Field */}
+                <div className="relative" ref={categoryContainerRef}>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Category
+                  </label>
+                  <div className="relative">
+                    <LayoutGrid className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Input
+                      ref={categoryInputRef}
+                      type="text"
+                      placeholder="What gig do you need help with?"
+                      value={categorySearch}
+                      onChange={(e) => {
+                        setCategorySearch(e.target.value)
+                        setIsCategoryOpen(true)
+                        if (!selectedCategory || e.target.value !== selectedCategoryName) {
+                          setSelectedCategory('')
+                          setSelectedCategoryName('')
+                          localStorage.removeItem('burpp_search_category_id')
+                          localStorage.removeItem('burpp_search_category_name')
+                        }
+                      }}
+                      onFocus={() => setIsCategoryOpen(true)}
+                      onKeyDown={handleCategoryKeyDown}
+                      className="pl-10 pr-10 h-12 text-base"
+                    />
+                    {categorySearch && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCategorySearch('')
+                          setSelectedCategory('')
+                          setSelectedCategoryName('')
+                          localStorage.removeItem('burpp_search_category_id')
+                          localStorage.removeItem('burpp_search_category_name')
+                        }}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                  
+                  {/* Category Dropdown */}
+                  {isCategoryOpen && filteredCategories.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 z-[9999] mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      {filteredCategories.map((category, index) => (
+                        <button
+                          key={category.id}
+                          type="button"
+                          onClick={() => handleCategorySelect(category.id, category.name)}
+                          onMouseEnter={() => setHighlightedCategoryIndex(index)}
+                          className={`w-full px-4 py-3 text-left focus:outline-none first:rounded-t-lg last:rounded-b-lg transition-colors ${
+                            highlightedCategoryIndex === index ? 'bg-primary text-white' : 'hover:bg-primary hover:text-white'
+                          }`}
+                        >
+                          <div className="font-medium">
+                            {highlightText(category.name, categorySearch)}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
 
-            {/* Row 2: Location */}
-            <div className="relative" ref={locationContainerRef}>
-              <div className="bg-white border border-gray-300 rounded-lg px-4 py-3">
-                <div className="flex items-center">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (navigator.geolocation) {
-                        navigator.geolocation.getCurrentPosition(
-                          async (position) => {
-                            const { latitude, longitude } = position.coords
-                            try {
-                              const response = await fetch(
-                                `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}&types=place`
-                              )
-                              const data = await response.json()
-                              if (data.features && data.features.length > 0) {
-                                const place = data.features[0]
-                                const locationText = `${place.text}, ${place.context?.find((c: any) => c.id.startsWith('region'))?.text || ''}`
-                                setUserLocation(locationText)
-                                setLocation(locationText)
-                                localStorage.setItem('burpp_search_location', locationText)
-                              }
-                            } catch (error) {
-                              console.error('Error reverse geocoding:', error)
-                            }
-                          },
-                          (error) => {
-                            console.error('Error getting location:', error)
-                            // Provide user-friendly error messages
-                            if (error.code === 1) {
-                              // PERMISSION_DENIED - user chose not to share
-                            } else if (error.code === 2) {
-                              // POSITION_UNAVAILABLE
-                              toast.error('Location unavailable. Please enter your location manually.')
-                            } else if (error.code === 3) {
-                              // TIMEOUT
-                              toast.error('Location request timed out. Please try again or enter manually.')
-                            }
-                          }
-                        )
-                      }
-                    }}
-                    className="mr-3 text-gray-400 hover:text-gray-600 flex-shrink-0"
-                    style={{ touchAction: 'manipulation' }}
-                  >
-                    <MapPin className="h-4 w-4" />
-                  </button>
-                  <input
-                    ref={locationInputRef}
-                    type="text"
-                    inputMode="text"
-                    autoComplete="off"
-                    autoCorrect="off"
-                    autoCapitalize="off"
-                    spellCheck={false}
-                    enterKeyHint="search"
-                    placeholder="Location"
-                    value={location}
-                    onChange={(e) => {
-                      setLocation(e.target.value)
-                      handleLocationSearch(e.target.value)
-                    }}
-                    onFocus={() => setIsLocationOpen(true)}
-                    onKeyDown={handleLocationKeyDown}
-                    className="flex-1 min-w-0 border-0 p-0 h-auto shadow-none bg-transparent outline-none font-semibold text-gray-700 placeholder:text-gray-500"
-                    style={{ fontSize: '16px', fontFamily: 'Poppins, sans-serif', touchAction: 'manipulation', WebkitUserSelect: 'text', userSelect: 'text', WebkitAppearance: 'none' }}
-                  />
-                  {location && (
+                {/* Location Field */}
+                <div className="relative" ref={locationContainerRef}>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Location
+                  </label>
+                  <div className="relative">
                     <button
                       type="button"
-                      onClick={clearLocation}
-                      className="ml-2 text-gray-400 hover:text-gray-600 flex-shrink-0"
-                      style={{ touchAction: 'manipulation' }}
+                      onClick={requestGeolocation}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                     >
-                      <X className="h-4 w-4" />
+                      <MapPin className="h-5 w-5" />
                     </button>
+                    <Input
+                      ref={locationInputRef}
+                      type="text"
+                      placeholder="Enter your location"
+                      value={location}
+                      onChange={(e) => {
+                        setLocation(e.target.value)
+                        handleLocationSearch(e.target.value)
+                      }}
+                      onFocus={() => setIsLocationOpen(true)}
+                      onKeyDown={handleLocationKeyDown}
+                      className="pl-10 pr-10 h-12 text-base"
+                    />
+                    {location && (
+                      <button
+                        type="button"
+                        onClick={clearLocation}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Location Suggestions Dropdown */}
+                  {isLocationOpen && locationSuggestions.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 z-[9999] mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      {locationSuggestions.map((suggestion, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => {
+                            setLocation(suggestion.place_name)
+                            localStorage.setItem('burpp_search_location', suggestion.place_name)
+                            setIsLocationOpen(false)
+                            setHighlightedIndex(-1)
+                          }}
+                          onMouseEnter={() => setHighlightedIndex(index)}
+                          className={`w-full px-4 py-3 text-left focus:outline-none flex items-start gap-3 first:rounded-t-lg last:rounded-b-lg transition-colors ${
+                            highlightedIndex === index ? 'bg-primary text-white' : 'hover:bg-primary hover:text-white'
+                          }`}
+                        >
+                          <MapPin className={`mt-0.5 h-4 w-4 flex-shrink-0 ${
+                            highlightedIndex === index ? 'text-white' : 'text-gray-400'
+                          }`} />
+                          <div>
+                            <div className="font-medium text-sm">
+                              {highlightText(suggestion.place_name, location)}
+                            </div>
+                            {suggestion.context && suggestion.context.length > 0 && (
+                              <div className={`text-xs ${
+                                highlightedIndex === index ? 'text-white/80' : 'text-gray-500'
+                              }`}>
+                                {suggestion.context.map((c, i) => c.text).join(', ')}
+                              </div>
+                            )}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
                   )}
                 </div>
               </div>
 
-              {/* Location Suggestions Dropdown */}
-              {isLocationOpen && locationSuggestions.length > 0 && (
-                <div className="absolute top-full left-0 right-0 z-50 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                  {locationSuggestions.map((suggestion, index) => (
-                    <button
-                      key={index}
-                      type="button"
-                      onClick={() => {
-                        setLocation(suggestion.place_name)
-                        setIsLocationOpen(false)
-                        setHighlightedIndex(-1)
-                        localStorage.setItem('burpp_search_location', suggestion.place_name)
-                      }}
-                      onMouseEnter={() => setHighlightedIndex(index)}
-                      className={`w-full px-4 py-3 text-left focus:outline-none flex items-start gap-3 first:rounded-t-lg last:rounded-b-lg transition-colors ${
-                        highlightedIndex === index ? 'bg-primary text-white' : 'hover:bg-primary hover:text-white'
-                      }`}
-                      style={{ touchAction: 'manipulation' }}
-                    >
-                      <MapPin className={`mt-0.5 h-4 w-4 flex-shrink-0 ${
-                        highlightedIndex === index ? 'text-white' : 'text-gray-400'
-                      }`} />
-                      <div>
-                        <div className="font-medium text-sm">
-                          {highlightText(suggestion.place_name, location)}
-                        </div>
-                        {suggestion.context && suggestion.context.length > 0 && (
-                          <div className={`text-xs ${
-                            highlightedIndex === index ? 'text-white/80' : 'text-gray-500'
-                          }`}>
-                            {suggestion.context.map((c, i) => c.text).join(', ')}
-                          </div>
-                        )}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
+              <DrawerFooter>
+                <Button
+                  onClick={handleSearch}
+                  size="lg"
+                  className="w-full h-12 text-lg"
+                >
+                  <Search className="h-5 w-5 mr-2" />
+                  Search
+                </Button>
+                <DrawerClose asChild>
+                  <Button variant="outline" size="lg" className="w-full h-12">
+                    Cancel
+                  </Button>
+                </DrawerClose>
+              </DrawerFooter>
             </div>
-
-            {/* Row 3: Search Button */}
-            <div>
-              <Button
-                onClick={handleSearch}
-                size="lg"
-                className="w-full h-12 rounded-lg bg-primary hover:bg-primary/90 font-semibold text-lg"
-              >
-                <Search className="h-5 w-5 mr-2" />
-                Search
-              </Button>
-            </div>
-          </div>
-        </div>
+          </DrawerContent>
+        </Drawer>
         
-        {/* Featured Service Tag */}
-        <div className="mt-16 flex mb-12">
+        {/* Scuba Instructor Tag - Inline */}
+        <div className="mt-4 flex items-center mt-16 mb-12">
           <div className="bg-black/50 backdrop-blur-sm pl-4 pr-8 py-4 shadow-lg border-l-4 border-primary">
             <div className="text-lg font-medium text-white">
               Fitness Instructor
@@ -535,7 +522,6 @@ export function MobileSearchHero() {
           </div>
         </div>
       </div>
-
     </div>
   )
 }

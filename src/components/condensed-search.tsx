@@ -5,9 +5,17 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Search, MapPin, X, LayoutGrid } from 'lucide-react'
-import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet'
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from '@/components/ui/drawer'
 import { cn } from '@/lib/utils'
-import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 import { getCategories } from '@/lib/categories-cache'
 import { toast } from 'sonner'
 
@@ -34,7 +42,7 @@ export function CondensedSearch() {
   const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([])
   const [isLocationOpen, setIsLocationOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
-  const [isSheetOpen, setIsSheetOpen] = useState(false)
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1)
   const [highlightedCategoryIndex, setHighlightedCategoryIndex] = useState<number>(-1)
   const hasAttemptedGeolocation = useRef(false)
@@ -324,9 +332,9 @@ export function CondensedSearch() {
 
     router.push(`/search?${params.toString()}`)
     
-    // Close sheet on mobile after search
+    // Close drawer on mobile after search
     if (isMobile) {
-      setIsSheetOpen(false)
+      setIsDrawerOpen(false)
     }
   }, [selectedCategory, location, router, isMobile])
 
@@ -732,26 +740,216 @@ export function CondensedSearch() {
   return (
     <div className="relative w-full max-w-4xl">
       {isMobile ? (
-        <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-          <SheetTrigger asChild>
+        <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen} direction="top">
+          <DrawerTrigger asChild>
             <div className="cursor-pointer p-2 hover:bg-gray-100 rounded-md transition-colors">
               <Search className="h-5 w-5 text-gray-600" />
             </div>
-          </SheetTrigger>
-          <SheetContent side="top" className="h-full p-6">
-            <VisuallyHidden>
-              <SheetTitle>Search Services</SheetTitle>
-            </VisuallyHidden>
-            <div className="flex flex-col h-full">
-              <div className="mb-6">
-                <h2 className="text-lg font-semibold">Search Services</h2>
+          </DrawerTrigger>
+          <DrawerContent className="max-h-[90vh]">
+            <div className="mx-auto w-full max-w-md">
+              <DrawerHeader>
+                <DrawerTitle>Search Services</DrawerTitle>
+                <DrawerDescription>
+                  Find local professionals for any service
+                </DrawerDescription>
+              </DrawerHeader>
+              
+              <div className="p-4 space-y-4">
+                {/* Category Field */}
+                <div className="relative" ref={categoryContainerRef}>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Category
+                  </label>
+                  <div className="relative">
+                    <LayoutGrid className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Input
+                      ref={categoryInputRef}
+                      type="text"
+                      placeholder="What gig do you need help with?"
+                      value={categorySearch}
+                      onChange={(e) => {
+                        setCategorySearch(e.target.value)
+                        setIsCategoryOpen(true)
+                        if (!selectedCategory || e.target.value !== selectedCategoryName) {
+                          setSelectedCategory('')
+                          setSelectedCategoryName('')
+                          localStorage.removeItem('burpp_search_category_id')
+                          localStorage.removeItem('burpp_search_category_name')
+                        }
+                      }}
+                      onFocus={() => setIsCategoryOpen(true)}
+                      onKeyDown={handleCategoryKeyDown}
+                      className="pl-10 pr-10 h-12 text-base"
+                    />
+                    {categorySearch && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCategorySearch('')
+                          setSelectedCategory('')
+                          setSelectedCategoryName('')
+                          localStorage.removeItem('burpp_search_category_id')
+                          localStorage.removeItem('burpp_search_category_name')
+                        }}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                  
+                  {/* Category Dropdown */}
+                  {isCategoryOpen && filteredCategories.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 z-[9999] mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      {filteredCategories.map((category, index) => (
+                        <button
+                          key={category.id}
+                          type="button"
+                          onClick={() => handleCategorySelect(category.id, category.name)}
+                          onMouseEnter={() => setHighlightedCategoryIndex(index)}
+                          className={cn(
+                            "w-full px-4 py-3 text-left focus:outline-none first:rounded-t-lg last:rounded-b-lg transition-colors",
+                            highlightedCategoryIndex === index ? 'bg-primary text-white' : 'hover:bg-primary hover:text-white'
+                          )}
+                        >
+                          <div className="font-medium">
+                            {highlightText(category.name, categorySearch)}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Location Field */}
+                <div className="relative" ref={locationContainerRef}>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Location
+                  </label>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (navigator.geolocation) {
+                          navigator.geolocation.getCurrentPosition(
+                            async (position) => {
+                              const { latitude, longitude } = position.coords
+                              try {
+                                const response = await fetch(
+                                  `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}&types=place`
+                                )
+                                const data = await response.json()
+                                if (data.features && data.features.length > 0) {
+                                  const place = data.features[0]
+                                  const locationText = `${place.text}, ${place.context?.find((c: {id: string; text: string}) => c.id.startsWith('region'))?.text || ''}`
+                                  setLocation(locationText)
+                                  localStorage.setItem('burpp_search_location', locationText)
+                                }
+                              } catch {
+                                // Silently fail if reverse geocoding fails
+                              }
+                            },
+                            (error) => {
+                              console.error('Error getting location:', error)
+                              if (error.code === 2) {
+                                toast.error('Location unavailable. Please enter your location manually.')
+                              } else if (error.code === 3) {
+                                toast.error('Location request timed out. Please try again or enter manually.')
+                              }
+                            }
+                          )
+                        }
+                      }}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      <MapPin className="h-5 w-5" />
+                    </button>
+                    <Input
+                      ref={locationInputRef}
+                      type="text"
+                      placeholder="Enter your location"
+                      value={location}
+                      onChange={(e) => {
+                        setLocation(e.target.value)
+                        handleLocationSearch(e.target.value)
+                      }}
+                      onFocus={() => setIsLocationOpen(true)}
+                      onKeyDown={handleLocationKeyDown}
+                      className="pl-10 pr-10 h-12 text-base"
+                    />
+                    {location && (
+                      <button
+                        type="button"
+                        onClick={clearLocation}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Location Suggestions Dropdown */}
+                  {isLocationOpen && locationSuggestions.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 z-[9999] mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      {locationSuggestions.map((suggestion, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => {
+                            setLocation(suggestion.place_name)
+                            localStorage.setItem('burpp_search_location', suggestion.place_name)
+                            setIsLocationOpen(false)
+                            setHighlightedIndex(-1)
+                          }}
+                          onMouseEnter={() => setHighlightedIndex(index)}
+                          className={cn(
+                            "w-full px-4 py-3 text-left focus:outline-none flex items-start gap-3 first:rounded-t-lg last:rounded-b-lg transition-colors",
+                            highlightedIndex === index ? 'bg-primary text-white' : 'hover:bg-primary hover:text-white'
+                          )}
+                        >
+                          <MapPin className={cn(
+                            "mt-0.5 h-4 w-4 flex-shrink-0",
+                            highlightedIndex === index ? 'text-white' : 'text-gray-400'
+                          )} />
+                          <div>
+                            <div className="font-medium text-sm">
+                              {highlightText(suggestion.place_name, location)}
+                            </div>
+                            {suggestion.context && suggestion.context.length > 0 && (
+                              <div className={cn(
+                                "text-xs",
+                                highlightedIndex === index ? 'text-white/80' : 'text-gray-500'
+                              )}>
+                                {suggestion.context.map((c) => c.text).join(', ')}
+                              </div>
+                            )}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="flex-1">
-                {searchForm}
-              </div>
+
+              <DrawerFooter>
+                <Button
+                  onClick={handleSearchSubmit}
+                  size="lg"
+                  className="w-full h-12 text-lg"
+                >
+                  <Search className="h-5 w-5 mr-2" />
+                  Search
+                </Button>
+                <DrawerClose asChild>
+                  <Button variant="outline" size="lg" className="w-full h-12">
+                    Cancel
+                  </Button>
+                </DrawerClose>
+              </DrawerFooter>
             </div>
-          </SheetContent>
-        </Sheet>
+          </DrawerContent>
+        </Drawer>
       ) : (
         searchForm
       )}
