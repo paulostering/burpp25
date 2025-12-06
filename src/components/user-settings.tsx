@@ -110,15 +110,19 @@ export function UserSettings({ userProfile }: UserSettingsProps) {
     setDeleteLoading(true)
 
     try {
-      // Delete user profile (this will cascade to auth.users)
-      const { error: deleteError } = await supabase
-        .from('user_profiles')
-        .delete()
-        .eq('id', userProfile.id)
+      // Call API to delete account (requires admin privileges)
+      const response = await fetch('/api/delete-account', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirmText: deleteConfirmText })
+      })
 
-      if (deleteError) throw deleteError
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to delete account')
+      }
 
-      // Sign out user
+      // Sign out user locally
       await supabase.auth.signOut()
 
       toast.success('Account deleted successfully')
