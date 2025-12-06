@@ -205,7 +205,6 @@ export function ConversationsList({ onConversationSelect, selectedConversationId
       <div className="flex h-full items-center justify-center text-gray-500 p-8 text-center">
         <div>
           <p className="text-lg font-medium mb-2">No conversations yet</p>
-          <p className="text-sm">Start messaging vendors to see your conversations here</p>
         </div>
       </div>
     )
