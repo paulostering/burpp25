@@ -173,6 +173,28 @@ export function VendorAuthForm({ mode, onModeChange, onAuthSuccess, className }:
           toast.error('Database error saving new user')
           return
         }
+
+        // Send welcome email (non-blocking - don't wait for it)
+        console.log('🎉 User created via messaging - triggering welcome email...')
+        fetch('/api/send-welcome-email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: values.email,
+            firstName: values.firstName,
+            lastName: values.lastName,
+          }),
+        })
+          .then(async (response) => {
+            const result = await response.json()
+            console.log('Welcome email API response:', result)
+          })
+          .catch(error => {
+            console.error('Failed to send welcome email:', error)
+            // Don't show error to user - email is non-critical
+          })
       }
 
       // Attempt immediate sign-in to create a seamless experience
