@@ -219,50 +219,45 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
     const loadReviews = async () => {
       setIsLoadingReviews(true)
       
-      // Test if the reviews table exists
-      const { data: tableTest, error: tableError } = await supabase
+      // Fetch reviews without join (the join fails because user_id references auth.users, not user_profiles)
+      const { data: reviewsData, error: reviewsError } = await supabase
         .from('reviews')
-        .select('count')
-        .limit(1)
-      
-      if (tableError) {
-        console.error('Reviews table does not exist or is not accessible:', tableError)
-        setIsLoadingReviews(false)
-        return
-      }
-      const { data, error } = await supabase
-        .from('reviews')
-        .select(`
-          *,
-          user:user_id (
-            first_name,
-            last_name,
-            profile_photo_url
-          )
-        `)
+        .select('*')
         .eq('vendor_id', vendor.id)
         .eq('approved', true)
         .order('created_at', { ascending: false })
 
-      if (error) {
-        console.error('Error loading reviews:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code,
-          full_error: error
-        })
+      if (reviewsError) {
+        console.error('Error loading reviews:', reviewsError)
         setIsLoadingReviews(false)
         return
       }
 
-      setReviews(data || [])
-      
-      if (data && data.length > 0) {
-        const avg = data.reduce((sum, review) => sum + review.rating, 0) / data.length
-        setAverageRating(Math.round(avg * 10) / 10)
-        setTotalReviews(data.length)
+      if (!reviewsData || reviewsData.length === 0) {
+        setReviews([])
+        setIsLoadingReviews(false)
+        return
       }
+
+      // Fetch user profiles for all reviewers
+      const userIds = [...new Set(reviewsData.map(r => r.user_id))]
+      const { data: usersData } = await supabase
+        .from('user_profiles')
+        .select('id, first_name, last_name, profile_photo_url')
+        .in('id', userIds)
+
+      // Map user data to reviews
+      const userMap = new Map(usersData?.map(u => [u.id, u]) || [])
+      const reviewsWithUsers = reviewsData.map(review => ({
+        ...review,
+        user: userMap.get(review.user_id) || null
+      }))
+
+      setReviews(reviewsWithUsers)
+      
+      const avg = reviewsData.reduce((sum, review) => sum + review.rating, 0) / reviewsData.length
+      setAverageRating(Math.round(avg * 10) / 10)
+      setTotalReviews(reviewsData.length)
       setIsLoadingReviews(false)
     }
 
