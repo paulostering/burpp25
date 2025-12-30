@@ -48,12 +48,13 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
   const [totalReviews, setTotalReviews] = useState(0)
   const [isLoadingReviews, setIsLoadingReviews] = useState(true)
   const [showModal, setShowModal] = useState(false)
-  const [modalStep, setModalStep] = useState<'auth' | 'message'>('auth')
+  const [modalStep, setModalStep] = useState<'auth' | 'success' | 'message'>('auth')
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('signup')
   const [conversationId, setConversationId] = useState<string | null>(null)
   const [message, setMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [modalTrigger, setModalTrigger] = useState<'message' | 'phone' | 'favorite' | 'other'>('message')
+  const [newUserFirstName, setNewUserFirstName] = useState<string>('')
 
   const [reviewRating, setReviewRating] = useState(5)
   const [reviewTitle, setReviewTitle] = useState('')
@@ -88,10 +89,15 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
   ).filter(Boolean) || []
 
   // Step 1: After successful auth, handle based on trigger
-  const handleAuthSuccess = async () => {
+  const handleAuthSuccess = async (isNewSignup?: boolean, firstName?: string) => {
     setIsLoading(true)
     
     try {
+      // Store first name for new signups
+      if (isNewSignup && firstName) {
+        setNewUserFirstName(firstName)
+      }
+
       // If triggered by phone icon, just close modal and return to profile
       if (modalTrigger === 'phone') {
         handleModalClose()
@@ -114,7 +120,7 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
         return
       }
 
-      // For message triggers, create conversation and go to step 2
+      // For message triggers, create conversation
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
         toast.error('Authentication failed')
@@ -132,7 +138,14 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
       }
 
       setConversationId(conversation.id)
-      setModalStep('message')
+      
+      // Show success step only for new signups when messaging
+      if (isNewSignup && modalTrigger === 'message') {
+        setModalStep('success')
+      } else {
+        // For logins, go directly to message step
+        setModalStep('message')
+      }
     } catch (error) {
       toast.error('Failed to start conversation')
     } finally {
@@ -181,6 +194,8 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
     setConversationId(null)
     setMessage('')
     setModalTrigger('message') // Reset to default
+    setNewUserFirstName('')
+    setAuthMode('signup') // Reset to signup as default
   }
 
   useEffect(() => {
@@ -836,15 +851,21 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
 
       {/* Simple Step Modal */}
       <Dialog open={showModal} onOpenChange={handleModalClose}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader className="text-center">
             <DialogTitle className="text-2xl font-bold text-center">
-              {modalStep === 'auth' ? 'Join the Burpp Community' : `Send a message to ${vendor.business_name}`}
+              {modalStep === 'auth' 
+                ? 'Join the Burpp Community' 
+                : modalStep === 'success'
+                ? ''
+                : `Send a message to ${vendor.business_name}`}
             </DialogTitle>
             <DialogDescription className="text-muted-foreground text-sm text-balance text-center">
               {modalStep === 'auth' 
                 ? 'Create an account to message vendors and manage your service requests.'
-                : 'Ask questions or describe what you need. You don\'t need to include contact info yet.'
+                : modalStep === 'message'
+                ? 'Ask questions or describe what you need. You don\'t need to include contact info yet.'
+                : ''
               }
             </DialogDescription>
           </DialogHeader>
@@ -855,6 +876,36 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
               onModeChange={setAuthMode}
               onAuthSuccess={handleAuthSuccess}
             />
+          ) : modalStep === 'success' ? (
+            <div className="flex flex-col items-center justify-center py-8 px-4 space-y-6 animate-in fade-in-50 zoom-in-95 duration-500">
+              {/* Success Icon with animated glow */}
+              <div className="relative">
+                <div className="absolute inset-0 bg-green-100 rounded-full blur-xl opacity-50 animate-pulse"></div>
+                <div className="relative bg-green-500 rounded-full p-6 animate-in zoom-in-50 duration-700">
+                  <CheckCircle className="h-16 w-16 text-white animate-in zoom-in-50 duration-1000 delay-300" strokeWidth={2.5} />
+                </div>
+              </div>
+
+              {/* Success Message */}
+              <div className="text-center space-y-3 animate-in fade-in-50 slide-in-from-bottom-4 duration-700 delay-200">
+                <h3 className="text-2xl font-bold text-gray-900">
+                  Your Account Has Successfully Been Created{newUserFirstName && `, ${newUserFirstName}`}!
+                </h3>
+                <p className="text-base text-gray-600 max-w-md">
+                  You can now send a message to <span className="font-semibold text-gray-900">{vendor.business_name}</span>.
+                </p>
+              </div>
+
+              {/* Continue Button */}
+              <Button
+                onClick={() => setModalStep('message')}
+                className="w-full max-w-xs h-12 text-base font-medium shadow-lg hover:shadow-xl transition-all animate-in fade-in-50 slide-in-from-bottom-4 duration-700 delay-400"
+                size="lg"
+              >
+                <MessageCircle className="h-5 w-5 mr-2" />
+                Continue to Message
+              </Button>
+            </div>
           ) : (
             <div className="space-y-4">
               <Textarea

@@ -31,7 +31,7 @@ const signupSchema = z.object({
 interface VendorAuthFormProps {
   mode: 'login' | 'signup'
   onModeChange: (mode: 'login' | 'signup') => void
-  onAuthSuccess?: () => void
+  onAuthSuccess?: (isNewSignup?: boolean, firstName?: string) => void
   className?: string
 }
 
@@ -116,11 +116,11 @@ export function VendorAuthForm({ mode, onModeChange, onAuthSuccess, className }:
           router.push(`/vendor/${data.user.id}/dashboard`)
         } else {
           // Smooth transition to messaging - no toast
-          onAuthSuccess?.()
+          onAuthSuccess?.(false)
         }
       } else {
         // Smooth transition to messaging - no toast
-        onAuthSuccess?.()
+        onAuthSuccess?.(false)
       }
       
       // Force refresh to ensure session is recognized
@@ -211,8 +211,8 @@ export function VendorAuthForm({ mode, onModeChange, onAuthSuccess, className }:
       
       // Check if this is a vendor signup (from vendor registration context)
       // For now, redirect to home page as this is used in vendor profile modal
-      // Smooth transition to messaging - no toast
-      onAuthSuccess?.()
+      // Smooth transition to messaging - pass signup info
+      onAuthSuccess?.(true, values.firstName)
       router.refresh()
     } catch (error) {
       console.error('Signup error:', error)
