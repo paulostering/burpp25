@@ -41,23 +41,39 @@ export async function PUT(
     const supabase = createAdminSupabase()
     const body = await request.json()
     
-    const { name, icon_url, is_active, is_featured } = body
+    const { name, icon_url, is_active, is_featured, parent_id, description } = body
     
     // Validate required fields
     if (!name) {
       return NextResponse.json({ error: 'Category name is required' }, { status: 400 })
     }
+
+    if (parent_id && parent_id === id) {
+      return NextResponse.json({ error: 'Category cannot be its own parent' }, { status: 400 })
+    }
     
     // Update the category
+    const updateData: Record<string, any> = {
+      name: name.trim(),
+      icon_url: icon_url || null,
+      is_active: is_active ?? true,
+      is_featured: is_featured ?? false,
+      updated_at: new Date().toISOString()
+    }
+
+    // Only change parent_id if caller provided it (allows PUTs from older clients)
+    if ('parent_id' in body) {
+      updateData.parent_id = parent_id || null
+    }
+
+    // Only change description if caller provided it (allows PUTs from older clients)
+    if ('description' in body) {
+      updateData.description = description || null
+    }
+
     const { data: category, error } = await supabase
       .from('categories')
-      .update({
-        name: name.trim(),
-        icon_url: icon_url || null,
-        is_active: is_active ?? true,
-        is_featured: is_featured ?? false,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', id)
       .select()
       .single()

@@ -1,8 +1,10 @@
-// Global cache for categories to prevent repeated API calls
-let categoriesCache: Array<{ id: string; name: string }> | null = null
-let categoriesPromise: Promise<Array<{ id: string; name: string }>> | null = null
+import type { Category } from '@/types/db'
 
-export const getCategories = async (): Promise<Array<{ id: string; name: string }>> => {
+// Global cache for categories to prevent repeated API calls
+let categoriesCache: Category[] | null = null
+let categoriesPromise: Promise<Category[]> | null = null
+
+export const getCategories = async (): Promise<Category[]> => {
   // Return cached data if available
   if (categoriesCache) {
     return categoriesCache
@@ -19,7 +21,7 @@ export const getCategories = async (): Promise<Array<{ id: string; name: string 
       if (!response.ok) {
         throw new Error('Failed to fetch categories')
       }
-      const data = await response.json()
+      const data = (await response.json()) as Category[]
       categoriesCache = data
       return data
     })

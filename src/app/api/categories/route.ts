@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     const supabase = await createServerSupabase()
     const body = await request.json()
 
-    const { name, icon_url, is_active, is_featured } = body
+    const { name, icon_url, is_active, is_featured, parent_id, description } = body
     
     // Validate required fields
     if (!name) {
@@ -46,6 +46,8 @@ export async function POST(request: NextRequest) {
         .insert([
           {
             name: name.trim(),
+            parent_id: parent_id || null,
+            description: description || null,
             icon_url: icon_url || null,
             is_active: is_active ?? true,
             is_featured: is_featured ?? false,

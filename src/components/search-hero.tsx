@@ -9,11 +9,7 @@ import { Search, MapPin, X, LayoutGrid } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getCategories } from '@/lib/categories-cache'
 import { toast } from 'sonner'
-
-interface Category {
-  id: string
-  name: string
-}
+import type { Category } from '@/types/db'
 
 interface LocationSuggestion {
   place_name: string
@@ -25,7 +21,7 @@ export function SearchHero() {
   const router = useRouter()
   const [categories, setCategories] = useState<Category[]>([])
   const [filteredCategories, setFilteredCategories] = useState<Category[]>([])
-  const [selectedCategory, setSelectedCategory] = useState<string>('')
+  const [selectedCategory, setSelectedCategory] = useState<string>('') // slug (preferred) or UUID fallback
   const [selectedCategoryName, setSelectedCategoryName] = useState<string>('')
   const [categorySearch, setCategorySearch] = useState<string>('')
   const [isCategoryOpen, setIsCategoryOpen] = useState(false)
@@ -51,8 +47,14 @@ export function SearchHero() {
       }
       
       const savedCategoryId = localStorage.getItem('burpp_search_category_id')
+      const savedCategorySlug = localStorage.getItem('burpp_search_category_slug')
       const savedCategoryName = localStorage.getItem('burpp_search_category_name')
-      if (savedCategoryId && savedCategoryName) {
+      if (savedCategorySlug && savedCategoryName) {
+        setSelectedCategory(savedCategorySlug)
+        setSelectedCategoryName(savedCategoryName)
+        setCategorySearch(savedCategoryName)
+      } else if (savedCategoryId && savedCategoryName) {
+        // Back-compat: old storage used UUID. We'll convert it to slug once categories load.
         setSelectedCategory(savedCategoryId)
         setSelectedCategoryName(savedCategoryName)
         setCategorySearch(savedCategoryName)
@@ -93,11 +95,34 @@ export function SearchHero() {
     const loadCategories = async () => {
       try {
         const data = await getCategories()
+        const allCategories = data
         
         // Only update state if component is still mounted
         if (isMounted) {
-          setCategories(data)
-          setFilteredCategories(data)
+          // Do NOT require slug here — local DBs may not have run the slug migration yet.
+          // We fall back to UUIDs in URLs until slugs exist.
+          setCategories(allCategories)
+          setFilteredCategories(allCategories)
+
+          // If localStorage has a selected category that doesn't exist anymore, clear it.
+          const savedSlug = localStorage.getItem('burpp_search_category_slug')
+          const savedId = localStorage.getItem('burpp_search_category_id')
+
+          if (savedSlug && !allCategories.some((c) => c.slug === savedSlug || c.id === savedSlug)) {
+            setSelectedCategory('')
+            setSelectedCategoryName('')
+            setCategorySearch('')
+            localStorage.removeItem('burpp_search_category_slug')
+            localStorage.removeItem('burpp_search_category_name')
+          } else if (!savedSlug && savedId) {
+            // Migration path: convert old saved UUID -> slug if possible
+            const match = allCategories.find((c) => c.id === savedId)
+            if (match?.slug) {
+              setSelectedCategory(match.slug)
+              localStorage.setItem('burpp_search_category_slug', match.slug)
+              localStorage.removeItem('burpp_search_category_id')
+            }
+          }
         }
       } catch (error) {
         console.error('Error loading categories:', error)
@@ -196,13 +221,13 @@ export function SearchHero() {
   }
 
   // Handle category selection
-  const handleCategorySelect = (categoryId: string, categoryName: string) => {
-    setSelectedCategory(categoryId)
+  const handleCategorySelect = (categorySlug: string, categoryName: string) => {
+    setSelectedCategory(categorySlug)
     setSelectedCategoryName(categoryName)
     setCategorySearch(categoryName)
     setIsCategoryOpen(false)
     setHighlightedCategoryIndex(-1)
-    localStorage.setItem('burpp_search_category_id', categoryId)
+    localStorage.setItem('burpp_search_category_slug', categorySlug)
     localStorage.setItem('burpp_search_category_name', categoryName)
   }
 
@@ -231,7 +256,7 @@ export function SearchHero() {
         e.preventDefault()
         if (highlightedCategoryIndex >= 0 && highlightedCategoryIndex < filteredCategories.length) {
           const category = filteredCategories[highlightedCategoryIndex]
-          handleCategorySelect(category.id, category.name)
+          handleCategorySelect(category.slug || category.id, category.name)
         }
         break
       case 'Escape':
@@ -338,7 +363,7 @@ export function SearchHero() {
                     if (!selectedCategory || e.target.value !== selectedCategoryName) {
                       setSelectedCategory('')
                       setSelectedCategoryName('')
-                      localStorage.removeItem('burpp_search_category_id')
+                      localStorage.removeItem('burpp_search_category_slug')
                       localStorage.removeItem('burpp_search_category_name')
                     }
                   }}
@@ -354,7 +379,7 @@ export function SearchHero() {
                     setCategorySearch('')
                     setSelectedCategory('')
                     setSelectedCategoryName('')
-                    localStorage.removeItem('burpp_search_category_id')
+                    localStorage.removeItem('burpp_search_category_slug')
                     localStorage.removeItem('burpp_search_category_name')
                   }}
                   className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
@@ -371,7 +396,7 @@ export function SearchHero() {
                       key={category.id}
                       onMouseDown={(e) => {
                         e.preventDefault()
-                        handleCategorySelect(category.id, category.name)
+                        handleCategorySelect(category.slug || category.id, category.name)
                       }}
                       onMouseEnter={() => setHighlightedCategoryIndex(index)}
                       className={cn(
@@ -528,7 +553,7 @@ export function SearchHero() {
                       if (!selectedCategory || e.target.value !== selectedCategoryName) {
                         setSelectedCategory('')
                         setSelectedCategoryName('')
-                        localStorage.removeItem('burpp_search_category_id')
+                        localStorage.removeItem('burpp_search_category_slug')
                         localStorage.removeItem('burpp_search_category_name')
                       }
                     }}
@@ -543,7 +568,7 @@ export function SearchHero() {
                       setCategorySearch('')
                       setSelectedCategory('')
                       setSelectedCategoryName('')
-                      localStorage.removeItem('burpp_search_category_id')
+                      localStorage.removeItem('burpp_search_category_slug')
                       localStorage.removeItem('burpp_search_category_name')
                     }}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
@@ -561,7 +586,7 @@ export function SearchHero() {
                       key={category.id}
                       onMouseDown={(e) => {
                         e.preventDefault()
-                        handleCategorySelect(category.id, category.name)
+                        handleCategorySelect(category.slug || category.id, category.name)
                       }}
                       onMouseEnter={() => setHighlightedCategoryIndex(index)}
                       className={cn(

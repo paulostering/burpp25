@@ -9,6 +9,48 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Helper functions to resolve category IDs by name (parent + optional child)
+-- and to pick a random sibling subcategory (for 1-2 subcategory seeding).
+CREATE OR REPLACE FUNCTION public.get_category_id(parent_name text, child_name text DEFAULT NULL)
+RETURNS uuid
+LANGUAGE sql
+STABLE
+AS $$
+  SELECT c.id
+  FROM public.categories c
+  WHERE
+    (
+      child_name IS NULL
+      AND c.parent_id IS NULL
+      AND c.name = parent_name
+    )
+    OR
+    (
+      child_name IS NOT NULL
+      AND c.parent_id = (
+        SELECT p.id
+        FROM public.categories p
+        WHERE p.parent_id IS NULL AND p.name = parent_name
+        LIMIT 1
+      )
+      AND c.name = child_name
+    )
+  LIMIT 1;
+$$;
+
+CREATE OR REPLACE FUNCTION public.random_subcategory_id(parent_name text, exclude_child_name text DEFAULT NULL)
+RETURNS uuid
+LANGUAGE sql
+VOLATILE
+AS $$
+  SELECT c.id
+  FROM public.categories c
+  WHERE c.parent_id = public.get_category_id(parent_name)
+    AND (exclude_child_name IS NULL OR c.name <> exclude_child_name)
+  ORDER BY random()
+  LIMIT 1;
+$$;
+
 -- CATERING - NY 11219
 INSERT INTO auth.users (id, email, encrypted_password, email_confirmed_at, created_at, updated_at, raw_user_meta_data)
 SELECT gen_random_uuid(), 'catering.ny.' || generate_series || '@burpp.com', crypt('password123', gen_salt('bf')), NOW(), NOW(), NOW(), '{"role": "vendor"}'::jsonb
@@ -22,7 +64,11 @@ INSERT INTO vendor_profiles (user_id, business_name, service_categories, profile
 SELECT 
   u.id,
   'Delicious Catering ' || SUBSTRING(u.email FROM 'catering\.ny\.(\d+)'),
-  ARRAY['59d01fee-c41b-4e30-abb6-3a851d90c65b']::uuid[],
+  ARRAY_REMOVE(ARRAY[
+    public.get_category_id('Events & Hospitality'),
+    public.get_category_id('Events & Hospitality', 'Catering'),
+    CASE WHEN random() < 0.5 THEN public.random_subcategory_id('Events & Hospitality', 'Catering') END
+  ], NULL::uuid)::uuid[],
   'Professional Catering Services',
   'Experienced catering professional specializing in kosher and traditional cuisine. Perfect for weddings, corporate events, and family celebrations.',
   '11219',
@@ -50,14 +96,20 @@ INSERT INTO user_profiles (id, email, role, is_active, created_at, updated_at)
 SELECT id, email, 'vendor', true, NOW(), NOW()
 FROM auth.users WHERE email LIKE 'catering.az.%@burpp.com';
 
-INSERT INTO vendor_profiles (user_id, business_name, service_categories, profile_title, about, zip_code, service_radius, first_name, last_name, email, phone_number, admin_approved, approved_at, created_at, updated_at, offers_in_person_services, offers_virtual_services)
+INSERT INTO vendor_profiles (user_id, business_name, service_categories, profile_title, about, zip_code, latitude, longitude, service_radius, first_name, last_name, email, phone_number, admin_approved, approved_at, created_at, updated_at, offers_in_person_services, offers_virtual_services)
 SELECT 
   u.id,
   'Phoenix Catering ' || SUBSTRING(u.email FROM 'catering\.az\.(\d+)'),
-  ARRAY['59d01fee-c41b-4e30-abb6-3a851d90c65b']::uuid[],
+  ARRAY_REMOVE(ARRAY[
+    public.get_category_id('Events & Hospitality'),
+    public.get_category_id('Events & Hospitality', 'Catering'),
+    CASE WHEN random() < 0.5 THEN public.random_subcategory_id('Events & Hospitality', 'Catering') END
+  ], NULL::uuid)::uuid[],
   'Premier Phoenix Catering',
   'Top-rated catering service in Phoenix. From corporate events to intimate gatherings, we bring exceptional food and service.',
   '85001',
+  33.4484,
+  -112.0740,
   30,
   'Maria',
   'Chef' || SUBSTRING(u.email FROM 'catering\.az\.(\d+)'),
@@ -80,14 +132,20 @@ INSERT INTO user_profiles (id, email, role, is_active, created_at, updated_at)
 SELECT id, email, 'vendor', true, NOW(), NOW()
 FROM auth.users WHERE email LIKE 'catering.fl.%@burpp.com';
 
-INSERT INTO vendor_profiles (user_id, business_name, service_categories, profile_title, about, zip_code, service_radius, first_name, last_name, email, phone_number, admin_approved, approved_at, created_at, updated_at, offers_in_person_services, offers_virtual_services)
+INSERT INTO vendor_profiles (user_id, business_name, service_categories, profile_title, about, zip_code, latitude, longitude, service_radius, first_name, last_name, email, phone_number, admin_approved, approved_at, created_at, updated_at, offers_in_person_services, offers_virtual_services)
 SELECT 
   u.id,
   'Tampa Bay Catering ' || SUBSTRING(u.email FROM 'catering\.fl\.(\d+)'),
-  ARRAY['59d01fee-c41b-4e30-abb6-3a851d90c65b']::uuid[],
+  ARRAY_REMOVE(ARRAY[
+    public.get_category_id('Events & Hospitality'),
+    public.get_category_id('Events & Hospitality', 'Catering'),
+    CASE WHEN random() < 0.5 THEN public.random_subcategory_id('Events & Hospitality', 'Catering') END
+  ], NULL::uuid)::uuid[],
   'Florida Style Catering',
   'Fresh Florida cuisine with local seafood and tropical flavors. Perfect for beach weddings and outdoor events.',
   '33545',
+  28.2314,
+  -82.3270,
   25,
   'Carlos',
   'Rodriguez' || SUBSTRING(u.email FROM 'catering\.fl\.(\d+)'),
@@ -113,7 +171,7 @@ INSERT INTO user_profiles (id, email, role, is_active, created_at, updated_at)
 SELECT id, email, 'vendor', true, NOW(), NOW()
 FROM auth.users WHERE email LIKE 'poker.%@burpp.com';
 
-INSERT INTO vendor_profiles (user_id, business_name, service_categories, profile_title, about, zip_code, service_radius, first_name, last_name, email, phone_number, admin_approved, approved_at, created_at, updated_at, offers_in_person_services, offers_virtual_services)
+INSERT INTO vendor_profiles (user_id, business_name, service_categories, profile_title, about, zip_code, latitude, longitude, service_radius, first_name, last_name, email, phone_number, admin_approved, approved_at, created_at, updated_at, offers_in_person_services, offers_virtual_services)
 SELECT 
   u.id,
   CASE 
@@ -121,13 +179,27 @@ SELECT
     WHEN u.email LIKE 'poker.az.%' THEN 'Phoenix Card Shark ' || SUBSTRING(u.email FROM 'poker\.az\.(\d+)')
     ELSE 'Tampa Poker Dealer ' || SUBSTRING(u.email FROM 'poker\.fl\.(\d+)')
   END,
-  ARRAY['6a0c2fc8-99ef-4151-a0f3-b5f491b2fa2f']::uuid[],
+  ARRAY_REMOVE(ARRAY[
+    public.get_category_id('Events & Hospitality'),
+    public.get_category_id('Events & Hospitality', 'Poker Dealer'),
+    CASE WHEN random() < 0.5 THEN public.random_subcategory_id('Events & Hospitality', 'Poker Dealer') END
+  ], NULL::uuid)::uuid[],
   'Professional Poker Dealer',
   'Experienced poker dealer for private games and events. Texas Hold''em, Omaha, and tournament-style games.',
   CASE 
     WHEN u.email LIKE 'poker.ny.%' THEN '11219'
     WHEN u.email LIKE 'poker.az.%' THEN '85001'
     ELSE '33545'
+  END,
+  CASE 
+    WHEN u.email LIKE 'poker.ny.%' THEN 40.6323
+    WHEN u.email LIKE 'poker.az.%' THEN 33.4484
+    ELSE 28.2314
+  END,
+  CASE 
+    WHEN u.email LIKE 'poker.ny.%' THEN -73.9967
+    WHEN u.email LIKE 'poker.az.%' THEN -112.0740
+    ELSE -82.3270
   END,
   20,
   'Mike',
@@ -158,7 +230,7 @@ INSERT INTO user_profiles (id, email, role, is_active, created_at, updated_at)
 SELECT id, email, 'vendor', true, NOW(), NOW()
 FROM auth.users WHERE email LIKE 'dogwalker.%@burpp.com';
 
-INSERT INTO vendor_profiles (user_id, business_name, service_categories, profile_title, about, zip_code, service_radius, first_name, last_name, email, phone_number, admin_approved, approved_at, created_at, updated_at, offers_in_person_services, offers_virtual_services)
+INSERT INTO vendor_profiles (user_id, business_name, service_categories, profile_title, about, zip_code, latitude, longitude, service_radius, first_name, last_name, email, phone_number, admin_approved, approved_at, created_at, updated_at, offers_in_person_services, offers_virtual_services)
 SELECT 
   u.id,
   CASE 
@@ -166,13 +238,27 @@ SELECT
     WHEN u.email LIKE 'dogwalker.az.%' THEN 'Desert Dogs ' || SUBSTRING(u.email FROM 'dogwalker\.az\.(\d+)')
     ELSE 'Sunshine Dog Walking ' || SUBSTRING(u.email FROM 'dogwalker\.fl\.(\d+)')
   END,
-  ARRAY['701443fe-d714-4313-a867-4bafa87877d9']::uuid[],
+  ARRAY_REMOVE(ARRAY[
+    public.get_category_id('Pet Care'),
+    public.get_category_id('Pet Care', 'Dog Walking'),
+    CASE WHEN random() < 0.5 THEN public.random_subcategory_id('Pet Care', 'Dog Walking') END
+  ], NULL::uuid)::uuid[],
   'Reliable Dog Walking Services',
   'Trusted dog walker with years of experience. Daily walks, pet sitting, and playtime. Insured and bonded.',
   CASE 
     WHEN u.email LIKE 'dogwalker.ny.%' THEN '11219'
     WHEN u.email LIKE 'dogwalker.az.%' THEN '85001'
     ELSE '33545'
+  END,
+  CASE 
+    WHEN u.email LIKE 'dogwalker.ny.%' THEN 40.6323
+    WHEN u.email LIKE 'dogwalker.az.%' THEN 33.4484
+    ELSE 28.2314
+  END,
+  CASE 
+    WHEN u.email LIKE 'dogwalker.ny.%' THEN -73.9967
+    WHEN u.email LIKE 'dogwalker.az.%' THEN -112.0740
+    ELSE -82.3270
   END,
   15,
   'Sarah',
@@ -203,7 +289,7 @@ INSERT INTO user_profiles (id, email, role, is_active, created_at, updated_at)
 SELECT id, email, 'vendor', true, NOW(), NOW()
 FROM auth.users WHERE email LIKE 'trainer.%@burpp.com';
 
-INSERT INTO vendor_profiles (user_id, business_name, service_categories, profile_title, about, zip_code, service_radius, first_name, last_name, email, phone_number, admin_approved, approved_at, created_at, updated_at, offers_in_person_services, offers_virtual_services)
+INSERT INTO vendor_profiles (user_id, business_name, service_categories, profile_title, about, zip_code, latitude, longitude, service_radius, first_name, last_name, email, phone_number, admin_approved, approved_at, created_at, updated_at, offers_in_person_services, offers_virtual_services)
 SELECT 
   u.id,
   CASE 
@@ -211,13 +297,27 @@ SELECT
     WHEN u.email LIKE 'trainer.az.%' THEN 'Phoenix Fitness Pro ' || SUBSTRING(u.email FROM 'trainer\.az\.(\d+)')
     ELSE 'Tampa Strength Coach ' || SUBSTRING(u.email FROM 'trainer\.fl\.(\d+)')
   END,
-  ARRAY['733fcc7d-da5b-4283-aacc-6426b1dee971']::uuid[],
+  ARRAY_REMOVE(ARRAY[
+    public.get_category_id('Health & Wellness'),
+    public.get_category_id('Health & Wellness', 'Personal Trainer'),
+    CASE WHEN random() < 0.5 THEN public.random_subcategory_id('Health & Wellness', 'Personal Trainer') END
+  ], NULL::uuid)::uuid[],
   'Certified Personal Trainer',
   'NASM certified personal trainer specializing in strength training, weight loss, and athletic performance. Transform your body and life!',
   CASE 
     WHEN u.email LIKE 'trainer.ny.%' THEN '11219'
     WHEN u.email LIKE 'trainer.az.%' THEN '85001'
     ELSE '33545'
+  END,
+  CASE 
+    WHEN u.email LIKE 'trainer.ny.%' THEN 40.6323
+    WHEN u.email LIKE 'trainer.az.%' THEN 33.4484
+    ELSE 28.2314
+  END,
+  CASE 
+    WHEN u.email LIKE 'trainer.ny.%' THEN -73.9967
+    WHEN u.email LIKE 'trainer.az.%' THEN -112.0740
+    ELSE -82.3270
   END,
   20,
   'Alex',
@@ -248,7 +348,7 @@ INSERT INTO user_profiles (id, email, role, is_active, created_at, updated_at)
 SELECT id, email, 'vendor', true, NOW(), NOW()
 FROM auth.users WHERE email LIKE 'beauty.%@burpp.com';
 
-INSERT INTO vendor_profiles (user_id, business_name, service_categories, profile_title, about, zip_code, service_radius, first_name, last_name, email, phone_number, admin_approved, approved_at, created_at, updated_at, offers_in_person_services, offers_virtual_services)
+INSERT INTO vendor_profiles (user_id, business_name, service_categories, profile_title, about, zip_code, latitude, longitude, service_radius, first_name, last_name, email, phone_number, admin_approved, approved_at, created_at, updated_at, offers_in_person_services, offers_virtual_services)
 SELECT 
   u.id,
   CASE 
@@ -256,13 +356,27 @@ SELECT
     WHEN u.email LIKE 'beauty.az.%' THEN 'Desert Beauty ' || SUBSTRING(u.email FROM 'beauty\.az\.(\d+)')
     ELSE 'Beauty by the Bay ' || SUBSTRING(u.email FROM 'beauty\.fl\.(\d+)')
   END,
-  ARRAY['86ff81c7-1b57-4afa-a319-119fefa2ae4a']::uuid[],
+  ARRAY_REMOVE(ARRAY[
+    public.get_category_id('Beauty & Personal Care'),
+    public.get_category_id('Beauty & Personal Care', 'Makeup Artist'),
+    CASE WHEN random() < 0.5 THEN public.random_subcategory_id('Beauty & Personal Care', 'Makeup Artist') END
+  ], NULL::uuid)::uuid[],
   'Professional Makeup Artist & Hairstylist',
   'Award-winning makeup artist and hairstylist. Specializing in weddings, special events, and photoshoots. Making you look stunning!',
   CASE 
     WHEN u.email LIKE 'beauty.ny.%' THEN '11219'
     WHEN u.email LIKE 'beauty.az.%' THEN '85001'
     ELSE '33545'
+  END,
+  CASE 
+    WHEN u.email LIKE 'beauty.ny.%' THEN 40.6323
+    WHEN u.email LIKE 'beauty.az.%' THEN 33.4484
+    ELSE 28.2314
+  END,
+  CASE 
+    WHEN u.email LIKE 'beauty.ny.%' THEN -73.9967
+    WHEN u.email LIKE 'beauty.az.%' THEN -112.0740
+    ELSE -82.3270
   END,
   25,
   'Jessica',
@@ -293,7 +407,7 @@ INSERT INTO user_profiles (id, email, role, is_active, created_at, updated_at)
 SELECT id, email, 'vendor', true, NOW(), NOW()
 FROM auth.users WHERE email LIKE 'health.%@burpp.com';
 
-INSERT INTO vendor_profiles (user_id, business_name, service_categories, profile_title, about, zip_code, service_radius, first_name, last_name, email, phone_number, admin_approved, approved_at, created_at, updated_at, offers_in_person_services, offers_virtual_services)
+INSERT INTO vendor_profiles (user_id, business_name, service_categories, profile_title, about, zip_code, latitude, longitude, service_radius, first_name, last_name, email, phone_number, admin_approved, approved_at, created_at, updated_at, offers_in_person_services, offers_virtual_services)
 SELECT 
   u.id,
   CASE 
@@ -301,13 +415,27 @@ SELECT
     WHEN u.email LIKE 'health.az.%' THEN 'Phoenix Health Coach ' || SUBSTRING(u.email FROM 'health\.az\.(\d+)')
     ELSE 'Tampa Wellness Center ' || SUBSTRING(u.email FROM 'health\.fl\.(\d+)')
   END,
-  ARRAY['87025b60-0ec7-4fbd-8e4a-38e79e5bea46']::uuid[],
+  ARRAY_REMOVE(ARRAY[
+    public.get_category_id('Health & Wellness'),
+    public.get_category_id('Health & Wellness', 'Wellness Coaching'),
+    CASE WHEN random() < 0.5 THEN public.random_subcategory_id('Health & Wellness', 'Wellness Coaching') END
+  ], NULL::uuid)::uuid[],
   'Certified Health Coach & Nutritionist',
   'Board certified health coach and registered nutritionist. Personalized wellness plans and lifestyle coaching for optimal health.',
   CASE 
     WHEN u.email LIKE 'health.ny.%' THEN '11219'
     WHEN u.email LIKE 'health.az.%' THEN '85001'
     ELSE '33545'
+  END,
+  CASE 
+    WHEN u.email LIKE 'health.ny.%' THEN 40.6323
+    WHEN u.email LIKE 'health.az.%' THEN 33.4484
+    ELSE 28.2314
+  END,
+  CASE 
+    WHEN u.email LIKE 'health.ny.%' THEN -73.9967
+    WHEN u.email LIKE 'health.az.%' THEN -112.0740
+    ELSE -82.3270
   END,
   30,
   'Emma',
@@ -338,7 +466,7 @@ INSERT INTO user_profiles (id, email, role, is_active, created_at, updated_at)
 SELECT id, email, 'vendor', true, NOW(), NOW()
 FROM auth.users WHERE email LIKE 'massage.%@burpp.com';
 
-INSERT INTO vendor_profiles (user_id, business_name, service_categories, profile_title, about, zip_code, service_radius, first_name, last_name, email, phone_number, admin_approved, approved_at, created_at, updated_at, offers_in_person_services, offers_virtual_services)
+INSERT INTO vendor_profiles (user_id, business_name, service_categories, profile_title, about, zip_code, latitude, longitude, service_radius, first_name, last_name, email, phone_number, admin_approved, approved_at, created_at, updated_at, offers_in_person_services, offers_virtual_services)
 SELECT 
   u.id,
   CASE 
@@ -346,13 +474,27 @@ SELECT
     WHEN u.email LIKE 'massage.az.%' THEN 'Desert Serenity Massage ' || SUBSTRING(u.email FROM 'massage\.az\.(\d+)')
     ELSE 'Relaxation Station ' || SUBSTRING(u.email FROM 'massage\.fl\.(\d+)')
   END,
-  ARRAY['c13456eb-baab-46c6-8fe8-d0649ff5a566']::uuid[],
+  ARRAY_REMOVE(ARRAY[
+    public.get_category_id('Health & Wellness'),
+    public.get_category_id('Health & Wellness', 'Massage'),
+    CASE WHEN random() < 0.5 THEN public.random_subcategory_id('Health & Wellness', 'Massage') END
+  ], NULL::uuid)::uuid[],
   'Licensed Massage Therapist',
   'Licensed massage therapist with 10+ years experience. Swedish, deep tissue, sports massage, hot stone, and aromatherapy.',
   CASE 
     WHEN u.email LIKE 'massage.ny.%' THEN '11219'
     WHEN u.email LIKE 'massage.az.%' THEN '85001'
     ELSE '33545'
+  END,
+  CASE 
+    WHEN u.email LIKE 'massage.ny.%' THEN 40.6323
+    WHEN u.email LIKE 'massage.az.%' THEN 33.4484
+    ELSE 28.2314
+  END,
+  CASE 
+    WHEN u.email LIKE 'massage.ny.%' THEN -73.9967
+    WHEN u.email LIKE 'massage.az.%' THEN -112.0740
+    ELSE -82.3270
   END,
   20,
   'David',
@@ -383,7 +525,7 @@ INSERT INTO user_profiles (id, email, role, is_active, created_at, updated_at)
 SELECT id, email, 'vendor', true, NOW(), NOW()
 FROM auth.users WHERE email LIKE 'home.%@burpp.com';
 
-INSERT INTO vendor_profiles (user_id, business_name, service_categories, profile_title, about, zip_code, service_radius, first_name, last_name, email, phone_number, admin_approved, approved_at, created_at, updated_at, offers_in_person_services, offers_virtual_services)
+INSERT INTO vendor_profiles (user_id, business_name, service_categories, profile_title, about, zip_code, latitude, longitude, service_radius, first_name, last_name, email, phone_number, admin_approved, approved_at, created_at, updated_at, offers_in_person_services, offers_virtual_services)
 SELECT 
   u.id,
   CASE 
@@ -391,13 +533,27 @@ SELECT
     WHEN u.email LIKE 'home.az.%' THEN 'Phoenix Handyman Pro ' || SUBSTRING(u.email FROM 'home\.az\.(\d+)')
     ELSE 'Tampa Home Repair ' || SUBSTRING(u.email FROM 'home\.fl\.(\d+)')
   END,
-  ARRAY['ffc62de2-8fab-41d9-915d-7bbbff13bf2e']::uuid[],
+  ARRAY_REMOVE(ARRAY[
+    public.get_category_id('Home & Living'),
+    public.get_category_id('Home & Living', 'Handyman Tasks'),
+    CASE WHEN random() < 0.5 THEN public.random_subcategory_id('Home & Living', 'Handyman Tasks') END
+  ], NULL::uuid)::uuid[],
   'Professional Handyman Services',
   'Licensed and insured handyman with 15+ years experience. Repairs, installations, maintenance, and home improvements. No job too small!',
   CASE 
     WHEN u.email LIKE 'home.ny.%' THEN '11219'
     WHEN u.email LIKE 'home.az.%' THEN '85001'
     ELSE '33545'
+  END,
+  CASE 
+    WHEN u.email LIKE 'home.ny.%' THEN 40.6323
+    WHEN u.email LIKE 'home.az.%' THEN 33.4484
+    ELSE 28.2314
+  END,
+  CASE 
+    WHEN u.email LIKE 'home.ny.%' THEN -73.9967
+    WHEN u.email LIKE 'home.az.%' THEN -112.0740
+    ELSE -82.3270
   END,
   25,
   'Tom',
@@ -418,6 +574,10 @@ FROM auth.users u WHERE u.email LIKE 'home.%@burpp.com' ORDER BY u.email;
 
 -- Drop the helper function
 DROP FUNCTION IF EXISTS random_phone();
+
+-- Drop category helper functions
+DROP FUNCTION IF EXISTS public.random_subcategory_id(text, text);
+DROP FUNCTION IF EXISTS public.get_category_id(text, text);
 
 -- Summary
 DO $$

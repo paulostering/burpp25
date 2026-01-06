@@ -115,6 +115,9 @@ export interface Category {
   id: string
   name: string
   icon_url?: string | null
+  parent_id?: string | null
+  description?: string | null
+  slug?: string | null
   is_active: boolean
   is_featured: boolean
   created_by?: string | null

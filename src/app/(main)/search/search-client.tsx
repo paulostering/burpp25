@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef } from 'react'
 import Image from 'next/image'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { InfiniteScrollVendors } from '@/components/infinite-scroll-vendors'
@@ -9,12 +9,7 @@ import { Card } from '@/components/ui/card'
 import { Footer } from '@/components/footer'
 import type { VendorProfile } from '@/types/db'
 import { getCategories } from '@/lib/categories-cache'
-
-type Category = {
-  id: string
-  name: string
-  icon_url?: string | null
-}
+import type { Category } from '@/types/db'
 
 export function SearchClient() {
   const searchParams = useSearchParams()
@@ -25,12 +20,32 @@ export function SearchClient() {
   const [sortBy, setSortBy] = useState<'rating' | 'hourly'>('rating')
   const [categoryName, setCategoryName] = useState<string | undefined>()
   const [categories, setCategories] = useState<Category[]>([])
-  const [activeCategoryId, setActiveCategoryId] = useState<string | undefined>()
 
   const categoryParam = searchParams.get('category') || undefined
   const q = searchParams.get('q') || undefined
 
+  // Initialize from URL to avoid an initial "unfiltered" fetch that causes flicker.
+  const [activeCategoryId, setActiveCategoryId] = useState<string | undefined>(() => categoryParam)
+  const lastSearchKeyRef = useRef<string | null>(null)
+
+  // Prevent "flash of old results" when URL params change by clearing results
+  // before the browser paints the next frame.
+  useLayoutEffect(() => {
+    const key = `${categoryParam ?? ''}|${q ?? ''}`
+    if (lastSearchKeyRef.current === null) {
+      lastSearchKeyRef.current = key
+      return
+    }
+    if (lastSearchKeyRef.current !== key) {
+      lastSearchKeyRef.current = key
+      setLoading(true)
+      setVendors([])
+      setCount(0)
+    }
+  }, [categoryParam, q])
+
   useEffect(() => {
+    let isStale = false
     const fetchVendors = async () => {
       setLoading(true)
       setVendors([]) // Clear vendors immediately when search changes
@@ -61,19 +76,29 @@ export function SearchClient() {
         const data = await response.json()
         
         clearTimeout(timeoutId)
-        setVendors(data.vendors || [])
-        setCount(data.count || 0)
+        if (!isStale) {
+          setVendors(data.vendors || [])
+          setCount(data.count || 0)
+        }
       } catch (error) {
         console.error('Error fetching vendors:', error)
         clearTimeout(timeoutId)
-        setVendors([])
-        setCount(0)
+        if (!isStale) {
+          setVendors([])
+          setCount(0)
+        }
       } finally {
-        setLoading(false)
+        if (!isStale) {
+          setLoading(false)
+        }
       }
     }
 
     fetchVendors()
+
+    return () => {
+      isStale = true
+    }
   }, [activeCategoryId, q])
 
   // Sync active category with URL param
@@ -86,10 +111,11 @@ export function SearchClient() {
     const loadCategories = async () => {
       try {
         const data = await getCategories()
-        setCategories(data as Category[])
+        const parentCategories = data.filter((c) => !c.parent_id)
+        setCategories(parentCategories)
 
         if (activeCategoryId) {
-          const match = (data as Category[]).find((c) => c.id === activeCategoryId)
+          const match = data.find((c) => c.id === activeCategoryId || c.slug === activeCategoryId)
           setCategoryName(match?.name)
         } else {
           setCategoryName(undefined)
@@ -196,14 +222,16 @@ export function SearchClient() {
               </span>
               <div className="flex gap-3 overflow-x-auto pb-1">
               {categories.map((cat) => {
-                const isSelected = activeCategoryId === cat.id
+                const isSelected =
+                  activeCategoryId === cat.slug || activeCategoryId === cat.id
                 return (
                   <button
                     key={cat.id}
                     type="button"
                     onClick={() => {
+                      const slug = cat.slug || cat.id
                       const newActive =
-                        activeCategoryId === cat.id ? undefined : cat.id
+                        activeCategoryId === slug ? undefined : slug
                       setActiveCategoryId(newActive)
 
                       const params = new URLSearchParams(window.location.search)
