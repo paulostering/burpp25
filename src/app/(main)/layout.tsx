@@ -1,3 +1,6 @@
+'use client'
+
+import { usePathname } from 'next/navigation'
 import { TopNav } from "@/components/top-nav"
 
 export default function MainLayout({
@@ -5,9 +8,12 @@ export default function MainLayout({
 }: {
   children: React.ReactNode
 }) {
+  const pathname = usePathname()
+  const isLandingPage = pathname?.startsWith('/landing')
+
   return (
     <>
-      <TopNav />
+      {!isLandingPage && <TopNav />}
       {children}
     </>
   )

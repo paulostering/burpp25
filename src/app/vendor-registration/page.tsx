@@ -12,23 +12,9 @@ import type { VendorProfile } from '@/types/db'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
+import { MultiSelect, type Option } from '@/components/ui/multi-select'
 import { Badge } from '@/components/ui/badge'
-import { Check, MapPin, Loader2, Camera, Sparkles, RefreshCw, DollarSign, X } from 'lucide-react'
+import { MapPin, Loader2, Camera, Sparkles, RefreshCw, DollarSign, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Area } from 'react-easy-crop'
 import { ImageCropModal } from '@/components/image-crop-modal'
@@ -79,7 +65,6 @@ export default function VendorRegisterPage() {
   const supabase = useMemo(() => createClient(), [])
   const router = useRouter()
   const [step, setStep] = useState(1)
-  const [open, setOpen] = useState(false)
 
   // Step data
   const [categories, setCategories] = useState<Category[]>([])
@@ -143,6 +128,30 @@ export default function VendorRegisterPage() {
         setCategories(data ?? [])
       })
   }, [supabase])
+
+  // Check for prefill data from landing page
+  useEffect(() => {
+    try {
+      const prefillData = localStorage.getItem('burpp_vendor_prefill')
+      if (prefillData) {
+        const parsed = JSON.parse(prefillData)
+        if (parsed.businessName) {
+          setBusinessName(parsed.businessName)
+        }
+        if (parsed.serviceCategories && Array.isArray(parsed.serviceCategories)) {
+          setSelectedCategoryIds(parsed.serviceCategories)
+        }
+        // If startStep is 2, we've completed step 1 on the landing page
+        if (parsed.startStep === 2) {
+          setStep(2)
+        }
+        // Clear the prefill data after reading it
+        localStorage.removeItem('burpp_vendor_prefill')
+      }
+    } catch {
+      // ignore errors
+    }
+  }, [])
 
   const validateStep = () => {
     const newErrors: Record<string, string> = {}
@@ -366,10 +375,20 @@ export default function VendorRegisterPage() {
 
   const passwordStrength = getPasswordStrength(password)
 
-  const toggleCategory = (id: string) => {
+  const handleCategoryChange = (selected: string[]) => {
     clearError('service_categories')
-    setSelectedCategoryIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+    setSelectedCategoryIds(selected)
   }
+
+  // Convert categories to MultiSelect options
+  const categoryOptions: Option[] = useMemo(
+    () =>
+      categories.map((c) => ({
+        label: c.name,
+        value: c.id,
+      })),
+    [categories]
+  )
 
   const handleHourlyRateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     clearError('hourly_rate')
@@ -974,69 +993,14 @@ export default function VendorRegisterPage() {
           </div>
           <div className="space-y-3">
             <Label>What do you specialize in? *</Label>
-            <Dialog open={open} onOpenChange={setOpen}>
-              <DialogTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  className={`w-full justify-between text-base font-normal ${errors.service_categories ? 'border-red-500' : ''}`}
-                  style={{ fontFamily: 'Helvetica Neue, sans-serif', fontSize: '16px' }}
-                >
-                  <span className="truncate">
-                    {selectedCategoryIds.length > 0 
-                      ? `${selectedCategoryIds.length} Categories Selected: ${selectedCategoryIds.map(id => categories.find(c => c.id === id)?.name).filter(Boolean).join(', ')}`
-                      : 'Select categories'
-                    }
-                  </span>
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="w-full h-full max-w-none max-h-none sm:max-w-[425px] sm:max-h-[80vh] overflow-hidden flex flex-col m-0 sm:m-4 rounded-none sm:rounded-lg">
-                <DialogHeader>
-                  <DialogTitle>Select categories</DialogTitle>
-                </DialogHeader>
-                <div className="flex-1 overflow-hidden">
-                  <Command className="h-full">
-                    <CommandInput placeholder="Search categories..." />
-                    <CommandList className="max-h-[200px] sm:max-h-[250px] overflow-auto">
-                      <CommandEmpty>No categories found.</CommandEmpty>
-                      <CommandGroup>
-                        {categories.map((c) => {
-                          const selected = selectedCategoryIds.includes(c.id)
-                          return (
-                            <CommandItem
-                              key={c.id}
-                              onSelect={() => toggleCategory(c.id)}
-                            >
-                              <Check className={cn('mr-2 h-4 w-4', selected ? 'opacity-100' : 'opacity-0')} />
-                              {c.name}
-                            </CommandItem>
-                          )
-                        })}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </div>
-                {selectedCategoryIds.length > 0 && (
-                  <div className="mt-4 space-y-2 flex-shrink-0">
-                    <Label className="text-sm">Selected categories:</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedCategoryIds.map((id) => {
-                        const category = categories.find(c => c.id === id)
-                        return (
-                          <Badge key={id} variant="secondary" className="text-xs">
-                            {category?.name}
-                          </Badge>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )}
-                <div className="flex justify-end gap-2 mt-4 flex-shrink-0">
-                  <Button variant="outline" onClick={() => setOpen(false)}>
-                    Done
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+            <MultiSelect
+              options={categoryOptions}
+              selected={selectedCategoryIds}
+              onChange={handleCategoryChange}
+              placeholder="Select categories"
+              maxCount={2}
+              className={errors.service_categories ? 'border-red-500' : ''}
+            />
             {errors.service_categories && (
               <p className="text-sm text-red-500">{errors.service_categories}</p>
             )}
