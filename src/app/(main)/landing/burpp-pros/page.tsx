@@ -88,8 +88,32 @@ export default function BurppProsLandingPage() {
       <div className="relative overflow-hidden border-b border-gray-200">
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-background to-background" />
-          <div className="absolute -top-48 left-1/2 h-[480px] w-[780px] -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
-          <div className="absolute -bottom-48 left-1/2 h-[480px] w-[780px] -translate-x-1/2 rounded-full bg-purple-500/10 blur-3xl" />
+          {/* Geometric Background Shapes */}
+          <div className="absolute inset-0 overflow-hidden">
+            {/* Large Circle - Top Left */}
+            <div className="absolute -top-20 -left-20 h-64 w-64 rounded-full bg-primary/8 blur-2xl" />
+            
+            {/* Medium Circle - Top Right */}
+            <div className="absolute top-10 right-10 h-32 w-32 rounded-full bg-primary/6" />
+            
+            {/* Small Circle - Middle Left */}
+            <div className="absolute top-1/2 left-20 h-16 w-16 rounded-full bg-primary/10" />
+            
+            {/* Triangle - Bottom Right */}
+            <div className="absolute bottom-20 right-32 h-24 w-24 rotate-45 bg-primary/7" />
+            
+            {/* Hexagon-like shape - Middle Right */}
+            <div className="absolute top-1/3 right-1/4 h-20 w-20 rotate-12 bg-primary/8" style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }} />
+            
+            {/* Rounded Rectangle - Bottom Left */}
+            <div className="absolute bottom-32 left-1/4 h-12 w-32 rounded-full bg-primary/6 rotate-12" />
+            
+            {/* Small Circle - Top Center */}
+            <div className="absolute top-32 left-1/2 h-12 w-12 rounded-full bg-primary/9 -translate-x-1/2" />
+            
+            {/* Diamond - Middle Center */}
+            <div className="absolute top-2/3 left-1/2 h-16 w-16 rotate-45 bg-primary/7 -translate-x-1/2" />
+          </div>
         </div>
 
         <div className="relative mx-auto max-w-6xl px-4 py-16 md:py-20">
