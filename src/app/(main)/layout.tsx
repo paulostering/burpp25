@@ -9,7 +9,7 @@ export default function MainLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
-  const isLandingPage = pathname?.startsWith('/landing')
+  const isLandingPage = pathname?.startsWith('/landing') || pathname === '/pros'
 
   return (
     <>

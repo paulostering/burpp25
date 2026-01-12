@@ -126,7 +126,7 @@ export default function BurppProsLandingPage() {
                   <span className="text-primary block"> Grow your business.</span>
                 </h1>
                 <p className="text-lg text-muted-foreground">
-                  Burpp helps independent pros get discovered locally, chat with customers, and book work—without the noise of big marketplaces.
+                  A simpler way for independent professionals to get discovered, booked, and build real client relationships—without bidding wars, algorithms, or marketplace chaos.
                 </p>
               </div>
             </div>

@@ -24,6 +24,14 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async rewrites() {
+    return [
+      {
+        source: '/pros',
+        destination: '/landing/burpp-pros',
+      },
+    ];
+  },
 };
 
 export default nextConfig;
