@@ -142,12 +142,15 @@
   }
 }
 
-/* Sonner success toast styling */
+/* Sonner toast styling */
 @layer utilities {
+  [data-sonner-toast] {
+    border: none !important;
+  }
+  
   [data-sonner-toast][data-type="success"] {
     background-color: var(--success) !important;
     color: var(--success-foreground) !important;
-    border-color: var(--success-border) !important;
   }
   
   [data-sonner-toast][data-type="success"] [data-title],
