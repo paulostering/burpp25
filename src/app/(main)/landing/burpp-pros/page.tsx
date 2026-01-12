@@ -352,7 +352,7 @@ export default function BurppProsLandingPage() {
       </div>
 
       {/* Section 3: Ready to meet customers */}
-      <div className="max-w-7xl mx-auto px-4 pb-16">
+      <div className="mx-auto max-w-6xl px-4 pb-16">
         {/* Mobile: Stacked Layout */}
         <div className="md:hidden space-y-6">
           <div className="relative h-64 rounded-lg overflow-hidden">
