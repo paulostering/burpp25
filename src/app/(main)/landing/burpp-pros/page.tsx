@@ -19,17 +19,14 @@ export default function BurppProsLandingPage() {
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([])
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  // Filter to only parent categories
-  const categories = allCategories.filter((c) => !c.parent_id)
-
-  // Convert categories to MultiSelect options
+  // Convert all categories (including subcategories) to MultiSelect options
   const categoryOptions: Option[] = useMemo(
     () =>
-      categories.map((c) => ({
+      allCategories.map((c) => ({
         label: c.name,
         value: c.id,
       })),
-    [categories]
+    [allCategories]
   )
 
   useEffect(() => {
