@@ -28,6 +28,7 @@ export function TopNav() {
   const { user, loading, signOut } = useAuth()
   const [isVendor, setIsVendor] = useState(false)
   const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null)
+  const [firstName, setFirstName] = useState<string | null>(null)
   const [roleLoading, setRoleLoading] = useState(true)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
@@ -37,6 +38,7 @@ export function TopNav() {
       if (!user) {
         setIsVendor(false)
         setProfilePhotoUrl(null)
+        setFirstName(null)
         setRoleLoading(false)
         return
       }
@@ -45,7 +47,7 @@ export function TopNav() {
         const supabase = createClient()
         const { data: profile } = await supabase
           .from('user_profiles')
-          .select('role, is_active, profile_photo_url')
+          .select('role, is_active, profile_photo_url, first_name')
           .eq('id', user.id)
           .single()
 
@@ -55,10 +57,12 @@ export function TopNav() {
 
         setIsVendor(userIsVendor)
         setProfilePhotoUrl(profile?.profile_photo_url || null)
+        setFirstName(profile?.first_name || null)
       } catch (error) {
         console.error('Error checking user role:', error)
         setIsVendor(false)
         setProfilePhotoUrl(null)
+        setFirstName(null)
       } finally {
         setRoleLoading(false)
       }
@@ -79,10 +83,16 @@ export function TopNav() {
   const isHomePage = pathname === '/' || pathname === '/home'
   const showCondensedSearch = !isHomePage && !isAuthPage && !isRegistrationPage && !isVendorDashboard && !isVendor && !roleLoading
 
-  // Get user initial from email
+  // Get user initial from first name
   const getUserInitial = () => {
-    if (!user?.email) return null
-    return user.email.charAt(0).toUpperCase()
+    if (firstName) {
+      return firstName.charAt(0).toUpperCase()
+    }
+    // Fallback to email if first name not available
+    if (user?.email) {
+      return user.email.charAt(0).toUpperCase()
+    }
+    return null
   }
 
   const firstInitial = getUserInitial()
