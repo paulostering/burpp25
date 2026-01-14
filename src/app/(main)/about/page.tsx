@@ -120,9 +120,9 @@ export default function AboutUs() {
                 <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto">
                   <CheckCircle className="h-8 w-8 text-white" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900">Reliable</h3>
+                <h3 className="text-xl font-semibold text-gray-900">Real Reviews</h3>
                 <p className="text-gray-600">
-                  Every professional on our platform is verified and reviewed. Quality service you can trust, every time.
+                  Every review comes from a real booking and a real client. Genuine feedback you can trust, every time.
                 </p>
               </CardContent>
             </Card>
