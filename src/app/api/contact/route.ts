@@ -6,6 +6,9 @@ const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KE
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('=== Contact Form Submission Received ===')
+    console.log('Timestamp:', new Date().toISOString())
+    
     // Check if Resend API key is configured
     if (!resend) {
       console.error('RESEND_API_KEY not configured')
@@ -17,8 +20,17 @@ export async function POST(request: NextRequest) {
 
     const { firstName, lastName, email, phone, message } = await request.json()
 
+    console.log('Form Data:', {
+      firstName,
+      lastName,
+      email,
+      phone: phone || 'Not provided',
+      messageLength: message?.length || 0
+    })
+
     // Validate required fields
     if (!firstName || !lastName || !email || !message) {
+      console.error('Validation failed: Missing required fields')
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -41,10 +53,19 @@ This message was sent from the Burpp contact form.
     `.trim()
 
     // Send email using Resend
+    console.log('Attempting to send email via Resend...')
+    const recipients = ['rosaura@burpp.com', 'paul@burpp.com', 'joel@burpp.com']
+    console.log('Email Configuration:', {
+      from: 'contact@burpp.com',
+      to: recipients,
+      replyTo: email,
+      subject: `New Contact Form Submission from ${firstName} ${lastName}`
+    })
+    
     try {
       const result = await resend.emails.send({
         from: 'Burpp Contact Form <contact@burpp.com>',
-        to: 'support@burpp.com',
+        to: recipients,
         replyTo: email,
         subject: `New Contact Form Submission from ${firstName} ${lastName}`,
         text: emailContent,
@@ -70,17 +91,25 @@ This message was sent from the Burpp contact form.
         `
       })
 
+      console.log('Resend API Response:', JSON.stringify(result, null, 2))
+
       if (result.error) {
-        console.error('Resend error:', result.error)
+        console.error('Resend returned an error:', result.error)
         return NextResponse.json(
           { error: 'Failed to send email' },
           { status: 500 }
         )
       }
 
-      console.log('Contact form email sent successfully, ID:', result.data?.id)
+      console.log('✅ Contact form email sent successfully!')
+      console.log('Email ID:', result.data?.id)
+      console.log('=== End of Contact Form Submission ===')
     } catch (sendError) {
-      console.error('Failed to send contact email:', sendError)
+      console.error('❌ Failed to send contact email')
+      console.error('Send Error Details:', sendError)
+      console.error('Error Type:', typeof sendError)
+      console.error('Error String:', String(sendError))
+      console.error('=== End of Contact Form Submission (Failed) ===')
       return NextResponse.json(
         { error: 'Failed to send email' },
         { status: 500 }
@@ -93,7 +122,9 @@ This message was sent from the Burpp contact form.
     )
 
   } catch (error) {
-    console.error('Contact form error:', error)
+    console.error('❌ Contact form error (outer catch):', error)
+    console.error('Error Details:', JSON.stringify(error, null, 2))
+    console.error('=== End of Contact Form Submission (Error) ===')
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
