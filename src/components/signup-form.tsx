@@ -148,6 +148,29 @@ export function SignupForm({
             console.error('Failed to send welcome email:', error)
             // Don't show error to user - email is non-critical
           })
+
+        // Send admin notification (non-blocking)
+        console.log('📧 Sending admin notification for client registration...')
+        fetch('/api/admin-notifications/client-registration', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: values.email,
+            firstName: values.firstName,
+            lastName: values.lastName,
+            userId: data.user.id,
+          }),
+        })
+          .then(async (response) => {
+            const result = await response.json()
+            console.log('Admin notification API response:', result)
+          })
+          .catch(error => {
+            console.error('Failed to send admin notification:', error)
+            // Don't show error to user - email is non-critical
+          })
       }
 
       // Attempt immediate sign-in to create a seamless experience

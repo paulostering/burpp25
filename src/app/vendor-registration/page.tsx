@@ -938,6 +938,47 @@ export default function VendorRegisterPage() {
             console.error('Failed to send vendor welcome email:', error)
             // Don't show error to user - email is non-critical
           })
+
+        // Send admin notification (non-blocking)
+        console.log('📧 Sending admin notification for vendor registration...')
+        const categoryNames = categories
+          .filter(cat => selectedCategoryIds.includes(cat.id))
+          .map(cat => cat.name)
+          .join(', ')
+        
+        const serviceTypeText = offersVirtual && offersInPerson 
+          ? 'Virtual & In-Person' 
+          : offersVirtual 
+            ? 'Virtual Only' 
+            : 'In-Person Only'
+        
+        const locationText = zipCode || 'Not specified'
+        
+        fetch('/api/admin-notifications/vendor-registration', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email,
+            firstName,
+            lastName,
+            businessName,
+            phone,
+            categories: categoryNames,
+            location: locationText,
+            serviceType: serviceTypeText,
+            userId: uid,
+          }),
+        })
+          .then(async (response) => {
+            const result = await response.json()
+            console.log('Admin notification API response:', result)
+          })
+          .catch(error => {
+            console.error('Failed to send admin notification:', error)
+            // Don't show error to user - email is non-critical
+          })
       }
 
       toast.success('Vendor account created')

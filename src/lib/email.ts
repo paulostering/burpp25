@@ -206,3 +206,66 @@ export async function sendPasswordResetConfirmation(
   })
 }
 
+// Admin notification emails
+export async function sendAdminClientRegistrationNotification(
+  clientEmail: string,
+  firstName: string,
+  lastName: string,
+  userId: string
+) {
+  const siteUrl = getSiteUrl()
+  const adminEmail = 'registrations@burpp.com'
+  const now = new Date()
+  
+  return sendTemplateEmail('admin_client_registration', adminEmail, {
+    firstName,
+    lastName,
+    email: clientEmail,
+    userId,
+    registrationDate: now.toLocaleString('en-US', { 
+      month: 'long', 
+      day: 'numeric', 
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }),
+    adminUrl: `${siteUrl}/admin/clients`
+  })
+}
+
+export async function sendAdminVendorRegistrationNotification(
+  vendorEmail: string,
+  firstName: string,
+  lastName: string,
+  businessName: string,
+  phone: string,
+  categories: string,
+  location: string,
+  serviceType: string,
+  userId: string
+) {
+  const siteUrl = getSiteUrl()
+  const adminEmail = 'registrations@burpp.com'
+  const now = new Date()
+  
+  return sendTemplateEmail('admin_vendor_registration', adminEmail, {
+    firstName,
+    lastName,
+    businessName,
+    email: vendorEmail,
+    phone,
+    categories,
+    location,
+    serviceType,
+    userId,
+    registrationDate: now.toLocaleString('en-US', { 
+      month: 'long', 
+      day: 'numeric', 
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }),
+    adminUrl: `${siteUrl}/admin/vendors`
+  })
+}
+
