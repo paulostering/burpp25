@@ -951,7 +951,7 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
               {/* Success Message */}
               <div className="text-center space-y-3 animate-in fade-in-50 slide-in-from-bottom-4 duration-700 delay-200">
                 <h3 className="text-2xl font-bold text-gray-900">
-                  Your Account Has Successfully Been Created{newUserFirstName && `, ${newUserFirstName}`}!
+                  Your Account Has Successfully Been Created!
                 </h3>
                 <p className="text-base text-gray-600 max-w-md">
                   {modalTrigger === 'other' ? (
