@@ -114,9 +114,13 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
         return
       }
 
-      // If triggered by review, just close modal and return to profile
+      // For review triggers, show success step for new signups
       if (modalTrigger === 'other') {
-        handleModalClose()
+        if (isNewSignup) {
+          setModalStep('success')
+        } else {
+          handleModalClose()
+        }
         return
       }
 
@@ -773,6 +777,7 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
                     variant="outline"
                     onClick={() => {
                       setAuthMode('signup')
+                      setModalTrigger('other')
                       setShowModal(true)
                     }}
                     className="w-full"
@@ -881,8 +886,8 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
               {/* Success Icon with animated glow */}
               <div className="relative">
                 <div className="absolute inset-0 bg-green-100 rounded-full blur-xl opacity-50 animate-pulse"></div>
-                <div className="relative bg-green-500 rounded-full p-6 animate-in zoom-in-50 duration-700">
-                  <CheckCircle className="h-16 w-16 text-white animate-in zoom-in-50 duration-1000 delay-300" strokeWidth={2.5} />
+                <div className="relative bg-green-500 rounded-full p-4 animate-in zoom-in-50 duration-700">
+                  <CheckCircle className="h-10 w-10 text-white animate-in zoom-in-50 duration-1000 delay-300" strokeWidth={2.5} />
                 </div>
               </div>
 
@@ -892,18 +897,37 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
                   Your Account Has Successfully Been Created{newUserFirstName && `, ${newUserFirstName}`}!
                 </h3>
                 <p className="text-base text-gray-600 max-w-md">
-                  You can now send a message to <span className="font-semibold text-gray-900">{vendor.business_name}</span>.
+                  {modalTrigger === 'other' ? (
+                    <>You can now leave a review for <span className="font-semibold text-gray-900">{vendor.business_name}</span>.</>
+                  ) : (
+                    <>You can now send a message to <span className="font-semibold text-gray-900">{vendor.business_name}</span>.</>
+                  )}
                 </p>
               </div>
 
               {/* Continue Button */}
               <Button
-                onClick={() => setModalStep('message')}
+                onClick={() => {
+                  if (modalTrigger === 'other') {
+                    handleModalClose()
+                  } else {
+                    setModalStep('message')
+                  }
+                }}
                 className="w-full max-w-xs h-12 text-base font-medium shadow-lg hover:shadow-xl transition-all animate-in fade-in-50 slide-in-from-bottom-4 duration-700 delay-400"
                 size="lg"
               >
-                <MessageCircle className="h-5 w-5 mr-2" />
-                Continue to Message
+                {modalTrigger === 'other' ? (
+                  <>
+                    <MessageSquare className="h-5 w-5 mr-2" />
+                    Continue to Review
+                  </>
+                ) : (
+                  <>
+                    <MessageCircle className="h-5 w-5 mr-2" />
+                    Continue to Message
+                  </>
+                )}
               </Button>
             </div>
           ) : (
