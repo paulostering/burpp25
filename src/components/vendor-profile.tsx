@@ -61,6 +61,8 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
   const [reviewComment, setReviewComment] = useState('')
   const [isSubmittingReview, setIsSubmittingReview] = useState(false)
   const [showImageModal, setShowImageModal] = useState(false)
+  const [isRegistrationEnabled, setIsRegistrationEnabled] = useState(true)
+  const [isCheckingRegistration, setIsCheckingRegistration] = useState(false)
 
   const supabase = createClient()
   const router = useRouter()
@@ -233,6 +235,28 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
     return () => subscription.unsubscribe()
   }, [supabase, vendor.id])
 
+  // Check if user registration is enabled
+  useEffect(() => {
+    const checkRegistrationEnabled = async () => {
+      setIsCheckingRegistration(true)
+      try {
+        const response = await fetch('/api/admin/user-registration')
+        if (response.ok) {
+          const data = await response.json()
+          setIsRegistrationEnabled(data.enabled ?? true)
+        }
+      } catch (error) {
+        console.error('Error checking registration setting:', error)
+        // Default to enabled on error
+        setIsRegistrationEnabled(true)
+      } finally {
+        setIsCheckingRegistration(false)
+      }
+    }
+
+    checkRegistrationEnabled()
+  }, [])
+
 
   useEffect(() => {
     const loadReviews = async () => {
@@ -360,6 +384,11 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
 
   const handleSubmitReview = async () => {
     if (!user) {
+      // Check if registration is enabled before showing modal
+      if (!isRegistrationEnabled) {
+        toast.error('User registration is currently disabled. Please check back soon.')
+        return
+      }
       setAuthMode('signup')
       setModalTrigger('other')
       setShowModal(true)
@@ -565,6 +594,11 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
                       className="h-10"
                       onClick={async () => {
                         if (!user) {
+                          // Check if registration is enabled before showing modal
+                          if (!isRegistrationEnabled) {
+                            toast.error('User registration is currently disabled. Please check back soon.')
+                            return
+                          }
                           setAuthMode('signup')
                           setModalTrigger('message')
                           setShowModal(true)
@@ -776,6 +810,11 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
                   <Button 
                     variant="outline"
                     onClick={() => {
+                      // Check if registration is enabled before showing modal
+                      if (!isRegistrationEnabled) {
+                        toast.error('User registration is currently disabled. Please check back soon.')
+                        return
+                      }
                       setAuthMode('signup')
                       setModalTrigger('other')
                       setShowModal(true)
@@ -876,11 +915,29 @@ export function VendorProfile({ vendor, categories }: VendorProfileProps) {
           </DialogHeader>
           
           {modalStep === 'auth' ? (
-            <VendorAuthForm 
-              mode={authMode} 
-              onModeChange={setAuthMode}
-              onAuthSuccess={handleAuthSuccess}
-            />
+            !isRegistrationEnabled ? (
+              <div className="flex flex-col items-center justify-center py-8 px-4 space-y-4 text-center">
+                <h3 className="text-xl font-semibold text-gray-900">
+                  Registration Currently Unavailable
+                </h3>
+                <p className="text-base text-gray-600 max-w-md">
+                  Burpp is currently not open to the public. Check back soon.
+                </p>
+                <Button
+                  onClick={handleModalClose}
+                  variant="outline"
+                  className="mt-4"
+                >
+                  Close
+                </Button>
+              </div>
+            ) : (
+              <VendorAuthForm 
+                mode={authMode} 
+                onModeChange={setAuthMode}
+                onAuthSuccess={handleAuthSuccess}
+              />
+            )
           ) : modalStep === 'success' ? (
             <div className="flex flex-col items-center justify-center py-8 px-4 space-y-6 animate-in fade-in-50 zoom-in-95 duration-500">
               {/* Success Icon with animated glow */}

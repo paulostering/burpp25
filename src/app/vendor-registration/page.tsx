@@ -122,6 +122,7 @@ export default function VendorRegisterPage() {
     supabase
       .from('categories')
       .select('id,name')
+      .eq('is_active', true)
       .order('name')
       .then(({ data, error }) => {
         if (error) return

@@ -33,6 +33,7 @@ import {
   Store,
   Tag,
   Users,
+  UserPlus,
 } from "lucide-react"
 
 import {
@@ -112,6 +113,11 @@ const data: { navMain: MenuItem[] } = {
           title: "Email Templates",
           url: "/admin/email-templates",
           icon: Mail,
+        },
+        {
+          title: "User Registration",
+          url: "/admin/user-registration",
+          icon: UserPlus,
         },
       ],
     },

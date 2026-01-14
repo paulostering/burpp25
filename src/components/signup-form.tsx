@@ -65,6 +65,32 @@ export function SignupForm({
     try {
       const supabase = createClient()
       
+      // Check if user registration is enabled
+      const { data: settingData, error: settingError } = await supabase
+        .from('app_settings')
+        .select('setting_value')
+        .eq('setting_key', 'user_registration_enabled')
+        .single()
+
+      if (!settingError && settingData) {
+        const value = settingData.setting_value
+        
+        // Handle various formats: boolean true/false, string "true"/"false", or JSON stringified
+        let isEnabled = true // Default to enabled
+        if (typeof value === 'boolean') {
+          isEnabled = value
+        } else if (typeof value === 'string') {
+          const normalized = value.toLowerCase().replace(/"/g, '')
+          isEnabled = normalized === 'true'
+        }
+        
+        if (!isEnabled) {
+          toast.error('User registration is currently disabled')
+          setIsLoading(false)
+          return
+        }
+      }
+      
       // Create user without metadata to avoid trigger issues
       const { data, error } = await supabase.auth.signUp({
         email: values.email,

@@ -136,6 +136,17 @@ export function VendorAuthForm({ mode, onModeChange, onAuthSuccess, className }:
   const onSignupSubmit = async (values: z.infer<typeof signupSchema>) => {
     setIsLoading(true)
     try {
+      // Check if user registration is enabled
+      const registrationResponse = await fetch('/api/admin/user-registration')
+      if (registrationResponse.ok) {
+        const registrationData = await registrationResponse.json()
+        if (!registrationData.enabled) {
+          toast.error('User registration is currently disabled. Please check back soon.')
+          setIsLoading(false)
+          return
+        }
+      }
+
       const supabase = createClient()
       
       // Create user without metadata to avoid trigger issues

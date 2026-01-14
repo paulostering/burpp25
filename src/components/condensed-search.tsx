@@ -126,27 +126,28 @@ export function CondensedSearch() {
     const loadCategories = async () => {
       try {
         const data = await getCategories()
-        const allCategories = data
+        // Filter to only show active categories
+        const activeCategories = data.filter(category => category.is_active === true)
         
         // Only update state if component is still mounted
         if (isMounted) {
           // Do NOT require slug here — local DBs may not have run the slug migration yet.
           // We fall back to UUIDs in URLs until slugs exist.
-          setCategories(allCategories)
-          setFilteredCategories(allCategories)
+          setCategories(activeCategories)
+          setFilteredCategories(activeCategories)
 
           // If localStorage has a selected category that doesn't exist anymore, clear it.
           const savedSlug = localStorage.getItem('burpp_search_category_slug')
           const savedId = localStorage.getItem('burpp_search_category_id')
 
-          if (savedSlug && !allCategories.some((c) => c.slug === savedSlug || c.id === savedSlug)) {
+          if (savedSlug && !activeCategories.some((c) => c.slug === savedSlug || c.id === savedSlug)) {
             setSelectedCategory('')
             setSelectedCategoryName('')
             setCategorySearch('')
             localStorage.removeItem('burpp_search_category_slug')
             localStorage.removeItem('burpp_search_category_name')
           } else if (!savedSlug && savedId) {
-            const match = allCategories.find((c) => c.id === savedId)
+            const match = activeCategories.find((c) => c.id === savedId)
             if (match?.slug) {
               setSelectedCategory(match.slug)
               localStorage.setItem('burpp_search_category_slug', match.slug)

@@ -4,6 +4,46 @@ import { redirect } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
 
+async function isUserRegistrationEnabled() {
+  const supabase = await createServerSupabase()
+  const { data, error } = await supabase
+    .from('app_settings')
+    .select('setting_value')
+    .eq('setting_key', 'user_registration_enabled')
+    .single()
+
+  if (error) {
+    // Default to enabled if setting doesn't exist or there's an error
+    console.error('Error fetching registration setting:', error)
+    return true
+  }
+
+  if (!data) {
+    console.log('No setting found, defaulting to enabled')
+    return true
+  }
+
+  const value = data.setting_value
+  console.log('Registration setting value:', value, 'Type:', typeof value, 'Raw:', JSON.stringify(value))
+  
+  // Handle various formats: boolean true/false, string "true"/"false", or JSON stringified
+  // JSONB can store booleans directly, so check for boolean first
+  if (typeof value === 'boolean') {
+    return value
+  }
+  
+  // Handle string values
+  if (typeof value === 'string') {
+    const normalized = value.toLowerCase().replace(/"/g, '')
+    if (normalized === 'true') return true
+    if (normalized === 'false') return false
+  }
+  
+  // Default to enabled if value is unexpected
+  console.log('Unexpected setting value format, defaulting to enabled')
+  return true
+}
+
 export default async function SignupPage() {
   // Check if user is already logged in and redirect accordingly
   const supabase = await createServerSupabase()
@@ -27,6 +67,10 @@ export default async function SignupPage() {
       redirect('/')
     }
   }
+
+  // Check if user registration is enabled
+  const registrationEnabled = await isUserRegistrationEnabled()
+
   return (
     <div className="grid min-h-svh lg:grid-cols-2">
       <div className="flex flex-col gap-4 p-6 md:p-10">
@@ -45,7 +89,16 @@ export default async function SignupPage() {
         </div>
         <div className="flex flex-1 items-center justify-center">
           <div className="w-full max-w-xs">
-            <SignupForm />
+            {registrationEnabled ? (
+              <SignupForm />
+            ) : (
+              <div className="text-center space-y-4">
+                <h1 className="text-2xl font-bold">Create your account</h1>
+                <p className="text-muted-foreground text-sm">
+                  Burpp is currently not open to the public. Check back soon
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>

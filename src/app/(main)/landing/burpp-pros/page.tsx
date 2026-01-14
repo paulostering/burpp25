@@ -36,7 +36,9 @@ export default function BurppProsLandingPage() {
         return (await r.json()) as Category[]
       })
       .then((data) => {
-        setAllCategories(data ?? [])
+        // Filter to only show active categories
+        const activeCategories = (data ?? []).filter(category => category.is_active === true)
+        setAllCategories(activeCategories)
       })
       .catch(() => {
         setAllCategories([])
