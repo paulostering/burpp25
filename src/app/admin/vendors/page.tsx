@@ -22,16 +22,19 @@ export default function AdminVendorsPage() {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
 
     const newToday = vendors.filter(vendor => {
+      if (!vendor.created_at) return false
       const createdAt = new Date(vendor.created_at)
       return createdAt >= startOfToday
     }).length
 
     const newThisWeek = vendors.filter(vendor => {
+      if (!vendor.created_at) return false
       const createdAt = new Date(vendor.created_at)
       return createdAt >= startOfWeek
     }).length
 
     const newThisMonth = vendors.filter(vendor => {
+      if (!vendor.created_at) return false
       const createdAt = new Date(vendor.created_at)
       return createdAt >= startOfMonth
     }).length
