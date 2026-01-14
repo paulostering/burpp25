@@ -27,6 +27,15 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet'
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination'
 import { CategoryForm } from './category-form'
 import { toast } from 'sonner'
 import type { Category } from '@/types/db'
@@ -47,6 +56,9 @@ export function EntitiesDataTable({ entities: initialEntities }: EntitiesDataTab
   const [isEditSheetOpen, setIsEditSheetOpen] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  
+  const itemsPerPage = 20
 
   // Update entities when props change
   useEffect(() => {
@@ -102,6 +114,39 @@ export function EntitiesDataTable({ entities: initialEntities }: EntitiesDataTab
         return aValue > bValue ? -1 : aValue < bValue ? 1 : 0
       }
     })
+
+  // Paginate entities
+  const totalPages = Math.ceil(sortedAndFilteredEntities.length / itemsPerPage)
+  const paginatedEntities = sortedAndFilteredEntities.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  )
+
+  // Reset to page 1 when search or sort changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, sortField, sortDirection])
+
+  const generatePaginationItems = () => {
+    const items = []
+    const maxVisible = 5
+    
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) {
+        items.push(i)
+      }
+    } else {
+      if (currentPage <= 3) {
+        items.push(1, 2, 3, 4, -1, totalPages)
+      } else if (currentPage >= totalPages - 2) {
+        items.push(1, -1, totalPages - 3, totalPages - 2, totalPages - 1, totalPages)
+      } else {
+        items.push(1, -1, currentPage - 1, currentPage, currentPage + 1, -2, totalPages)
+      }
+    }
+    
+    return items
+  }
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -376,14 +421,14 @@ export function EntitiesDataTable({ entities: initialEntities }: EntitiesDataTab
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sortedAndFilteredEntities.length === 0 ? (
+            {paginatedEntities.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground pl-4">
-                  No categories found
+                <TableCell colSpan={7} className="text-center text-muted-foreground pl-4">
+                  {searchTerm ? 'No categories found matching your search.' : 'No categories found.'}
                 </TableCell>
               </TableRow>
             ) : (
-              sortedAndFilteredEntities.map((entity) => (
+              paginatedEntities.map((entity) => (
                 <TableRow key={entity.id}>
                   <TableCell>
                     <div className="font-medium">
@@ -439,10 +484,60 @@ export function EntitiesDataTable({ entities: initialEntities }: EntitiesDataTab
         </Table>
       </div>
 
-      {/* Summary */}
-      <div className="text-sm text-muted-foreground">
-        Showing {sortedAndFilteredEntities.length} of {entities.length} categories
-      </div>
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, sortedAndFilteredEntities.length)} of {sortedAndFilteredEntities.length} categories
+          </div>
+          
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious 
+                  onClick={() => currentPage > 1 && setCurrentPage(currentPage - 1)}
+                  className={currentPage <= 1 ? 'pointer-events-none opacity-50' : ''}
+                />
+              </PaginationItem>
+              
+              {generatePaginationItems().map((pageNum, idx) => {
+                if (pageNum === -1 || pageNum === -2) {
+                  return (
+                    <PaginationItem key={`ellipsis-${idx}`}>
+                      <PaginationEllipsis />
+                    </PaginationItem>
+                  )
+                }
+                
+                return (
+                  <PaginationItem key={pageNum}>
+                    <PaginationLink
+                      onClick={() => setCurrentPage(pageNum)}
+                      isActive={currentPage === pageNum}
+                    >
+                      {pageNum}
+                    </PaginationLink>
+                  </PaginationItem>
+                )
+              })}
+              
+              <PaginationItem>
+                <PaginationNext 
+                  onClick={() => currentPage < totalPages && setCurrentPage(currentPage + 1)}
+                  className={currentPage >= totalPages ? 'pointer-events-none opacity-50' : ''}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
+
+      {/* Summary - only show if no pagination */}
+      {totalPages <= 1 && (
+        <div className="text-sm text-muted-foreground">
+          Showing {sortedAndFilteredEntities.length} of {entities.length} categories
+        </div>
+      )}
 
       {/* Edit Category Sheet */}
       <Sheet open={isEditSheetOpen} onOpenChange={setIsEditSheetOpen}>

@@ -45,7 +45,7 @@ export function VendorsDataTable({ vendors }: VendorsDataTableProps) {
   const [sortOrder, setSortOrder] = useState<SortOrder>(null)
   const router = useRouter()
   
-  const itemsPerPage = 10
+  const itemsPerPage = 20
 
   // Helper functions
   const formatDate = (dateString: string) => {
