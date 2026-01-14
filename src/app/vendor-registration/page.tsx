@@ -981,8 +981,9 @@ export default function VendorRegisterPage() {
           })
       }
 
-      toast.success('Vendor account created')
-      router.push(`/vendor/${uid}/dashboard`)
+      // Set flag to show welcome modal on dashboard
+      sessionStorage.setItem('burpp_new_vendor_welcome', 'true')
+      router.push('/dashboard')
     } catch (error) {
       console.error('Error creating account:', error)
       toast.error('An error occurred while creating your account. Please try again.')

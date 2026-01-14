@@ -7,6 +7,9 @@ import { VendorDashboardWrapper } from '@/components/vendor-dashboard-wrapper'
 import { useAuth } from '@/contexts/auth-context'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { CheckCircle } from 'lucide-react'
 import type { VendorProfile as VendorProfileType, Category } from '@/types/db'
 
 export default function VendorDashboardPage() {
@@ -19,6 +22,7 @@ export default function VendorDashboardPage() {
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false)
   
   const { user, loading: authLoading } = useAuth()
   const router = useRouter()
@@ -97,6 +101,13 @@ export default function VendorDashboardPage() {
         setVendor(vendorResult.data)
         setStats(processedStats)
         setCategories(categoriesResult.data || [])
+
+        // Check for new vendor welcome flag
+        const isNewVendor = sessionStorage.getItem('burpp_new_vendor_welcome')
+        if (isNewVendor === 'true') {
+          setShowWelcomeModal(true)
+          sessionStorage.removeItem('burpp_new_vendor_welcome')
+        }
 
       } catch (err) {
         console.error('Error loading dashboard data:', err)
@@ -235,10 +246,46 @@ export default function VendorDashboardPage() {
   }
 
   return (
-    <VendorDashboardWrapper 
-      vendor={vendor} 
-      stats={stats} 
-      categories={categories}
-    />
+    <>
+      <VendorDashboardWrapper 
+        vendor={vendor} 
+        stats={stats} 
+        categories={categories}
+      />
+      
+      {/* Welcome Modal */}
+      <Dialog open={showWelcomeModal} onOpenChange={setShowWelcomeModal}>
+        <DialogContent className="sm:max-w-md">
+          <div className="flex flex-col items-center justify-center py-8 px-4 space-y-6 animate-in fade-in-50 zoom-in-95 duration-500">
+            {/* Success Icon with animated glow */}
+            <div className="relative">
+              <div className="absolute inset-0 bg-green-100 rounded-full blur-xl opacity-50 animate-pulse"></div>
+              <div className="relative bg-green-500 rounded-full p-4 animate-in zoom-in-50 duration-700">
+                <CheckCircle className="h-10 w-10 text-white animate-in zoom-in-50 duration-1000 delay-300" strokeWidth={2.5} />
+              </div>
+            </div>
+
+            {/* Welcome Message */}
+            <div className="text-center space-y-3 animate-in fade-in-50 slide-in-from-bottom-4 duration-700 delay-200">
+              <h3 className="text-2xl font-bold text-gray-900">
+                Welcome to Burpp! 🎉
+              </h3>
+              <p className="text-base text-gray-600 max-w-md">
+                Your vendor account has been created successfully. Take a moment to explore your dashboard and continue updating your profile to attract more clients.
+              </p>
+            </div>
+
+            {/* Continue Button */}
+            <Button
+              onClick={() => setShowWelcomeModal(false)}
+              className="w-full max-w-xs h-12 text-base font-medium shadow-lg hover:shadow-xl transition-all animate-in fade-in-50 slide-in-from-bottom-4 duration-700 delay-400"
+              size="lg"
+            >
+              Explore Dashboard
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }

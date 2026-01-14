@@ -134,7 +134,12 @@ export default function BurppProsLandingPage() {
             <div className="lg:col-span-5">
               <Card className="border border-gray-200 shadow-none">
                 <CardContent className="p-6 space-y-6">
-                  <h2 className="text-2xl font-semibold">Claim your free profile</h2>
+                  <div className="space-y-2">
+                    <h2 className="text-2xl font-semibold">Claim your free profile</h2>
+                    <p className="text-gray-600">
+                      Choose the name clients know you by and pick the category that best matches your service. You can always edit it later.
+                    </p>
+                  </div>
                   <div className="space-y-2">
                     <Label htmlFor="business">Business Name *</Label>
                     <Input 
