@@ -822,7 +822,7 @@ export function CondensedSearch() {
                   
                   {/* Category Dropdown */}
                   {isCategoryOpen && filteredCategories.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 z-[9999] mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                    <div className="absolute top-full left-0 right-0 z-[9999] mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-[75vh] overflow-y-auto">
                       {filteredCategories.map((category, index) => (
                         <button
                           key={category.id}
@@ -914,7 +914,7 @@ export function CondensedSearch() {
 
                   {/* Location Suggestions Dropdown */}
                   {isLocationOpen && locationSuggestions.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 z-[9999] mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                    <div className="absolute top-full left-0 right-0 z-[9999] mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-[75vh] overflow-y-auto">
                       {locationSuggestions.map((suggestion, index) => (
                         <button
                           key={index}
