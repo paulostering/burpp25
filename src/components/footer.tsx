@@ -58,7 +58,7 @@ export function Footer() {
         <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
           {/* Copyright */}
           <div className="text-gray-600 text-sm">
-            © {new Date().getFullYear()} Burpp. All Rights Reserved.
+            © {new Date().getFullYear()} Burpp Ventures LLC. All Rights Reserved.
           </div>
 
           {/* Social Media Icons */}
