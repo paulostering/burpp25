@@ -3,7 +3,7 @@
 import { Footer } from "@/components/footer"
 import { Card, CardContent } from "@/components/ui/card"
 import Image from "next/image"
-import { Search, MessageCircle, CheckCircle } from "lucide-react"
+import { Search, MessageCircle } from "lucide-react"
 
 export default function HowToUse() {
   
@@ -127,7 +127,7 @@ export default function HowToUse() {
             </p>
           </div>
 
-          <div className="grid gap-8 md:grid-cols-3">
+          <div className="grid gap-8 md:grid-cols-2">
             <Card className="text-center p-8 border-0 shadow-lg">
               <CardContent className="space-y-4">
                 <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto">
@@ -148,18 +148,6 @@ export default function HowToUse() {
                 <h3 className="text-xl font-semibold text-gray-900">Real Communication</h3>
                 <p className="text-gray-600">
                   Ask questions, discuss your needs, and get personalized responses from real professionals.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="text-center p-8 border-0 shadow-lg">
-              <CardContent className="space-y-4">
-                <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto">
-                  <CheckCircle className="h-8 w-8 text-white" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900">Verified Pros</h3>
-                <p className="text-gray-600">
-                  Every professional is verified and reviewed. Quality service you can trust, every time.
                 </p>
               </CardContent>
             </Card>
