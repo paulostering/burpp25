@@ -118,7 +118,7 @@ export function VendorSettings({ vendor }: VendorSettingsProps) {
     setAccountLoading(true)
 
     try {
-      // Update vendor profile
+      // Update vendor profile (first name, last name)
       const { error: profileError } = await supabase
         .from('vendor_profiles')
         .update({
@@ -128,22 +128,16 @@ export function VendorSettings({ vendor }: VendorSettingsProps) {
         .eq('id', vendor.id)
 
       if (profileError) throw profileError
-
-      // Update email if changed
-      if (accountInfo.email !== user?.email) {
-        const { error: emailError } = await supabase.auth.updateUser({
-          email: accountInfo.email
-        })
-
-        if (emailError) throw emailError
-        
-        toast.success('Account information updated. Please check your new email for verification.')
-      } else {
-        toast.success('Account information updated successfully')
-      }
+      
+      toast.success('Account information updated successfully')
     } catch (error) {
       console.error('Error updating account info:', error)
-      toast.error('Failed to update account information')
+      
+      if (error instanceof Error) {
+        toast.error(error.message)
+      } else {
+        toast.error('Failed to update account information')
+      }
     } finally {
       setAccountLoading(false)
     }
@@ -193,7 +187,7 @@ export function VendorSettings({ vendor }: VendorSettingsProps) {
             <CardTitle>Account Information</CardTitle>
           </div>
           <CardDescription>
-            Update your account details and email address
+            Update your account details
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -224,11 +218,12 @@ export function VendorSettings({ vendor }: VendorSettingsProps) {
                 id="email"
                 type="email"
                 value={accountInfo.email}
-                onChange={(e) => setAccountInfo({ ...accountInfo, email: e.target.value })}
+                disabled
+                className="bg-gray-50 cursor-not-allowed"
                 placeholder="your.email@example.com"
               />
               <p className="text-xs text-muted-foreground">
-                Changing your email will require verification
+                Email address cannot be changed. Please contact support if you need to update it.
               </p>
             </div>
             <div className="flex justify-end">
