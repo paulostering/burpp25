@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import type { VendorProfile } from '@/types/db'
@@ -51,12 +52,26 @@ const step5Schema = z.object({
   first_name: z.string().min(1, 'Required'),
   last_name: z.string().min(1, 'Required'),
   email: z.string().email('Invalid email'),
-  phone_number: z.string().min(7, 'Invalid phone'),
+  phone_number: z.string().optional(),
   password: z.string().min(6, 'Min 6 characters'),
   confirmPassword: z.string().min(6, 'Please confirm your password'),
+  allow_phone_contact: z.boolean().optional(),
+  agree_to_terms: z.boolean(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
+}).refine((data) => {
+  // If allow_phone_contact is true, phone_number is required
+  if (data.allow_phone_contact) {
+    return data.phone_number && data.phone_number.length >= 7
+  }
+  return true
+}, {
+  message: "Phone number is required when allowing phone contact",
+  path: ["phone_number"],
+}).refine((data) => data.agree_to_terms === true, {
+  message: "You must agree to the terms of service and privacy policy",
+  path: ["agree_to_terms"],
 })
 
 type Category = { id: string; name: string }
@@ -116,6 +131,8 @@ export default function VendorRegisterPage() {
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [allowPhoneContact, setAllowPhoneContact] = useState(true)
+  const [agreeToTerms, setAgreeToTerms] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
@@ -667,6 +684,8 @@ export default function VendorRegisterPage() {
       phone_number: phone,
       password,
       confirmPassword,
+      allow_phone_contact: allowPhoneContact,
+      agree_to_terms: agreeToTerms,
     })
     
     if (!v.success) {
@@ -683,6 +702,8 @@ export default function VendorRegisterPage() {
           newErrors.password = issue.message
         } else if (issue.path[0] === 'confirmPassword') {
           newErrors.confirmPassword = issue.message
+        } else if (issue.path[0] === 'agree_to_terms') {
+          newErrors.agree_to_terms = issue.message
         }
       })
       setErrors(newErrors)
@@ -843,7 +864,7 @@ export default function VendorRegisterPage() {
           last_name: lastName,
           email,
           phone_number: phone,
-          allow_phone_contact: true, // Allow phone contact by default for new vendors
+          allow_phone_contact: allowPhoneContact,
           admin_approved: true, // Auto-approve vendors on registration
         }
         const { error: insErr, data: vendorProfile } = await supabase.from('vendor_profiles').insert(payload).select().single()
@@ -1760,7 +1781,7 @@ export default function VendorRegisterPage() {
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone *</Label>
+              <Label htmlFor="phone">Phone {allowPhoneContact && '*'}</Label>
               <Input 
                 id="phone" 
                 value={phone} 
@@ -1832,6 +1853,60 @@ export default function VendorRegisterPage() {
               <p className="text-sm text-red-500">{errors.confirmPassword}</p>
             )}
           </div>
+          
+          {/* Checkboxes */}
+          <div className="space-y-3">
+            <div className="flex items-start space-x-2">
+              <Checkbox 
+                id="allowPhoneContact"
+                checked={allowPhoneContact}
+                onCheckedChange={(checked) => {
+                  setAllowPhoneContact(checked === true)
+                  // Clear phone error when unchecking
+                  if (!checked) {
+                    clearError('phone_number')
+                  }
+                }}
+              />
+              <Label 
+                htmlFor="allowPhoneContact" 
+                className="text-sm font-normal cursor-pointer leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 pt-0.5"
+              >
+                Allow customers to call my phone number
+              </Label>
+            </div>
+            
+            <div className="flex items-start space-x-2">
+              <Checkbox 
+                id="agreeToTerms"
+                checked={agreeToTerms}
+                onCheckedChange={(checked) => {
+                  setAgreeToTerms(checked === true)
+                  clearError('agree_to_terms')
+                }}
+              />
+              <div className="flex-1">
+                <Label 
+                  htmlFor="agreeToTerms" 
+                  className="text-sm font-normal cursor-pointer leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 pt-0.5"
+                >
+                  I agree to the{' '}
+                  <a href="/terms" target="_blank" className="text-primary hover:underline">
+                    Terms of Service
+                  </a>
+                  {' '}and{' '}
+                  <a href="/privacy" target="_blank" className="text-primary hover:underline">
+                    Privacy Policy
+                  </a>
+                  {' '}*
+                </Label>
+                {errors.agree_to_terms && (
+                  <p className="text-sm text-red-500 mt-1">{errors.agree_to_terms}</p>
+                )}
+              </div>
+            </div>
+          </div>
+          
           <div className="flex justify-between gap-2">
             <Button variant="outline" onClick={back} disabled={isSubmitting}>Back</Button>
             <Button onClick={submit} disabled={isSubmitting}>
