@@ -1262,7 +1262,7 @@ export default function VendorRegisterPage() {
           {offersInPerson && (
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="zip">Service zip code</Label>
+                <Label htmlFor="zip">Service zip code *</Label>
                 <div className="relative">
                   <Input 
                     id="zip" 
