@@ -5,7 +5,10 @@ import Cropper from 'react-easy-crop'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
-import { ZoomIn, ZoomOut, RotateCw, Loader2 } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
+import { ZoomIn, ZoomOut, RotateCw, Loader2, RotateCcw } from 'lucide-react'
 
 interface ImageCropModalProps {
   open: boolean
@@ -15,6 +18,7 @@ interface ImageCropModalProps {
   aspectRatio?: number
   title?: string
   description?: string
+  allowAspectChange?: boolean
 }
 
 interface CropArea {
@@ -31,13 +35,17 @@ export function ImageCropModal({
   onCropComplete,
   aspectRatio = 1,
   title = 'Crop Image',
-  description = 'Adjust the crop area to your liking'
+  description = 'Adjust the crop area to your liking',
+  allowAspectChange = false
 }: ImageCropModalProps) {
   const [crop, setCrop] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(1)
   const [rotation, setRotation] = useState(0)
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<CropArea | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [showGrid, setShowGrid] = useState(true)
+  const [currentAspect, setCurrentAspect] = useState<number | undefined>(aspectRatio)
+  const [aspectMode, setAspectMode] = useState<string>('default')
 
   const onCropChange = useCallback((newCrop: { x: number; y: number }) => {
     setCrop(newCrop)
@@ -144,12 +152,43 @@ export function ImageCropModal({
     setRotation((prev) => (prev + 90) % 360)
   }
 
+  const handleReset = () => {
+    setCrop({ x: 0, y: 0 })
+    setZoom(1)
+    setRotation(0)
+  }
+
+  const handleAspectChange = (value: string) => {
+    setAspectMode(value)
+    switch (value) {
+      case '1:1':
+        setCurrentAspect(1)
+        break
+      case '16:9':
+        setCurrentAspect(16 / 9)
+        break
+      case '4:3':
+        setCurrentAspect(4 / 3)
+        break
+      case '2.5:1':
+        setCurrentAspect(2.5)
+        break
+      case 'free':
+        setCurrentAspect(undefined)
+        break
+      default:
+        setCurrentAspect(aspectRatio)
+    }
+  }
+
   const handleCancel = () => {
     // Reset state
     setCrop({ x: 0, y: 0 })
     setZoom(1)
     setRotation(0)
     setCroppedAreaPixels(null)
+    setCurrentAspect(aspectRatio)
+    setAspectMode('default')
     onOpenChange(false)
   }
 
@@ -168,11 +207,12 @@ export function ImageCropModal({
             crop={crop}
             zoom={zoom}
             rotation={rotation}
-            aspect={aspectRatio}
+            aspect={currentAspect}
             onCropChange={onCropChange}
             onZoomChange={onZoomChange}
             onCropComplete={onCropCompleteCallback}
             objectFit="contain"
+            showGrid={showGrid}
             classes={{
               containerClassName: 'rounded-lg',
               cropAreaClassName: 'border-2 border-white shadow-lg'
@@ -182,6 +222,41 @@ export function ImageCropModal({
 
         {/* Controls */}
         <div className="space-y-4 pt-4">
+          {/* Aspect Ratio & Grid Toggle Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Aspect Ratio Selector */}
+            {allowAspectChange && (
+              <div className="space-y-2">
+                <Label className="text-sm text-gray-600">Aspect Ratio</Label>
+                <Select value={aspectMode} onValueChange={handleAspectChange}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="default">Default</SelectItem>
+                    <SelectItem value="1:1">Square (1:1)</SelectItem>
+                    <SelectItem value="16:9">Landscape (16:9)</SelectItem>
+                    <SelectItem value="4:3">Standard (4:3)</SelectItem>
+                    <SelectItem value="2.5:1">Wide (2.5:1)</SelectItem>
+                    <SelectItem value="free">Free Crop</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            
+            {/* Grid Toggle */}
+            <div className="flex items-center justify-between space-x-2">
+              <Label htmlFor="grid-toggle" className="text-sm text-gray-600 cursor-pointer">
+                Show Grid
+              </Label>
+              <Switch
+                id="grid-toggle"
+                checked={showGrid}
+                onCheckedChange={setShowGrid}
+              />
+            </div>
+          </div>
+
           {/* Zoom Control */}
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm text-gray-600">
@@ -189,28 +264,59 @@ export function ImageCropModal({
                 <ZoomOut className="h-4 w-4" />
                 <span>Zoom</span>
               </div>
-              <ZoomIn className="h-4 w-4" />
+              <div className="flex items-center gap-2">
+                <span className="text-xs">{zoom.toFixed(1)}x</span>
+                <ZoomIn className="h-4 w-4" />
+              </div>
             </div>
             <Slider
               value={[zoom]}
               onValueChange={(value) => setZoom(value[0])}
               min={1}
-              max={3}
+              max={5}
               step={0.1}
               className="w-full"
             />
           </div>
 
-          {/* Rotate Button */}
-          <div className="flex justify-center">
+          {/* Rotation Control */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm text-gray-600">
+              <div className="flex items-center gap-2">
+                <RotateCcw className="h-4 w-4" />
+                <span>Rotation</span>
+              </div>
+              <span className="text-xs">{rotation}°</span>
+            </div>
+            <Slider
+              value={[rotation]}
+              onValueChange={(value) => setRotation(value[0])}
+              min={0}
+              max={360}
+              step={1}
+              className="w-full"
+            />
+          </div>
+
+          {/* Quick Actions */}
+          <div className="flex gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={handleRotate}
-              className="gap-2"
+              className="flex-1 gap-2"
             >
               <RotateCw className="h-4 w-4" />
               Rotate 90°
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleReset}
+              className="flex-1 gap-2"
+            >
+              <RotateCcw className="h-4 w-4" />
+              Reset
             </Button>
           </div>
         </div>

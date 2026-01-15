@@ -505,8 +505,9 @@ export function VendorProductForm({ vendorId, productId, initialData }: VendorPr
         imageSrc={imageToCrop}
         onCropComplete={handleCropComplete}
         aspectRatio={16/9}
+        allowAspectChange={true}
         title="Crop Product Image"
-        description="Crop your product image to the desired size. This will be the main image displayed for your product."
+        description="Adjust the crop area, zoom, and rotation to showcase your product perfectly."
       />
     </>
   )

@@ -1699,8 +1699,9 @@ export default function VendorRegisterPage() {
         imageSrc={productImageToCrop}
         onCropComplete={handleProductCropComplete}
         aspectRatio={16/9}
+        allowAspectChange={true}
         title="Crop Product Image"
-        description="Crop your product image to the desired size. This will be displayed on your vendor profile."
+        description="Adjust the crop area, zoom, and rotation to showcase your product perfectly."
       />
 
       {step === 6 && (
