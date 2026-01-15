@@ -215,17 +215,19 @@ export function ImageCropModal({
           </div>
         </div>
 
-        <DialogFooter className="gap-2">
+        <DialogFooter className="flex flex-row gap-2 sm:gap-2">
           <Button
             variant="outline"
             onClick={handleCancel}
             disabled={isProcessing}
+            className="flex-1"
           >
             Cancel
           </Button>
           <Button
             onClick={handleSave}
             disabled={isProcessing}
+            className="flex-1"
           >
             {isProcessing ? (
               <>
@@ -233,7 +235,7 @@ export function ImageCropModal({
                 Processing...
               </>
             ) : (
-              'Save & Upload'
+              'Save'
             )}
           </Button>
         </DialogFooter>
