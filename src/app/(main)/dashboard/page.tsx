@@ -268,10 +268,10 @@ export default function VendorDashboardPage() {
             {/* Welcome Message */}
             <div className="text-center space-y-3 animate-in fade-in-50 slide-in-from-bottom-4 duration-700 delay-200">
               <h3 className="text-2xl font-bold text-gray-900">
-                Welcome to Burpp! 🎉
+                You're all set.
               </h3>
               <p className="text-base text-gray-600 max-w-md">
-                Your vendor account has been created successfully. Take a moment to explore your dashboard and continue updating your profile to attract more clients.
+                Burpp is currently onboarding vendors only. We'll notify you as soon as the platform goes live for users.
               </p>
             </div>
 
@@ -281,7 +281,7 @@ export default function VendorDashboardPage() {
               className="w-full max-w-xs h-12 text-base font-medium shadow-lg hover:shadow-xl transition-all animate-in fade-in-50 slide-in-from-bottom-4 duration-700 delay-400"
               size="lg"
             >
-              Explore Dashboard
+              View Profile
             </Button>
           </div>
         </DialogContent>

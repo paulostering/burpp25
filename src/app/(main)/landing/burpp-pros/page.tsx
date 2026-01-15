@@ -135,6 +135,9 @@ export default function BurppProsLandingPage() {
               <Card className="border border-gray-200 shadow-none">
                 <CardContent className="p-6 space-y-6">
                   <div className="space-y-2">
+                    <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
+                      Always Free. No Credit Card Required
+                    </p>
                     <h2 className="text-2xl font-semibold">Claim your free profile</h2>
                     <p className="text-gray-600">
                       Choose the name clients know you by and pick the category that best matches your service. You can always edit it later.
