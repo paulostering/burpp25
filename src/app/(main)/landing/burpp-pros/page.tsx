@@ -8,7 +8,8 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { MultiSelect, type Option } from '@/components/ui/multi-select'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { ArrowRight, Quote } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { ArrowRight, Quote, HelpCircle } from 'lucide-react'
 import Image from 'next/image'
 import type { Category } from '@/types/db'
 
@@ -144,7 +145,19 @@ export default function BurppProsLandingPage() {
                     </p>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="business">Business Name *</Label>
+                    <div className="flex items-center gap-1.5">
+                      <Label htmlFor="business">Business Name or Service *</Label>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            <p>This is the name of your business or service that will be displayed to the Burpp community.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                     <Input 
                       id="business" 
                       value={businessName} 
