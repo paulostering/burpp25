@@ -235,13 +235,10 @@ export function AdminVendorProfileManager({ vendor, stats: _stats, categories, o
   }
 
   const handleImageUpload = async (file: File, type: 'profile' | 'cover') => {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      setImageToCrop(e.target?.result as string)
-      setCropType(type)
-      setCropModalOpen(true)
-    }
-    reader.readAsDataURL(file)
+    const url = URL.createObjectURL(file)
+    setImageToCrop(url)
+    setCropType(type)
+    setCropModalOpen(true)
   }
 
   const handlePhotoInputChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'profile' | 'cover') => {

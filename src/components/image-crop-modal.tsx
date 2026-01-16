@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import Cropper from 'react-easy-crop'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -42,8 +42,22 @@ export function ImageCropModal({
   const [rotation, setRotation] = useState(0)
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<CropArea | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [isImageLoading, setIsImageLoading] = useState(true)
   const [currentAspect, setCurrentAspect] = useState<number | undefined>(aspectRatio)
   const [aspectMode, setAspectMode] = useState<string>('default')
+
+  // Sync aspect ratio when prop changes or modal opens
+  useEffect(() => {
+    if (open) {
+      setCurrentAspect(aspectRatio)
+      setAspectMode('default')
+      setIsImageLoading(true)
+      // Reset crop/zoom on open
+      setCrop({ x: 0, y: 0 })
+      setZoom(1)
+      setRotation(0)
+    }
+  }, [open, aspectRatio])
 
   const onCropChange = useCallback((newCrop: { x: number; y: number }) => {
     setCrop(newCrop)
@@ -197,6 +211,14 @@ export function ImageCropModal({
 
         {/* Crop Area */}
         <div className="relative h-[400px] bg-gray-100 rounded-lg overflow-hidden">
+          {isImageLoading && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-gray-100/50 backdrop-blur-sm">
+              <div className="flex flex-col items-center gap-2">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="text-sm text-gray-500 font-medium">Loading photo...</p>
+              </div>
+            </div>
+          )}
           <Cropper
             image={imageSrc}
             crop={crop}
@@ -206,6 +228,7 @@ export function ImageCropModal({
             onCropChange={onCropChange}
             onZoomChange={onZoomChange}
             onCropComplete={onCropCompleteCallback}
+            onMediaLoaded={() => setIsImageLoading(false)}
             objectFit="contain"
             showGrid={false}
             classes={{

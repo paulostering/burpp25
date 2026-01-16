@@ -169,12 +169,9 @@ export function UserProfileManager({ userProfile, onProfileUpdate }: UserProfile
         return
       }
 
-      const reader = new FileReader()
-      reader.onload = () => {
-        setImageToCrop(reader.result as string)
-        setCropModalOpen(true)
-      }
-      reader.readAsDataURL(file)
+      const url = URL.createObjectURL(file)
+      setImageToCrop(url)
+      setCropModalOpen(true)
     }
     e.target.value = ''
   }

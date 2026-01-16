@@ -261,17 +261,23 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
       }
 
       // Create preview URL and open crop modal
-      const reader = new FileReader()
-      reader.onload = () => {
-        setImageToCrop(reader.result as string)
-        setCropType(type)
-        setCropModalOpen(true)
-      }
-      reader.readAsDataURL(file)
+      const url = URL.createObjectURL(file)
+      setImageToCrop(url)
+      setCropType(type)
+      setCropModalOpen(true)
     }
     // Reset input value to allow uploading the same file again
     e.target.value = ''
   }
+
+  // Cleanup object URLs to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (imageToCrop && imageToCrop.startsWith('blob:')) {
+        URL.revokeObjectURL(imageToCrop)
+      }
+    }
+  }, [imageToCrop])
 
   const handleCroppedImageUpload = async (croppedBlob: Blob) => {
     setUploadingPhoto(cropType)
