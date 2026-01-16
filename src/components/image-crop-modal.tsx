@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
 import { ZoomIn, ZoomOut, RotateCw, Loader2, RotateCcw } from 'lucide-react'
 
 interface ImageCropModalProps {
@@ -43,7 +42,6 @@ export function ImageCropModal({
   const [rotation, setRotation] = useState(0)
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<CropArea | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
-  const [showGrid, setShowGrid] = useState(true)
   const [currentAspect, setCurrentAspect] = useState<number | undefined>(aspectRatio)
   const [aspectMode, setAspectMode] = useState<string>('default')
 
@@ -170,9 +168,6 @@ export function ImageCropModal({
       case '4:3':
         setCurrentAspect(4 / 3)
         break
-      case '2.5:1':
-        setCurrentAspect(2.5)
-        break
       case 'free':
         setCurrentAspect(undefined)
         break
@@ -212,7 +207,7 @@ export function ImageCropModal({
             onZoomChange={onZoomChange}
             onCropComplete={onCropCompleteCallback}
             objectFit="contain"
-            showGrid={showGrid}
+            showGrid={false}
             classes={{
               containerClassName: 'rounded-lg',
               cropAreaClassName: 'border-2 border-white shadow-lg'
@@ -222,8 +217,8 @@ export function ImageCropModal({
 
         {/* Controls */}
         <div className="space-y-4 pt-4">
-          {/* Aspect Ratio & Grid Toggle Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Aspect Ratio Row */}
+          <div className="grid grid-cols-1 gap-4">
             {/* Aspect Ratio Selector */}
             {allowAspectChange && (
               <div className="space-y-2">
@@ -237,24 +232,11 @@ export function ImageCropModal({
                     <SelectItem value="1:1">Square (1:1)</SelectItem>
                     <SelectItem value="16:9">Landscape (16:9)</SelectItem>
                     <SelectItem value="4:3">Standard (4:3)</SelectItem>
-                    <SelectItem value="2.5:1">Wide (2.5:1)</SelectItem>
                     <SelectItem value="free">Free Crop</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             )}
-            
-            {/* Grid Toggle */}
-            <div className="flex items-center justify-between space-x-2">
-              <Label htmlFor="grid-toggle" className="text-sm text-gray-600 cursor-pointer">
-                Show Grid
-              </Label>
-              <Switch
-                id="grid-toggle"
-                checked={showGrid}
-                onCheckedChange={setShowGrid}
-              />
-            </div>
           </div>
 
           {/* Zoom Control */}
