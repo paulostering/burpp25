@@ -31,7 +31,7 @@ export default function LandingLayout({
           </Link>
 
           <div className="flex items-center gap-2 md:gap-3">
-            {user ? (
+            {user && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -39,15 +39,6 @@ export default function LandingLayout({
                 onClick={() => router.push('/vendor/dashboard')}
               >
                 Dashboard
-              </Button>
-            ) : (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-base border border-gray-300 px-6 whitespace-nowrap"
-                onClick={() => router.push('/login')}
-              >
-                Login
               </Button>
             )}
             <Button
