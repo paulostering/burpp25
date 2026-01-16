@@ -1886,20 +1886,20 @@ export default function VendorRegisterPage() {
                 }}
               />
               <div className="flex-1">
-                <Label 
+                <label 
                   htmlFor="agreeToTerms" 
-                  className="text-sm font-normal cursor-pointer leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 pt-0.5"
+                  className="text-sm font-normal cursor-pointer leading-relaxed peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
                   I agree to the{' '}
-                  <a href="/terms" target="_blank" className="text-primary hover:underline">
+                  <a href="/terms" target="_blank">
                     Terms of Service
                   </a>
                   {' '}and{' '}
-                  <a href="/privacy" target="_blank" className="text-primary hover:underline">
+                  <a href="/privacy" target="_blank">
                     Privacy Policy
                   </a>
                   {' '}*
-                </Label>
+                </label>
                 {errors.agree_to_terms && (
                   <p className="text-sm text-red-500 mt-1">{errors.agree_to_terms}</p>
                 )}
