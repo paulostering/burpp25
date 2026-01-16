@@ -1027,7 +1027,7 @@ export function AdminVendorProfileManager({ vendor, stats: _stats, categories, o
         onOpenChange={setCropModalOpen}
         imageSrc={imageToCrop}
         onCropComplete={handleCroppedImage}
-        aspectRatio={cropType === 'profile' ? 1 : 16 / 9}
+        aspectRatio={cropType === 'profile' ? 1 : 446 / 192}
       />
     </div>
   )

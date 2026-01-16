@@ -1704,7 +1704,7 @@ export default function VendorRegisterPage() {
         }}
         imageSrc={cropType === 'profile' ? (profilePhotoUrl || '') : (coverPhotoUrl || '')}
         onCropComplete={handleCropComplete}
-        aspectRatio={cropType === 'profile' ? 1 : 16 / 9}
+        aspectRatio={cropType === 'profile' ? 1 : 446 / 192}
         title={`Crop ${cropType === 'profile' ? 'Profile' : 'Cover'} Photo`}
         description={`Crop your ${cropType} photo to the desired size. This will be displayed on your vendor profile.`}
       />

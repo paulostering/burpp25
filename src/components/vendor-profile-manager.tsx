@@ -870,7 +870,7 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
         onOpenChange={setCropModalOpen}
         imageSrc={imageToCrop}
         onCropComplete={handleCroppedImageUpload}
-        aspectRatio={cropType === 'profile' ? 1 : 16 / 9}
+        aspectRatio={cropType === 'profile' ? 1 : 446 / 192}
         title={cropType === 'profile' ? 'Crop Profile Photo' : 'Crop Cover Photo'}
         description={
           cropType === 'profile'
