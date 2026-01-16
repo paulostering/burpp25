@@ -10,7 +10,7 @@ export default async function LoginPage() {
   const { data: { user } } = await supabase.auth.getUser()
   
   if (user) {
-    // Check user role
+    // ... existing logic ...
     const { data: profile } = await supabase
       .from('user_profiles')
       .select('role, is_active')
@@ -27,6 +27,24 @@ export default async function LoginPage() {
       redirect('/')
     }
   }
+
+  // Fetch registration setting
+  const { data: regSetting } = await supabase
+    .from('app_settings')
+    .select('setting_value')
+    .eq('setting_key', 'user_registration_enabled')
+    .single()
+
+  let registrationEnabled = true
+  if (regSetting) {
+    const value = regSetting.setting_value
+    if (typeof value === 'boolean') {
+      registrationEnabled = value
+    } else if (typeof value === 'string') {
+      registrationEnabled = value.toLowerCase().replace(/"/g, '') === 'true'
+    }
+  }
+
   return (
     <div className="grid min-h-svh lg:grid-cols-2">
       <div className="flex flex-col gap-4 p-6 md:p-10">
@@ -45,7 +63,7 @@ export default async function LoginPage() {
         </div>
         <div className="flex flex-1 items-center justify-center">
           <div className="w-full max-w-xs">
-            <LoginForm />
+            <LoginForm registrationEnabled={registrationEnabled} />
           </div>
         </div>
       </div>
