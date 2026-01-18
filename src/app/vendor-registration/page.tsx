@@ -1624,11 +1624,22 @@ export default function VendorRegisterPage() {
                     <div className="space-y-2">
                       <Label>Product Image (optional)</Label>
                       {product.imageUrl ? (
-                        <div className="relative h-56 border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
+                        <div className="relative h-56 border border-gray-200 rounded-lg overflow-hidden bg-white">
                           <img
                             src={product.imageUrl}
                             alt="Product preview"
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-contain"
+                            onError={(e) => {
+                              console.error('❌ Product image failed to load:', {
+                                src: product.imageUrl,
+                                productIndex: index
+                              })
+                              // Fallback to gray background on error
+                              e.currentTarget.style.display = 'none'
+                            }}
+                            onLoad={() => {
+                              console.error('✅ Product image loaded successfully')
+                            }}
                           />
                           {/* Action buttons in top right corner */}
                           <div className="absolute top-3 right-3 flex gap-2">
@@ -1830,11 +1841,21 @@ export default function VendorRegisterPage() {
             <div className="relative">
               {/* Cover Photo */}
               <div className="h-48 bg-gradient-to-r from-primary to-primary/60 relative">
-                {coverPhotoFile ? (
+                {coverPhotoFile && coverPhotoUrl ? (
                   <img
-                    src={coverPhotoUrl || ''}
+                    src={coverPhotoUrl}
                     alt="Cover preview"
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      console.error('❌ Cover photo failed to load:', {
+                        src: coverPhotoUrl,
+                        hasFile: !!coverPhotoFile
+                      })
+                      e.currentTarget.style.display = 'none'
+                    }}
+                    onLoad={() => {
+                      console.error('✅ Cover photo loaded successfully')
+                    }}
                   />
                 ) : null}
                 <Button
@@ -1875,6 +1896,16 @@ export default function VendorRegisterPage() {
                         src={profilePhotoUrl}
                         alt="Profile preview"
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          console.error('❌ Profile photo failed to load:', {
+                            src: profilePhotoUrl,
+                            hasFile: !!profilePhotoFile
+                          })
+                          e.currentTarget.style.display = 'none'
+                        }}
+                        onLoad={() => {
+                          console.error('✅ Profile photo loaded successfully')
+                        }}
                       />
                     ) : (
                       <span className="text-lg font-semibold text-gray-600">
