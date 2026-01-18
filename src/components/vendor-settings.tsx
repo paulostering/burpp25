@@ -128,8 +128,8 @@ export function VendorSettings({ vendor }: VendorSettingsProps) {
         .eq('id', vendor.id)
 
       if (profileError) throw profileError
-      
-      toast.success('Account information updated successfully')
+
+        toast.success('Account information updated successfully')
     } catch (error) {
       console.error('Error updating account info:', error)
       

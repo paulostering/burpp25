@@ -667,8 +667,14 @@ export default function VendorRegisterPage() {
   }
 
   const handleCropComplete = async (croppedBlob: Blob) => {
+    console.error('🖼️ Crop complete for type:', cropType, {
+      blobSize: croppedBlob.size,
+      blobType: croppedBlob.type
+    })
+    
     // Create preview URL from cropped blob
     const previewUrl = URL.createObjectURL(croppedBlob)
+    console.error('📎 Preview URL created:', previewUrl)
     
     // Store the cropped blob for later upload during submission
     if (cropType === 'profile') {
@@ -678,6 +684,7 @@ export default function VendorRegisterPage() {
       setTimeout(() => {
         setProfilePhotoFile(file)
         setProfilePhotoUrl(previewUrl)
+        console.error('✅ Profile photo state updated')
       }, 100)
     } else {
       const file = new File([croppedBlob], 'cover.jpg', { type: 'image/jpeg' })
@@ -685,6 +692,7 @@ export default function VendorRegisterPage() {
       setTimeout(() => {
         setCoverPhotoFile(file)
         setCoverPhotoUrl(previewUrl)
+        console.error('✅ Cover photo state updated')
       }, 100)
     }
     setCropModalOpen(false)
@@ -703,13 +711,26 @@ export default function VendorRegisterPage() {
   }
 
   const handleProductCropComplete = async (croppedBlob: Blob) => {
-    if (currentProductImageIndex === null) return
+    if (currentProductImageIndex === null) {
+      console.error('⚠️ handleProductCropComplete called but no product index set')
+      return
+    }
+
+    console.error('🖼️ Product crop complete:', {
+      productIndex: currentProductImageIndex,
+      blobSize: croppedBlob.size,
+      blobType: croppedBlob.type
+    })
 
     const previewUrl = URL.createObjectURL(croppedBlob)
+    console.error('📎 Product preview URL created:', previewUrl)
+    
     const updated = [...products]
     updated[currentProductImageIndex].croppedImageBlob = croppedBlob
     updated[currentProductImageIndex].imageUrl = previewUrl
     setProducts(updated)
+    
+    console.error('✅ Product state updated, closing modal')
     setProductCropModalOpen(false)
     setCurrentProductImageIndex(null)
   }
@@ -1621,19 +1642,22 @@ export default function VendorRegisterPage() {
                       {product.imageUrl ? (
                         <div className="relative h-56 border border-gray-200 rounded-lg overflow-hidden bg-white">
                           <img
+                            key={product.imageUrl}
                             src={product.imageUrl}
                             alt="Product preview"
                             className="w-full h-full object-contain"
+                            loading="eager"
                             onError={(e) => {
                               console.error('❌ Product image failed to load:', {
                                 src: product.imageUrl,
-                                productIndex: index
+                                productIndex: index,
+                                error: e
                               })
                               // Fallback to gray background on error
                               e.currentTarget.style.display = 'none'
                             }}
                             onLoad={() => {
-                              console.error('✅ Product image loaded successfully')
+                              console.error('✅ Product image loaded successfully for index:', index)
                             }}
                           />
                           {/* Action buttons in top right corner */}
@@ -1838,13 +1862,16 @@ export default function VendorRegisterPage() {
               <div className="h-48 bg-gradient-to-r from-primary to-primary/60 relative">
                 {coverPhotoFile && coverPhotoUrl ? (
                   <img
+                    key={coverPhotoUrl}
                     src={coverPhotoUrl}
                     alt="Cover preview"
                     className="w-full h-full object-cover"
+                    loading="eager"
                     onError={(e) => {
                       console.error('❌ Cover photo failed to load:', {
                         src: coverPhotoUrl,
-                        hasFile: !!coverPhotoFile
+                        hasFile: !!coverPhotoFile,
+                        error: e
                       })
                       e.currentTarget.style.display = 'none'
                     }}
@@ -1888,13 +1915,16 @@ export default function VendorRegisterPage() {
                   >
                     {profilePhotoFile && profilePhotoUrl ? (
                       <img
+                        key={profilePhotoUrl}
                         src={profilePhotoUrl}
                         alt="Profile preview"
                         className="w-full h-full object-cover"
+                        loading="eager"
                         onError={(e) => {
                           console.error('❌ Profile photo failed to load:', {
                             src: profilePhotoUrl,
-                            hasFile: !!profilePhotoFile
+                            hasFile: !!profilePhotoFile,
+                            error: e
                           })
                           e.currentTarget.style.display = 'none'
                         }}
