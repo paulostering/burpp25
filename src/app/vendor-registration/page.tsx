@@ -1572,7 +1572,78 @@ export default function VendorRegisterPage() {
 
                     <div className="space-y-2">
                       <Label>Product Image (optional)</Label>
-                      <div className="flex items-center gap-3">
+                      {product.imageUrl ? (
+                        <div className="space-y-3">
+                          <div className="relative h-56 border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
+                            <img
+                              src={product.imageUrl}
+                              alt="Product preview"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => {
+                                const input = document.createElement('input')
+                                input.type = 'file'
+                                input.accept = 'image/*'
+                                input.onchange = (e) => {
+                                  const file = (e.target as HTMLInputElement).files?.[0]
+                                  if (!file) return
+
+                                  if (!file.type.startsWith('image/')) {
+                                    toast.error('Please select an image file')
+                                    return
+                                  }
+
+                                  if (file.size > 5 * 1024 * 1024) {
+                                    toast.error('Image must be less than 5MB')
+                                    return
+                                  }
+
+                                  // Show loading state
+                                  toast.loading('Preparing image...')
+
+                                  // Create blob URL (faster than FileReader)
+                                  const imageUrl = URL.createObjectURL(file)
+                                  
+                                  // Set state
+                                  setCurrentProductImageIndex(index)
+                                  setProductImageToCrop(imageUrl)
+                                  
+                                  // Use setTimeout to ensure state is set before opening modal
+                                  setTimeout(() => {
+                                    setProductCropModalOpen(true)
+                                    toast.dismiss()
+                                  }, 100)
+                                }
+                                input.click()
+                              }}
+                              className="flex-1"
+                            >
+                              <Camera className="h-4 w-4 mr-2" />
+                              Change Image
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const updated = [...products]
+                                updated[index].imageUrl = null
+                                updated[index].imageFile = null
+                                updated[index].croppedImageBlob = null
+                                setProducts(updated)
+                              }}
+                              className="text-red-600"
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
                         <Button
                           type="button"
                           variant="outline"
@@ -1612,36 +1683,11 @@ export default function VendorRegisterPage() {
                             }
                             input.click()
                           }}
+                          className="w-full"
                         >
                           <Camera className="h-4 w-4 mr-2" />
-                          {product.imageUrl ? 'Change Image' : 'Upload Image'}
+                          Upload Image
                         </Button>
-                        {product.imageUrl && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              const updated = [...products]
-                              updated[index].imageUrl = null
-                              updated[index].imageFile = null
-                              updated[index].croppedImageBlob = null
-                              setProducts(updated)
-                            }}
-                            className="text-red-600"
-                          >
-                            Remove
-                          </Button>
-                        )}
-                      </div>
-                      {product.imageUrl && (
-                        <div className="relative h-48 border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
-                          <img
-                            src={product.imageUrl}
-                            alt="Product preview"
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
                       )}
                     </div>
                   </div>
