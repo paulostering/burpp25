@@ -91,7 +91,13 @@ export function MultiSelect({
         className
       )}
       disabled={disabled}
-      onClick={() => setOpen(!open)}
+      onClick={() => {
+        // Blur any active input to close keyboard on mobile
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur()
+        }
+        setOpen(!open)
+      }}
     >
       <div className="flex gap-1 flex-wrap">
         {selected.length === 0 && (
