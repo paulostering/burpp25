@@ -827,7 +827,7 @@ export default function VendorRegisterPage() {
           if (upErr) {
             console.error('Profile photo upload error:', {
               message: upErr.message,
-              statusCode: upErr.statusCode,
+              name: upErr.name,
               error: upErr
             })
             toast.error(`Profile photo upload failed: ${upErr.message}`)
@@ -857,7 +857,7 @@ export default function VendorRegisterPage() {
           if (upErr) {
             console.error('Cover photo upload error:', {
               message: upErr.message,
-              statusCode: upErr.statusCode,
+              name: upErr.name,
               error: upErr
             })
             toast.error(`Cover photo upload failed: ${upErr.message}`)
@@ -1007,7 +1007,7 @@ export default function VendorRegisterPage() {
                 if (uploadError) {
                   console.error('Product image upload error:', {
                     message: uploadError.message,
-                    statusCode: uploadError.statusCode,
+                    name: uploadError.name,
                     error: uploadError,
                     productTitle: product.title
                   })
