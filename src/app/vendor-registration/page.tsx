@@ -1969,7 +1969,7 @@ export default function VendorRegisterPage() {
                 htmlFor="allowPhoneContact" 
                 className="text-sm font-normal cursor-pointer leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 pt-0.5"
               >
-                Allow customers to call my phone number
+                (Recommended) Allow customers to call my phone number
               </Label>
             </div>
             
