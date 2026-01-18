@@ -69,7 +69,7 @@ export default function BurppProsLandingPage() {
                 </Button>
                 
                 <p className="text-sm italic text-muted-foreground">
-                  Always Free. No Credit Card Required
+                  No Credit Card Required
                 </p>
               </div>
             </div>
