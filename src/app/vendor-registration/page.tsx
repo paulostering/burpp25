@@ -1474,10 +1474,10 @@ export default function VendorRegisterPage() {
               {products.map((product, index) => (
                 <div key={index} className="border border-gray-200 rounded-lg p-6 space-y-4">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-semibold">Product {index + 1}</h3>
+                    <h3 className="font-semibold">Add a Product Offering</h3>
                     {products.length > 0 && (
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
                         onClick={() => {
                           setProducts(products.filter((_, i) => i !== index))
@@ -1487,7 +1487,7 @@ export default function VendorRegisterPage() {
                             setEditingProductIndex(editingProductIndex - 1)
                           }
                         }}
-                        className="text-red-600 hover:text-red-700"
+                        className="h-8 px-3 text-xs border-red-600 text-red-600 hover:bg-red-50 hover:text-red-700"
                       >
                         Remove
                       </Button>
@@ -1573,18 +1573,18 @@ export default function VendorRegisterPage() {
                     <div className="space-y-2">
                       <Label>Product Image (optional)</Label>
                       {product.imageUrl ? (
-                        <div className="space-y-3">
-                          <div className="relative h-56 border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
-                            <img
-                              src={product.imageUrl}
-                              alt="Product preview"
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                          <div className="flex items-center gap-3">
+                        <div className="relative h-56 border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
+                          <img
+                            src={product.imageUrl}
+                            alt="Product preview"
+                            className="w-full h-full object-cover"
+                          />
+                          {/* Action buttons in top right corner */}
+                          <div className="absolute top-3 right-3 flex gap-2">
                             <Button
                               type="button"
-                              variant="outline"
+                              variant="secondary"
+                              size="sm"
                               onClick={() => {
                                 const input = document.createElement('input')
                                 input.type = 'file'
@@ -1621,14 +1621,14 @@ export default function VendorRegisterPage() {
                                 }
                                 input.click()
                               }}
-                              className="flex-1"
+                              className="h-8 px-3 text-xs bg-white/95 hover:bg-white shadow-md"
                             >
-                              <Camera className="h-4 w-4 mr-2" />
-                              Change Image
+                              <Camera className="h-3 w-3 mr-1" />
+                              Change
                             </Button>
                             <Button
                               type="button"
-                              variant="ghost"
+                              variant="secondary"
                               size="sm"
                               onClick={() => {
                                 const updated = [...products]
@@ -1637,8 +1637,9 @@ export default function VendorRegisterPage() {
                                 updated[index].croppedImageBlob = null
                                 setProducts(updated)
                               }}
-                              className="text-red-600"
+                              className="h-8 px-3 text-xs bg-white/95 hover:bg-white shadow-md text-red-600 hover:text-red-700"
                             >
+                              <X className="h-3 w-3 mr-1" />
                               Remove
                             </Button>
                           </div>
