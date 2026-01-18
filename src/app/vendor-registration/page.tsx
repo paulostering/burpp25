@@ -2034,11 +2034,11 @@ export default function VendorRegisterPage() {
                   className="text-sm font-normal cursor-pointer leading-relaxed peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
                   I agree to the{' '}
-                  <a href="/terms" target="_blank">
+                  <a href="/terms" target="_blank" className="text-primary font-bold">
                     Terms of Service
                   </a>
                   {' '}and{' '}
-                  <a href="/privacy" target="_blank">
+                  <a href="/privacy" target="_blank" className="text-primary font-bold">
                     Privacy Policy
                   </a>
                   {' '}*
