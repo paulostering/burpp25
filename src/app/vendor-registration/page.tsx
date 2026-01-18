@@ -566,6 +566,9 @@ export default function VendorRegisterPage() {
       return
     }
 
+    // Show loading state
+    toast.loading('Preparing image...')
+
     // Set the appropriate state based on type
     if (type === 'profile') {
       setProfilePhotoFile(file)
@@ -582,7 +585,12 @@ export default function VendorRegisterPage() {
     }
     
     setCropType(type)
-    setCropModalOpen(true)
+    
+    // Use setTimeout to ensure state is set before opening modal
+    setTimeout(() => {
+      setCropModalOpen(true)
+      toast.dismiss()
+    }, 100)
   }
 
   const handleCropComplete = async (croppedBlob: Blob) => {
@@ -1501,18 +1509,21 @@ export default function VendorRegisterPage() {
                                 return
                               }
 
-                              const reader = new FileReader()
-                              reader.onloadend = () => {
-                                const imageUrl = reader.result as string
-                                // Set state in the correct order to ensure modal opens
-                                setCurrentProductImageIndex(index)
-                                setProductImageToCrop(imageUrl)
-                                // Use setTimeout to ensure state is set before opening modal
-                                setTimeout(() => {
-                                  setProductCropModalOpen(true)
-                                }, 0)
-                              }
-                              reader.readAsDataURL(file)
+                              // Show loading state
+                              toast.loading('Preparing image...')
+
+                              // Create blob URL (faster than FileReader)
+                              const imageUrl = URL.createObjectURL(file)
+                              
+                              // Set state
+                              setCurrentProductImageIndex(index)
+                              setProductImageToCrop(imageUrl)
+                              
+                              // Use setTimeout to ensure state is set before opening modal
+                              setTimeout(() => {
+                                setProductCropModalOpen(true)
+                                toast.dismiss()
+                              }, 100)
                             }
                             input.click()
                           }}

@@ -169,9 +169,18 @@ export function UserProfileManager({ userProfile, onProfileUpdate }: UserProfile
         return
       }
 
+      // Show loading state
+      toast.loading('Preparing image...')
+
+      // Create blob URL
       const url = URL.createObjectURL(file)
       setImageToCrop(url)
-      setCropModalOpen(true)
+      
+      // Use setTimeout to ensure state is set before opening modal
+      setTimeout(() => {
+        setCropModalOpen(true)
+        toast.dismiss()
+      }, 100)
     }
     e.target.value = ''
   }

@@ -260,24 +260,25 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
         return
       }
 
-      // Create preview URL and open crop modal
+      // Show loading state
+      toast.loading('Preparing image...')
+
+      // Create blob URL
       const url = URL.createObjectURL(file)
-      setImageToCrop(url)
+      
+      // Set state and open modal after a brief delay to ensure state updates complete
       setCropType(type)
-      setCropModalOpen(true)
+      setImageToCrop(url)
+      
+      // Use setTimeout to ensure state is set before opening modal
+      setTimeout(() => {
+        setCropModalOpen(true)
+        toast.dismiss()
+      }, 100)
     }
     // Reset input value to allow uploading the same file again
     e.target.value = ''
   }
-
-  // Cleanup object URLs to prevent memory leaks
-  useEffect(() => {
-    return () => {
-      if (imageToCrop && imageToCrop.startsWith('blob:')) {
-        URL.revokeObjectURL(imageToCrop)
-      }
-    }
-  }, [imageToCrop])
 
   const handleCroppedImageUpload = async (croppedBlob: Blob) => {
     setUploadingPhoto(cropType)

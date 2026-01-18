@@ -69,25 +69,25 @@ export function VendorProductForm({ vendorId, productId, initialData }: VendorPr
 
     setSelectedFile(file)
     
-    // Create preview URL and open crop modal
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      const imageUrl = reader.result as string
-      setImageToCrop(imageUrl)
+    // Show loading state
+    toast.loading('Preparing image...')
+    
+    // Create preview URL using blob (faster than FileReader)
+    const imageUrl = URL.createObjectURL(file)
+    setImageToCrop(imageUrl)
+    
+    // Use setTimeout to ensure state is set before opening modal
+    setTimeout(() => {
       setCropModalOpen(true)
-    }
-    reader.readAsDataURL(file)
+      toast.dismiss()
+    }, 100)
   }
 
   const handleCropComplete = async (croppedBlob: Blob) => {
-    // Convert blob to data URL for preview
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      const dataUrl = reader.result as string
-      setCroppedImageUrl(dataUrl)
-      setPreviewUrl(dataUrl)
-    }
-    reader.readAsDataURL(croppedBlob)
+    // Convert blob to URL for preview (faster than FileReader)
+    const dataUrl = URL.createObjectURL(croppedBlob)
+    setCroppedImageUrl(dataUrl)
+    setPreviewUrl(dataUrl)
     setCropModalOpen(false)
   }
 

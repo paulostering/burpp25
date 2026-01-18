@@ -235,10 +235,18 @@ export function AdminVendorProfileManager({ vendor, stats: _stats, categories, o
   }
 
   const handleImageUpload = async (file: File, type: 'profile' | 'cover') => {
+    // Show loading state
+    toast.loading('Preparing image...')
+    
     const url = URL.createObjectURL(file)
-    setImageToCrop(url)
     setCropType(type)
-    setCropModalOpen(true)
+    setImageToCrop(url)
+    
+    // Use setTimeout to ensure state is set before opening modal
+    setTimeout(() => {
+      setCropModalOpen(true)
+      toast.dismiss()
+    }, 100)
   }
 
   const handlePhotoInputChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'profile' | 'cover') => {
