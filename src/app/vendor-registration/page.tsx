@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Switch } from '@/components/ui/switch'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import type { VendorProfile } from '@/types/db'
@@ -49,11 +50,11 @@ const step3Schema = z.object({
 )
 
 const step5Schema = z.object({
-  first_name: z.string().min(1, 'Required'),
-  last_name: z.string().min(1, 'Required'),
-  email: z.string().email('Invalid email'),
-  phone_number: z.string().optional(),
-  password: z.string().min(6, 'Min 6 characters'),
+  first_name: z.string().min(1, 'Required').max(50, 'First name must be 50 characters or less'),
+  last_name: z.string().min(1, 'Required').max(50, 'Last name must be 50 characters or less'),
+  email: z.string().email('Invalid email').max(100, 'Email must be 100 characters or less'),
+  phone_number: z.string().max(20, 'Phone number must be 20 characters or less').optional(),
+  password: z.string().min(6, 'Min 6 characters').max(100, 'Password must be 100 characters or less'),
   confirmPassword: z.string().min(6, 'Please confirm your password'),
   allow_phone_contact: z.boolean().optional(),
   agree_to_terms: z.boolean(),
@@ -92,8 +93,11 @@ export default function VendorRegisterPage() {
   const [isGeneratingDescription, setIsGeneratingDescription] = useState(false)
 
   const [offersVirtual, setOffersVirtual] = useState<boolean>(true)
-  const [offersInPerson, setOffersInPerson] = useState<boolean>(true)
+  const [offersInPerson] = useState<boolean>(true) // Always true
   const [zipCode, setZipCode] = useState('')
+  const [locationQuery, setLocationQuery] = useState('')
+  const [locationSuggestions, setLocationSuggestions] = useState<any[]>([])
+  const [isLocationDropdownOpen, setIsLocationDropdownOpen] = useState(false)
   const [radius, setRadius] = useState<number | undefined>(25)
   const [hourlyRate, setHourlyRate] = useState<number | undefined>(undefined)
   const [hourlyRateInput, setHourlyRateInput] = useState<string>('')
@@ -171,6 +175,21 @@ export default function VendorRegisterPage() {
     }
   }, [])
 
+  // Close location dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement
+      if (!target.closest('#location') && !target.closest('[data-location-dropdown]')) {
+        setIsLocationDropdownOpen(false)
+      }
+    }
+
+    if (isLocationDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isLocationDropdownOpen])
+
   const validateStep = () => {
     const newErrors: Record<string, string> = {}
     
@@ -201,27 +220,17 @@ export default function VendorRegisterPage() {
     }
     
     if (step === 3) {
-      // Custom validation for hourly rate to provide better error message
-      if (!hourlyRate || hourlyRate < 1) {
-        if (!hourlyRate) {
-          newErrors.hourly_rate = 'Please enter your starting hourly rate'
-        } else if (hourlyRate < 1) {
-          newErrors.hourly_rate = 'Hourly rate must be at least $1.00'
-        }
-      }
-      
+      // Validate service area (no hourly rate here anymore)
       const res = step3Schema.safeParse({
         offers_virtual_services: offersVirtual,
         offers_in_person_services: offersInPerson,
         zip_code: zipCode || undefined,
         service_radius: radius,
-        hourly_rate: hourlyRate || 0, // Pass 0 if undefined to avoid type error
+        hourly_rate: hourlyRate || 0, // Pass dummy value since it's optional in schema
       })
       if (!res.success) {
         res.error.issues.forEach(issue => {
-          if (issue.path[0] === 'hourly_rate' && !newErrors.hourly_rate) {
-            newErrors.hourly_rate = issue.message
-          } else if (issue.path[0] === 'zip_code') {
+          if (issue.path[0] === 'zip_code') {
             newErrors.zip_code = issue.message
           } else if (issue.path[0] === 'service_radius') {
             newErrors.service_radius = issue.message
@@ -234,6 +243,17 @@ export default function VendorRegisterPage() {
     }
 
     if (step === 4) {
+      // Custom validation for hourly rate
+      if (!hourlyRate || hourlyRate < 1) {
+        if (!hourlyRate) {
+          newErrors.hourly_rate = 'Please enter your starting hourly rate'
+        } else if (hourlyRate < 1) {
+          newErrors.hourly_rate = 'Hourly rate must be at least $1.00'
+        }
+      }
+    }
+
+    if (step === 5) {
       // Validate products - if any products exist, they must have title and description
       const newProductErrors: Record<number, { title?: string; description?: string }> = {}
       let hasProductErrors = false
@@ -495,7 +515,7 @@ export default function VendorRegisterPage() {
       
       // Use Mapbox geocoding API to get zip code from coordinates
       const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}&types=postcode&limit=1`
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}&types=postcode,place&limit=1`
       )
       
       if (!response.ok) {
@@ -506,13 +526,10 @@ export default function VendorRegisterPage() {
       
       if (data.features && data.features.length > 0) {
         const feature = data.features[0]
-        const zipCode = feature.text || feature.properties?.postcode
-        if (zipCode) {
-          setZipCode(zipCode)
-          toast.success(`Location detected: ${zipCode}`)
-        } else {
-          throw new Error('Could not extract zip code from location')
-        }
+        const placeName = feature.place_name || feature.text
+        setLocationQuery(placeName)
+        setZipCode(feature.text || feature.properties?.postcode || '')
+        toast.success(`Location detected: ${placeName}`)
       } else {
         throw new Error('No location data found')
       }
@@ -521,23 +538,65 @@ export default function VendorRegisterPage() {
       if (error instanceof GeolocationPositionError) {
         switch (error.code) {
           case error.PERMISSION_DENIED:
-            toast.error('Location access denied. Please enable location permissions or enter your zip code manually.')
+            toast.error('Location access denied. Please enable location permissions or enter your location manually.')
             break
           case error.POSITION_UNAVAILABLE:
-            toast.error('Location information unavailable. Please enter your zip code manually.')
+            toast.error('Location information unavailable. Please enter your location manually.')
             break
           case error.TIMEOUT:
-            toast.error('Location request timed out. Please enter your zip code manually.')
+            toast.error('Location request timed out. Please enter your location manually.')
             break
           default:
-            toast.error('Unable to detect your location. Please enter your zip code manually.')
+            toast.error('Unable to detect your location. Please enter your location manually.')
         }
       } else {
-        toast.error('Unable to detect your location. Please enter your zip code manually.')
+        toast.error('Unable to detect your location. Please enter your location manually.')
       }
     } finally {
       setIsGettingLocation(false)
     }
+  }
+
+  const searchLocations = async (query: string) => {
+    if (!query || query.length < 2) {
+      setLocationSuggestions([])
+      return
+    }
+
+    try {
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}&types=place,postcode&country=us&limit=5`
+      )
+      const data = await response.json()
+      setLocationSuggestions(data.features || [])
+    } catch (error) {
+      console.error('Error searching locations:', error)
+      setLocationSuggestions([])
+    }
+  }
+
+  const handleLocationSelect = async (feature: any) => {
+    const placeName = feature.place_name
+    const [lng, lat] = feature.center
+    
+    // Extract zip code from the feature
+    let zipCodeValue = ''
+    if (feature.place_type.includes('postcode')) {
+      zipCodeValue = feature.text
+    } else {
+      // Try to extract zip code from context
+      const postcodeContext = feature.context?.find((c: any) => c.id.startsWith('postcode'))
+      if (postcodeContext) {
+        zipCodeValue = postcodeContext.text
+      }
+    }
+    
+    setLocationQuery(placeName)
+    setZipCode(zipCodeValue || feature.text)
+    setLocationSuggestions([])
+    setIsLocationDropdownOpen(false)
+    
+    toast.success(`Location set: ${placeName}`)
   }
 
   const validateImage = (file: File): string | null => {
@@ -724,12 +783,12 @@ export default function VendorRegisterPage() {
 
       // Create account
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email,
+        email: email.trim(),
         password,
         options: { 
           data: { 
-            first_name: firstName, 
-            last_name: lastName, 
+            first_name: firstName.trim().slice(0, 50), 
+            last_name: lastName.trim().slice(0, 50), 
             role: 'vendor'
           } 
         },
@@ -855,30 +914,42 @@ export default function VendorRegisterPage() {
           allow_phone_contact?: boolean
         } = {
           user_id: uid,
-          business_name: businessName,
+          business_name: businessName.trim().slice(0, 100),
           service_categories: selectedCategoryIds,
-          profile_title: profileTitle,
-          about,
+          profile_title: profileTitle.trim().slice(0, 200),
+          about: about.trim().slice(0, 200),
           offers_virtual_services: offersVirtual,
           offers_in_person_services: offersInPerson,
-          zip_code: zipCode || undefined,
+          zip_code: zipCode ? zipCode.trim().slice(0, 10) : undefined,
           latitude,
           longitude,
           service_radius: radius,
           hourly_rate: hourlyRate,
           profile_photo_url,
           cover_photo_url,
-          first_name: firstName,
-          last_name: lastName,
-          email,
-          phone_number: phone,
+          first_name: firstName.trim().slice(0, 50),
+          last_name: lastName.trim().slice(0, 50),
+          email: email.trim().slice(0, 100),
+          phone_number: phone ? phone.trim().slice(0, 20) : '',
           allow_phone_contact: allowPhoneContact,
           admin_approved: true, // Auto-approve vendors on registration
         }
+        
+        console.log('Attempting to insert vendor profile with payload:', {
+          ...payload,
+          user_id: uid.slice(0, 8) + '...',
+          email: email.slice(0, 20) + '...'
+        })
+        
         const { error: insErr, data: vendorProfile } = await supabase.from('vendor_profiles').insert(payload).select().single()
         if (insErr) {
-          console.error('Profile insertion error:', insErr)
-          toast.error(`Profile creation failed: ${insErr.message}`)
+          console.error('Profile insertion error details:', {
+            message: insErr.message,
+            details: insErr.details,
+            hint: insErr.hint,
+            code: insErr.code
+          })
+          toast.error(`Profile creation failed: ${insErr.message || 'Unknown error'}`)
           return
         }
 
@@ -1039,7 +1110,7 @@ export default function VendorRegisterPage() {
         <div className="flex flex-1 items-center justify-center">
           <div className="w-full max-w-md">
             <div className="mb-6 flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">Step {step} of 6</div>
+              <div className="text-sm text-muted-foreground">Step {step} of 7</div>
             </div>
 
       {step === 1 && (
@@ -1209,8 +1280,138 @@ export default function VendorRegisterPage() {
       {step === 3 && (
         <section className="space-y-6">
           <div>
-            <h2 className="text-2xl font-semibold">Service Area & Rates</h2>
-            <p className="text-muted-foreground">Tell us about your service offerings and pricing.</p>
+            <h2 className="text-2xl font-semibold">Location of your services</h2>
+          </div>
+          
+          {/* ZIP Code / City Input - First Position */}
+          <div className="space-y-2">
+            <Label htmlFor="location">Enter the ZIP code or city for your service area.</Label>
+            <div className="relative">
+              <Input 
+                id="location" 
+                value={locationQuery} 
+                onChange={(e) => {
+                  clearError('zip_code')
+                  const value = e.target.value
+                  setLocationQuery(value)
+                  searchLocations(value)
+                  setIsLocationDropdownOpen(true)
+                }}
+                onFocus={() => {
+                  if (locationSuggestions.length > 0) {
+                    setIsLocationDropdownOpen(true)
+                  }
+                }}
+                placeholder="Enter city or zip code"
+                className={`pr-12 ${errors.zip_code ? 'border-red-500' : ''}`}
+                autoComplete="off"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={getCurrentLocation}
+                disabled={isGettingLocation}
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-100"
+                title="Use current location"
+              >
+                {isGettingLocation ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <MapPin className="h-4 w-4" />
+                )}
+              </Button>
+              
+              {/* Location Suggestions Dropdown */}
+              {isLocationDropdownOpen && locationSuggestions.length > 0 && (
+                <div 
+                  data-location-dropdown
+                  className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto"
+                >
+                  {locationSuggestions.map((suggestion, index) => (
+                    <button
+                      key={suggestion.id}
+                      type="button"
+                      onClick={() => handleLocationSelect(suggestion)}
+                      className="w-full text-left px-4 py-3 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none border-b border-gray-100 last:border-b-0"
+                    >
+                      <div className="flex items-start gap-2">
+                        <MapPin className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-gray-900 truncate">
+                            {suggestion.text}
+                          </div>
+                          <div className="text-xs text-gray-500 truncate">
+                            {suggestion.place_name}
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            {errors.zip_code && (
+              <p className="text-sm text-red-500">{errors.zip_code}</p>
+            )}
+          </div>
+          
+          {/* Travel Distance - Always shown since in-person is always true */}
+          <div className="space-y-2">
+            <Label>How far are you willing to travel to service a client?</Label>
+            <div className="flex flex-wrap gap-2">
+              {[10, 25, 50, 100].map((r) => (
+                <Button 
+                  key={r} 
+                  variant={radius === r ? 'default' : 'outline'} 
+                  size="sm" 
+                  className="text-base font-semibold flex-1 h-9 px-3"
+                  style={{ fontSize: '16px' }}
+                  onClick={() => {
+                    clearError('service_radius')
+                    setRadius(r)
+                  }}
+                >
+                  {r} miles
+                </Button>
+              ))}
+            </div>
+          </div>
+          
+          {/* Virtual Services Switch */}
+          <div className="flex items-center space-x-2">
+            <Switch 
+              id="offersVirtual"
+              checked={offersVirtual}
+              onCheckedChange={(checked) => {
+                setOffersVirtual(checked)
+                clearError('general')
+              }}
+            />
+            <Label 
+              htmlFor="offersVirtual" 
+              className="text-sm font-normal cursor-pointer"
+            >
+              I offer services virtually as well.
+            </Label>
+          </div>
+          {errors.general && (
+            <div className="bg-red-50 border border-red-200 rounded-md p-3">
+              <p className="text-sm text-red-600">{errors.general}</p>
+            </div>
+          )}
+          <div className="flex justify-between gap-2">
+            <Button variant="outline" onClick={back}>Back</Button>
+            <Button onClick={next}>Next</Button>
+          </div>
+        </section>
+      )}
+
+      {step === 4 && (
+        <section className="space-y-6">
+          <div>
+            <h2 className="text-2xl font-semibold">Your Rates</h2>
+            <p className="text-muted-foreground">Tell us about your pricing.</p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="rate">What is the hourly rate for your service? *</Label>
@@ -1228,128 +1429,6 @@ export default function VendorRegisterPage() {
               <p className="text-sm text-red-500">{errors.hourly_rate}</p>
             )}
           </div>
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label>Offers virtual services</Label>
-              <div className="flex gap-2">
-                <Button 
-                  variant={offersVirtual ? 'default' : 'outline'} 
-                  size="sm" 
-                  className="text-base"
-                  style={{ fontFamily: 'Helvetica Neue, sans-serif', fontSize: '16px' }}
-                  onClick={() => {
-                    clearError('general')
-                    setOffersVirtual(true)
-                  }}
-                >
-                  Yes
-                </Button>
-                <Button 
-                  variant={!offersVirtual ? 'default' : 'outline'} 
-                  size="sm" 
-                  className="text-base"
-                  style={{ fontFamily: 'Helvetica Neue, sans-serif', fontSize: '16px' }}
-                  onClick={() => {
-                    clearError('general')
-                    setOffersVirtual(false)
-                  }}
-                >
-                  No
-                </Button>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Offers in-person services</Label>
-              <div className="flex gap-2">
-                <Button 
-                  variant={offersInPerson ? 'default' : 'outline'} 
-                  size="sm" 
-                  className="text-base"
-                  style={{ fontFamily: 'Helvetica Neue, sans-serif', fontSize: '16px' }}
-                  onClick={() => {
-                    clearError('general')
-                    setOffersInPerson(true)
-                  }}
-                >
-                  Yes
-                </Button>
-                <Button 
-                  variant={!offersInPerson ? 'default' : 'outline'} 
-                  size="sm" 
-                  className="text-base"
-                  style={{ fontFamily: 'Helvetica Neue, sans-serif', fontSize: '16px' }}
-                  onClick={() => {
-                    clearError('general')
-                    setOffersInPerson(false)
-                  }}
-                >
-                  No
-                </Button>
-              </div>
-            </div>
-          </div>
-          {offersInPerson && (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="zip">Service zip code *</Label>
-                <div className="relative">
-                  <Input 
-                    id="zip" 
-                    value={zipCode} 
-                    onChange={(e) => {
-                      clearError('zip_code')
-                      setZipCode(e.target.value)
-                    }}
-                    placeholder="Enter zip code"
-                    className={`pr-12 ${errors.zip_code ? 'border-red-500' : ''}`}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={getCurrentLocation}
-                    disabled={isGettingLocation}
-                    className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-100"
-                    title="Use current location"
-                  >
-                    {isGettingLocation ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <MapPin className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-                {errors.zip_code && (
-                  <p className="text-sm text-red-500">{errors.zip_code}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label>Service radius</Label>
-                <div className="flex flex-wrap gap-2">
-                  {[10, 25, 50, 100].map((r) => (
-                    <Button 
-                      key={r} 
-                      variant={radius === r ? 'default' : 'outline'} 
-                      size="sm" 
-                      className="text-base font-semibold"
-                      style={{ fontFamily: 'Helvetica Neue, sans-serif', fontSize: '16px' }}
-                      onClick={() => {
-                        clearError('service_radius')
-                        setRadius(r)
-                      }}
-                    >
-                      {r} miles
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-          {errors.general && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-3">
-              <p className="text-sm text-red-600">{errors.general}</p>
-            </div>
-          )}
           <div className="flex justify-between gap-2">
             <Button variant="outline" onClick={back}>Back</Button>
             <Button onClick={next}>Next</Button>
@@ -1357,7 +1436,7 @@ export default function VendorRegisterPage() {
         </section>
       )}
 
-      {step === 4 && (
+      {step === 5 && (
         <section className="space-y-6">
           <div>
             <h2 className="text-2xl font-semibold">Add Your First Product</h2>
@@ -1595,7 +1674,7 @@ export default function VendorRegisterPage() {
         </section>
       )}
 
-      {step === 5 && (
+      {step === 6 && (
         <section className="space-y-6">
           <div>
             <h2 className="text-2xl font-semibold">Add Profile & Cover Photos</h2>
@@ -1733,7 +1812,7 @@ export default function VendorRegisterPage() {
         title="Crop Image"
       />
 
-      {step === 6 && (
+      {step === 7 && (
         <section className="space-y-6">
           <div>
             <h2 className="text-2xl font-semibold">Create Account</h2>
@@ -1749,6 +1828,7 @@ export default function VendorRegisterPage() {
                   clearError('first_name')
                   setFirstName(e.target.value)
                 }}
+                maxLength={50}
                 className={errors.first_name ? 'border-red-500' : ''}
               />
               {errors.first_name && (
@@ -1764,6 +1844,7 @@ export default function VendorRegisterPage() {
                   clearError('last_name')
                   setLastName(e.target.value)
                 }}
+                maxLength={50}
                 className={errors.last_name ? 'border-red-500' : ''}
               />
               {errors.last_name && (
@@ -1782,6 +1863,7 @@ export default function VendorRegisterPage() {
                   clearError('email')
                   setEmail(e.target.value)
                 }}
+                maxLength={100}
                 className={errors.email ? 'border-red-500' : ''}
               />
               {errors.email && (
@@ -1797,6 +1879,7 @@ export default function VendorRegisterPage() {
                   clearError('phone_number')
                   setPhone(e.target.value)
                 }}
+                maxLength={20}
                 className={errors.phone_number ? 'border-red-500' : ''}
               />
               {errors.phone_number && (
