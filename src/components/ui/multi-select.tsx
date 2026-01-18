@@ -186,49 +186,46 @@ export function MultiSelect({
       <>
         {TriggerButton}
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent className="max-w-full h-full p-0 gap-0 flex flex-col">
-            {/* Search at top */}
-            <div className="flex-shrink-0 p-4 border-b">
-              <Command>
+          <DialogContent className="max-w-full h-full p-0 gap-0 flex flex-col rounded-none border-0">
+            <Command className="flex flex-col h-full">
+              {/* Search at top */}
+              <div className="flex-shrink-0 p-4 border-b">
                 <CommandInput 
                   ref={searchInputRef}
                   placeholder="Search..." 
                 />
-              </Command>
-            </div>
-            
-            {/* Categories in middle - scrollable */}
-            <div className="flex-1 overflow-auto">
-              <Command>
-                <CommandList>
-                  <CommandEmpty>No results found.</CommandEmpty>
-                  <CommandGroup>
-                    {options.map((option) => {
-                      const isSelected = selected.includes(option.value)
-                      return (
-                        <CommandItem
-                          key={option.value}
-                          onSelect={() => {
-                            if (!option.disabled) {
-                              handleSelect(option.value)
-                            }
-                          }}
-                          disabled={option.disabled}
-                        >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              isSelected ? "opacity-100" : "opacity-0"
-                            )}
-                          />
-                          {option.label}
-                        </CommandItem>
-                      )
-                    })}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </div>
+              </div>
+              
+              {/* Categories in middle - scrollable, spans full height */}
+              <CommandList className="flex-1 overflow-auto max-h-none">
+                <CommandEmpty>No results found.</CommandEmpty>
+                <CommandGroup className="p-0">
+                  {options.map((option) => {
+                    const isSelected = selected.includes(option.value)
+                    return (
+                      <CommandItem
+                        key={option.value}
+                        onSelect={() => {
+                          if (!option.disabled) {
+                            handleSelect(option.value)
+                          }
+                        }}
+                        disabled={option.disabled}
+                        className="px-4 py-3"
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            isSelected ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        {option.label}
+                      </CommandItem>
+                    )
+                  })}
+                </CommandGroup>
+              </CommandList>
+            </Command>
             
             {/* Select button at bottom */}
             <div className="flex-shrink-0 p-4 border-t bg-white">
