@@ -20,8 +20,6 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
 } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -53,7 +51,18 @@ export function MultiSelect({
 }: MultiSelectProps) {
   const [open, setOpen] = React.useState(false)
   const triggerRef = React.useRef<HTMLButtonElement>(null)
+  const searchInputRef = React.useRef<HTMLInputElement>(null)
   const isMobile = useIsMobile()
+
+  // Auto-focus search input when dialog opens on mobile
+  React.useEffect(() => {
+    if (open && isMobile && searchInputRef.current) {
+      // Small delay to ensure the dialog is fully rendered
+      setTimeout(() => {
+        searchInputRef.current?.focus()
+      }, 100)
+    }
+  }, [open, isMobile])
 
   const handleUnselect = (value: string) => {
     onChange(selected.filter((s) => s !== value))
@@ -137,7 +146,10 @@ export function MultiSelect({
 
   const CommandContent = (
     <Command>
-      <CommandInput placeholder="Search..." />
+      <CommandInput 
+        ref={searchInputRef}
+        placeholder="Search..." 
+      />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
         <CommandGroup>
@@ -174,14 +186,52 @@ export function MultiSelect({
       <>
         {TriggerButton}
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent className="max-w-full h-[85vh] p-0 gap-0">
-            <DialogHeader className="px-4 pt-4 pb-2 border-b">
-              <DialogTitle>Select Categories</DialogTitle>
-            </DialogHeader>
-            <div className="flex-1 overflow-hidden">
-              {CommandContent}
+          <DialogContent className="max-w-full h-full p-0 gap-0 flex flex-col">
+            {/* Search at top */}
+            <div className="flex-shrink-0 p-4 border-b">
+              <Command>
+                <CommandInput 
+                  ref={searchInputRef}
+                  placeholder="Search..." 
+                />
+              </Command>
             </div>
-            <div className="p-4 border-t">
+            
+            {/* Categories in middle - scrollable */}
+            <div className="flex-1 overflow-auto">
+              <Command>
+                <CommandList>
+                  <CommandEmpty>No results found.</CommandEmpty>
+                  <CommandGroup>
+                    {options.map((option) => {
+                      const isSelected = selected.includes(option.value)
+                      return (
+                        <CommandItem
+                          key={option.value}
+                          onSelect={() => {
+                            if (!option.disabled) {
+                              handleSelect(option.value)
+                            }
+                          }}
+                          disabled={option.disabled}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              isSelected ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {option.label}
+                        </CommandItem>
+                      )
+                    })}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </div>
+            
+            {/* Select button at bottom */}
+            <div className="flex-shrink-0 p-4 border-t bg-white">
               <Button 
                 onClick={() => setOpen(false)} 
                 className="w-full"
@@ -209,7 +259,36 @@ export function MultiSelect({
           width: triggerRef.current?.offsetWidth ? `${triggerRef.current.offsetWidth}px` : '100%'
         }}
       >
-        {CommandContent}
+        <Command>
+          <CommandInput placeholder="Search..." />
+          <CommandList>
+            <CommandEmpty>No results found.</CommandEmpty>
+            <CommandGroup>
+              {options.map((option) => {
+                const isSelected = selected.includes(option.value)
+                return (
+                  <CommandItem
+                    key={option.value}
+                    onSelect={() => {
+                      if (!option.disabled) {
+                        handleSelect(option.value)
+                      }
+                    }}
+                    disabled={option.disabled}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        isSelected ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    {option.label}
+                  </CommandItem>
+                )
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
       </PopoverContent>
     </Popover>
   )
