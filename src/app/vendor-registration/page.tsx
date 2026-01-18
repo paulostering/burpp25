@@ -1706,7 +1706,6 @@ export default function VendorRegisterPage() {
         onCropComplete={handleCropComplete}
         aspectRatio={cropType === 'profile' ? 1 : 446 / 192}
         title={`Crop ${cropType === 'profile' ? 'Profile' : 'Cover'} Photo`}
-        description={`Crop your ${cropType} photo to the desired size. This will be displayed on your vendor profile.`}
       />
 
       {/* Product Image Crop Modal - Always rendered */}
@@ -1719,10 +1718,8 @@ export default function VendorRegisterPage() {
         }}
         imageSrc={productImageToCrop}
         onCropComplete={handleProductCropComplete}
-        aspectRatio={16/9}
-        allowAspectChange={true}
-        title="Crop Product Image"
-        description="Adjust the crop area, zoom, and rotation to showcase your product perfectly."
+        aspectRatio={16 / 9}
+        title="Crop Image"
       />
 
       {step === 6 && (

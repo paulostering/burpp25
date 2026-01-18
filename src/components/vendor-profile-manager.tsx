@@ -878,11 +878,6 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
         onCropComplete={handleCroppedImageUpload}
         aspectRatio={cropType === 'profile' ? 1 : 446 / 192}
         title={cropType === 'profile' ? 'Crop Profile Photo' : 'Crop Cover Photo'}
-        description={
-          cropType === 'profile'
-            ? 'Adjust your profile photo. Try to center your face or logo.'
-            : 'Adjust your cover photo. This will be displayed at the top of your profile.'
-        }
       />
     </div>
   )

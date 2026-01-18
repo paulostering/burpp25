@@ -645,7 +645,6 @@ export function UserProfileManager({ userProfile, onProfileUpdate }: UserProfile
         onCropComplete={handleCroppedImageUpload}
         aspectRatio={1}
         title="Crop Profile Photo"
-        description="Adjust the crop area to set your profile photo"
       />
     </>
   )
