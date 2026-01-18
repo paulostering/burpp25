@@ -2133,7 +2133,7 @@ export default function VendorRegisterPage() {
                 htmlFor="allowPhoneContact" 
                 className="text-sm font-normal cursor-pointer leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 pt-0.5"
               >
-                (Recommended) Allow customers to call my phone number
+                Allow customers to call my phone number (Recommended)
               </Label>
             </div>
             
@@ -2159,7 +2159,7 @@ export default function VendorRegisterPage() {
                   <a href="/privacy" target="_blank" className="text-primary font-bold">
                     Privacy Policy
                   </a>
-                  {' '}*
+                  {' '}
                 </label>
                 {errors.agree_to_terms && (
                   <p className="text-sm text-red-500 mt-1">{errors.agree_to_terms}</p>
