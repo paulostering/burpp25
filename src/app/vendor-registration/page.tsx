@@ -15,6 +15,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { MultiSelect, type Option } from '@/components/ui/multi-select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { MapPin, Loader2, Camera, Sparkles, RefreshCw, DollarSign, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -1358,24 +1359,24 @@ export default function VendorRegisterPage() {
           
           {/* Travel Distance - Always shown since in-person is always true */}
           <div className="space-y-2">
-            <Label>How far are you willing to travel to service a client?</Label>
-            <div className="flex flex-wrap gap-2">
-              {[10, 25, 50, 100].map((r) => (
-                <Button 
-                  key={r} 
-                  variant={radius === r ? 'default' : 'outline'} 
-                  size="sm" 
-                  className="text-base font-semibold flex-1 h-9 px-3"
-                  style={{ fontSize: '16px' }}
-                  onClick={() => {
-                    clearError('service_radius')
-                    setRadius(r)
-                  }}
-                >
-                  {r} miles
-                </Button>
-              ))}
-            </div>
+            <Label htmlFor="radius">How far are you willing to travel to service a client?</Label>
+            <Select
+              value={radius?.toString()}
+              onValueChange={(value) => {
+                clearError('service_radius')
+                setRadius(parseInt(value))
+              }}
+            >
+              <SelectTrigger id="radius" className="w-full text-base">
+                <SelectValue placeholder="Select distance" />
+              </SelectTrigger>
+              <SelectContent className="text-base">
+                <SelectItem value="10">10 miles</SelectItem>
+                <SelectItem value="25">25 miles</SelectItem>
+                <SelectItem value="50">50 miles</SelectItem>
+                <SelectItem value="100">100 miles</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           
           {/* Virtual Services Switch */}
@@ -1415,16 +1416,21 @@ export default function VendorRegisterPage() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="rate">What is the hourly rate for your service? *</Label>
-            <Input
-              id="rate"
-              type="text"
-              inputMode="decimal"
-              placeholder="Enter amount (minimum $1.00)"
-              value={hourlyRateInput}
-              onChange={handleHourlyRateChange}
-              required
-              className={errors.hourly_rate ? 'border-red-500' : ''}
-            />
+            <div className="relative">
+              <Input
+                id="rate"
+                type="text"
+                inputMode="decimal"
+                placeholder=""
+                value={hourlyRateInput}
+                onChange={handleHourlyRateChange}
+                required
+                className={`pr-16 text-base ${errors.hourly_rate ? 'border-red-500' : ''}`}
+              />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-base font-medium pointer-events-none">
+                $/HR
+              </div>
+            </div>
             {errors.hourly_rate && (
               <p className="text-sm text-red-500">{errors.hourly_rate}</p>
             )}
