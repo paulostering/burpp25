@@ -825,12 +825,23 @@ export default function VendorRegisterPage() {
             contentType: 'image/jpeg',
           })
           if (upErr) {
+            console.error('Profile photo upload error:', {
+              message: upErr.message,
+              statusCode: upErr.statusCode,
+              error: upErr
+            })
             toast.error(`Profile photo upload failed: ${upErr.message}`)
           } else {
             const { data: pub } = supabase.storage.from('vendor').getPublicUrl(up.path)
             profile_photo_url = pub.publicUrl
+            console.log('✅ Profile photo uploaded successfully:', profile_photo_url)
           }
-        } catch {
+        } catch (error) {
+          console.error('Profile photo processing exception:', {
+            error,
+            errorMessage: error instanceof Error ? error.message : 'Unknown error',
+            errorStack: error instanceof Error ? error.stack : undefined
+          })
           toast.error('Profile photo processing failed, continuing without photo')
         }
       }
@@ -844,12 +855,23 @@ export default function VendorRegisterPage() {
             contentType: 'image/jpeg',
           })
           if (upErr) {
+            console.error('Cover photo upload error:', {
+              message: upErr.message,
+              statusCode: upErr.statusCode,
+              error: upErr
+            })
             toast.error(`Cover photo upload failed: ${upErr.message}`)
           } else {
             const { data: pub } = supabase.storage.from('vendor').getPublicUrl(up.path)
             cover_photo_url = pub.publicUrl
+            console.log('✅ Cover photo uploaded successfully:', cover_photo_url)
           }
-        } catch {
+        } catch (error) {
+          console.error('Cover photo processing exception:', {
+            error,
+            errorMessage: error instanceof Error ? error.message : 'Unknown error',
+            errorStack: error instanceof Error ? error.stack : undefined
+          })
           toast.error('Cover photo processing failed, continuing without photo')
         }
       }
@@ -983,7 +1005,12 @@ export default function VendorRegisterPage() {
                   })
 
                 if (uploadError) {
-                  console.error('Error uploading product image:', uploadError)
+                  console.error('Product image upload error:', {
+                    message: uploadError.message,
+                    statusCode: uploadError.statusCode,
+                    error: uploadError,
+                    productTitle: product.title
+                  })
                   toast.error(`Failed to upload product image: ${uploadError.message}`)
                   // Continue without image
                 } else if (uploadData) {
@@ -991,9 +1018,15 @@ export default function VendorRegisterPage() {
                     .from('vendor')
                     .getPublicUrl(uploadData.path)
                   productImageUrl = publicUrl
+                  console.log('✅ Product image uploaded successfully:', productImageUrl)
                 }
               } catch (error) {
-                console.error('Error uploading product image:', error)
+                console.error('Product image processing exception:', {
+                  error,
+                  errorMessage: error instanceof Error ? error.message : 'Unknown error',
+                  errorStack: error instanceof Error ? error.stack : undefined,
+                  productTitle: product.title
+                })
                 toast.error('Failed to upload product image')
                 // Continue without image
               }
