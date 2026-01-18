@@ -331,7 +331,6 @@ export default function VendorRegisterPage() {
 
       setProfileTitle(data.text)
       clearError('profile_title')
-      toast.success(profileTitle ? 'Title refined!' : 'Title generated!')
     } catch (error) {
       console.error('Error generating title:', error)
       toast.error('Failed to generate title. Please try again.')
@@ -380,7 +379,6 @@ export default function VendorRegisterPage() {
 
       setAbout(truncateWithWordBoundary(data.text, characterLimit))
       clearError('about')
-      toast.success(about ? 'Description refined!' : 'Description generated!')
     } catch (error) {
       console.error('Error generating description:', error)
       toast.error('Failed to generate description. Please try again.')
@@ -530,7 +528,6 @@ export default function VendorRegisterPage() {
         const placeName = feature.place_name || feature.text
         setLocationQuery(placeName)
         setZipCode(feature.text || feature.properties?.postcode || '')
-        toast.success(`Location detected: ${placeName}`)
       } else {
         throw new Error('No location data found')
       }
@@ -596,8 +593,6 @@ export default function VendorRegisterPage() {
     setZipCode(zipCodeValue || feature.text)
     setLocationSuggestions([])
     setIsLocationDropdownOpen(false)
-    
-    toast.success(`Location set: ${placeName}`)
   }
 
   const validateImage = (file: File): string | null => {
