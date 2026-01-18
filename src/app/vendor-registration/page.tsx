@@ -602,29 +602,43 @@ export default function VendorRegisterPage() {
 
   const validateImage = (file: File): string | null => {
     // Check file type
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
-    if (!validTypes.includes(file.type)) {
-      return 'Please upload a valid image file (JPEG, PNG, or WebP)'
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'image/heif']
+    if (!validTypes.includes(file.type.toLowerCase())) {
+      return 'Please upload a valid image file (JPEG, PNG, WebP, or HEIC)'
     }
 
-    // Check file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024 // 5MB
+    // Check file size (max 15MB to handle high-res iPhone photos)
+    const maxSize = 15 * 1024 * 1024 // 15MB
     if (file.size > maxSize) {
-      return 'Image size must be less than 5MB'
+      return 'Image size must be less than 15MB'
     }
 
     return null
   }
 
   const onPhotoSelected = (file: File | null, type: 'profile' | 'cover') => {
-    if (!file) return
+    console.error('📸 onPhotoSelected called:', { 
+      hasFile: !!file, 
+      type, 
+      fileName: file?.name,
+      fileSize: file?.size,
+      fileType: file?.type 
+    })
+    
+    if (!file) {
+      console.error('⚠️ No file provided to onPhotoSelected')
+      return
+    }
 
     // Validate image
     const validationError = validateImage(file)
     if (validationError) {
+      console.error('❌ Image validation failed:', validationError)
       toast.error(validationError)
       return
     }
+
+    console.error('✅ Image validation passed, preparing to crop...')
 
     // Show loading state
     toast.loading('Preparing image...')
@@ -636,18 +650,22 @@ export default function VendorRegisterPage() {
       if (profilePhotoUrl) URL.revokeObjectURL(profilePhotoUrl)
       const url = URL.createObjectURL(file)
       setProfilePhotoUrl(url)
+      console.error('📷 Profile photo URL created:', url)
     } else {
       setCoverPhotoFile(file)
       setCroppedAreaPixels(null)
       if (coverPhotoUrl) URL.revokeObjectURL(coverPhotoUrl)
       const url = URL.createObjectURL(file)
       setCoverPhotoUrl(url)
+      console.error('🖼️ Cover photo URL created:', url)
     }
     
     setCropType(type)
     
     // Use setTimeout to ensure state is set before opening modal
+    console.error('⏱️ Setting timeout to open crop modal...')
     setTimeout(() => {
+      console.error('🚀 Opening crop modal now')
       setCropModalOpen(true)
       toast.dismiss()
     }, 100)
@@ -1619,35 +1637,55 @@ export default function VendorRegisterPage() {
                               variant="secondary"
                               size="sm"
                               onClick={() => {
+                                console.error('🔘 Change Image button clicked for product index:', index)
                                 const input = document.createElement('input')
                                 input.type = 'file'
                                 input.accept = 'image/*'
+                                console.error('📂 File input created, triggering click...')
                                 input.onchange = (e) => {
                                   const file = (e.target as HTMLInputElement).files?.[0]
-                                  if (!file) return
+                                  console.error('📸 Product image selected:', {
+                                    hasFile: !!file,
+                                    fileName: file?.name,
+                                    fileSize: file?.size,
+                                    fileType: file?.type,
+                                    productIndex: index
+                                  })
+                                  
+                                  if (!file) {
+                                    console.error('⚠️ No file selected for product image')
+                                    return
+                                  }
 
                                   if (!file.type.startsWith('image/')) {
+                                    console.error('❌ Invalid file type:', file.type)
                                     toast.error('Please select an image file')
                                     return
                                   }
 
-                                  if (file.size > 5 * 1024 * 1024) {
-                                    toast.error('Image must be less than 5MB')
+                                  if (file.size > 15 * 1024 * 1024) {
+                                    console.error('❌ File too large:', file.size, 'bytes')
+                                    toast.error('Image must be less than 15MB')
                                     return
                                   }
+
+                                  console.error('✅ Product image validation passed')
 
                                   // Show loading state
                                   toast.loading('Preparing image...')
 
                                   // Create blob URL (faster than FileReader)
                                   const imageUrl = URL.createObjectURL(file)
+                                  console.error('🖼️ Product image blob URL created:', imageUrl)
                                   
                                   // Set state
                                   setCurrentProductImageIndex(index)
                                   setProductImageToCrop(imageUrl)
                                   
                                   // Use setTimeout to ensure state is set before opening modal
+                                  console.error('⏱️ Setting timeout to open product crop modal...')
                                   setTimeout(() => {
+                                    console.error('🚀 Opening product crop modal')
                                     setProductCropModalOpen(true)
                                     toast.dismiss()
                                   }, 100)
@@ -1682,35 +1720,55 @@ export default function VendorRegisterPage() {
                           type="button"
                           variant="outline"
                           onClick={() => {
+                            console.error('🔘 Upload Image button clicked for product index:', index)
                             const input = document.createElement('input')
                             input.type = 'file'
                             input.accept = 'image/*'
+                            console.error('📂 File input created, triggering click...')
                             input.onchange = (e) => {
                               const file = (e.target as HTMLInputElement).files?.[0]
-                              if (!file) return
+                              console.error('📸 Product image (initial upload) selected:', {
+                                hasFile: !!file,
+                                fileName: file?.name,
+                                fileSize: file?.size,
+                                fileType: file?.type,
+                                productIndex: index
+                              })
+                              
+                              if (!file) {
+                                console.error('⚠️ No file selected for product image')
+                                return
+                              }
 
                               if (!file.type.startsWith('image/')) {
+                                console.error('❌ Invalid file type:', file.type)
                                 toast.error('Please select an image file')
                                 return
                               }
 
-                              if (file.size > 5 * 1024 * 1024) {
-                                toast.error('Image must be less than 5MB')
+                              if (file.size > 15 * 1024 * 1024) {
+                                console.error('❌ File too large:', file.size, 'bytes')
+                                toast.error('Image must be less than 15MB')
                                 return
                               }
+
+                              console.error('✅ Product image validation passed')
 
                               // Show loading state
                               toast.loading('Preparing image...')
 
                               // Create blob URL (faster than FileReader)
                               const imageUrl = URL.createObjectURL(file)
+                              console.error('🖼️ Product image blob URL created:', imageUrl)
                               
                               // Set state
                               setCurrentProductImageIndex(index)
                               setProductImageToCrop(imageUrl)
                               
                               // Use setTimeout to ensure state is set before opening modal
+                              console.error('⏱️ Setting timeout to open product crop modal...')
                               setTimeout(() => {
+                                console.error('🚀 Opening product crop modal')
                                 setProductCropModalOpen(true)
                                 toast.dismiss()
                               }, 100)
