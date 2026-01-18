@@ -1,86 +1,14 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
-import { MultiSelect, type Option } from '@/components/ui/multi-select'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { ArrowRight, Quote, HelpCircle } from 'lucide-react'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Quote, ArrowRight } from 'lucide-react'
 import Image from 'next/image'
-import type { Category } from '@/types/db'
 
 export default function BurppProsLandingPage() {
   const router = useRouter()
-  const [allCategories, setAllCategories] = useState<Category[]>([])
-  const [businessName, setBusinessName] = useState('')
-  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([])
-  const [errors, setErrors] = useState<Record<string, string>>({})
-
-  // Convert all categories (including subcategories) to MultiSelect options
-  const categoryOptions: Option[] = useMemo(
-    () =>
-      allCategories.map((c) => ({
-        label: c.name,
-        value: c.id,
-      })),
-    [allCategories]
-  )
-
-  useEffect(() => {
-    fetch('/api/categories', { cache: 'no-store' })
-      .then(async (r) => {
-        if (!r.ok) throw new Error('Failed to load categories')
-        return (await r.json()) as Category[]
-      })
-      .then((data) => {
-        // Filter to only show active categories
-        const activeCategories = (data ?? []).filter(category => category.is_active === true)
-        setAllCategories(activeCategories)
-      })
-      .catch(() => {
-        setAllCategories([])
-      })
-  }, [])
-
-  const handleCategoryChange = (selected: string[]) => {
-    setErrors((prev) => ({ ...prev, service_categories: '' }))
-    setSelectedCategoryIds(selected)
-  }
-
-  const handleSubmit = () => {
-    const newErrors: Record<string, string> = {}
-    
-    if (!businessName.trim()) {
-      newErrors.business_name = 'Business name is required'
-    }
-    
-    if (selectedCategoryIds.length === 0) {
-      newErrors.service_categories = 'Select at least one category'
-    }
-    
-    setErrors(newErrors)
-    
-    if (Object.keys(newErrors).length > 0) {
-      return
-    }
-
-    // Store in localStorage for prefill and indicate we're starting at step 2
-    try {
-      localStorage.setItem('burpp_vendor_prefill', JSON.stringify({
-        businessName: businessName.trim(),
-        serviceCategories: selectedCategoryIds,
-        startStep: 2, // Indicate we've completed step 1
-      }))
-    } catch {
-      // ignore
-    }
-
-    router.push('/vendor-registration')
-  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -117,87 +45,33 @@ export default function BurppProsLandingPage() {
         </div>
 
         <div className="relative mx-auto max-w-6xl px-4 py-16 md:py-20">
-          <div className="grid gap-10 lg:grid-cols-12 lg:items-center">
-            {/* LEFT: Headline */}
-            <div className="lg:col-span-7 space-y-6">
-              <div className="space-y-3 max-w-1xl">
-                <h1 className="text-4xl md:text-5xl font-semibold tracking-tight">
+          {/* Single Left Column */}
+          <div className="max-w-2xl">
+            <div className="space-y-8">
+              <div className="space-y-6">
+                <h1 className="text-4xl md:text-5xl font-normal tracking-tight">
                   Share your skills.
-                  <span className="text-primary block"> Grow your business.</span>
+                  <span className="font-bold text-primary block">Grow your business.</span>
                 </h1>
                 <p className="text-lg text-muted-foreground">
                   A simpler way for independent professionals to get discovered, booked, and build real client relationships—without bidding wars, algorithms, or marketplace chaos.
                 </p>
               </div>
-            </div>
-
-            {/* RIGHT: Form */}
-            <div className="lg:col-span-5">
-              <Card className="border border-gray-200 shadow-none">
-                <CardContent className="p-6 space-y-6">
-                  <div className="space-y-2">
-                    <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
-                      Always Free. No Credit Card Required
-                    </p>
-                    <h2 className="text-2xl font-semibold">Claim your free profile</h2>
-                    <p className="text-gray-600">
-                      Choose the name clients know you by and pick the category that best matches your service. You can always edit it later.
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-1.5">
-                      <Label htmlFor="business">Business Name or Service *</Label>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xs">
-                            <p>This is the name of your business or service that will be displayed to the Burpp community.</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                    <Input 
-                      id="business" 
-                      value={businessName} 
-                      onChange={(e) => {
-                        setErrors((prev) => ({ ...prev, business_name: '' }))
-                        setBusinessName(e.target.value)
-                      }}
-                      className={errors.business_name ? 'border-red-500' : ''}
-                      placeholder="Enter your business name"
-                    />
-                    {errors.business_name && (
-                      <p className="text-sm text-red-500">{errors.business_name}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Service Category *</Label>
-                    <MultiSelect
-                      options={categoryOptions}
-                      selected={selectedCategoryIds}
-                      onChange={handleCategoryChange}
-                      placeholder="Select categories"
-                      maxCount={2}
-                      className={errors.service_categories ? 'border-red-500' : ''}
-                    />
-                    {errors.service_categories && (
-                      <p className="text-sm text-red-500">{errors.service_categories}</p>
-                    )}
-                  </div>
-
-                  <Button 
-                    className="w-full text-lg px-8 py-3" 
-                    size="lg"
-                    onClick={handleSubmit}
-                  >
-                    Continue to registration
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </CardContent>
-              </Card>
+              
+              <div className="space-y-4">
+                <Button 
+                  className="text-lg px-8 py-3" 
+                  size="lg"
+                  onClick={() => router.push('/vendor-registration')}
+                >
+                  Claim Your Free Profile
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+                
+                <p className="text-sm italic text-muted-foreground">
+                  Always Free. No Credit Card Required
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -299,7 +173,6 @@ export default function BurppProsLandingPage() {
                 }}
               >
                 Get Started
-                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
           </div>
