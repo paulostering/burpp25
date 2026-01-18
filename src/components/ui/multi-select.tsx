@@ -91,12 +91,22 @@ export function MultiSelect({
         className
       )}
       disabled={disabled}
-      onClick={() => {
+      onTouchStart={(e) => {
+        // On mobile, blur any active input immediately on touch
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur()
+        }
+      }}
+      onClick={(e) => {
         // Blur any active input to close keyboard on mobile
         if (document.activeElement instanceof HTMLElement) {
           document.activeElement.blur()
         }
-        setOpen(!open)
+        
+        // Small delay to ensure blur completes before opening modal
+        setTimeout(() => {
+          setOpen(!open)
+        }, 50)
       }}
     >
       <div className="flex gap-1 flex-wrap">
