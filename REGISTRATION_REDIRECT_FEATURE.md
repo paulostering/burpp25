@@ -146,7 +146,6 @@ if (!shouldRender) {
 
 ### Redirects to `/pros` when registration disabled:
 - `/home`
-- `/about`
 - `/how-to-use`
 - `/search`
 
@@ -164,6 +163,7 @@ if (!shouldRender) {
 ### Pages NOT affected (remain accessible):
 - `/pros` (vendor landing)
 - `/vendor-registration`
+- `/about` (accessible even when registration off)
 - `/contact`
 - `/privacy`
 - `/terms`

@@ -28,9 +28,6 @@ export function Footer() {
               <Link href="/about" className="block text-gray-600 hover:text-gray-900 transition-colors">
                 About
               </Link>
-              <Link href="/how-to-use" className="block text-gray-600 hover:text-gray-900 transition-colors">
-                How to use Burpp
-              </Link>
             </div>
           </div>
 
