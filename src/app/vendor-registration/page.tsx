@@ -17,7 +17,7 @@ import Link from 'next/link'
 import { MultiSelect, type Option } from '@/components/ui/multi-select'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { MapPin, Loader2, Camera, Sparkles, RefreshCw, DollarSign, X } from 'lucide-react'
+import { MapPin, Loader2, Camera, Sparkles, RefreshCw, DollarSign, X, ArrowLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Area } from 'react-easy-crop'
 import { ImageCropModal } from '@/components/image-crop-modal'
@@ -752,7 +752,7 @@ export default function VendorRegisterPage() {
       password,
       confirmPassword,
       allow_phone_contact: allowPhoneContact,
-      agree_to_terms: agreeToTerms,
+      agree_to_terms: true, // Automatically true since terms are in header
     })
     
     if (!v.success) {
@@ -1142,10 +1142,6 @@ export default function VendorRegisterPage() {
         </div>
         <div className="flex flex-1 items-center justify-center">
           <div className="w-full max-w-md">
-            <div className="mb-6 flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">Step {step} of 7</div>
-            </div>
-
       {step === 1 && (
         <section className="space-y-6">
           <div>
@@ -1168,7 +1164,7 @@ export default function VendorRegisterPage() {
             )}
           </div>
           <div className="space-y-3">
-            <Label>What do you specialize in? *</Label>
+            <Label>Choose the categories that best describe your business *</Label>
             <MultiSelect
               options={categoryOptions}
               selected={selectedCategoryIds}
@@ -1188,7 +1184,12 @@ export default function VendorRegisterPage() {
       )}
 
       {step === 2 && (
-        <section className="space-y-6">
+        <>
+          <button onClick={back} className="flex items-center gap-2 text-primary mb-3 hover:underline">
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back</span>
+          </button>
+          <section className="space-y-6">
           <div>
             <h2 className="text-2xl font-semibold">Put Your Best Foot Forward</h2>
             <p className="text-muted-foreground">Create a compelling profile to attract potential clients.</p>
@@ -1303,17 +1304,23 @@ export default function VendorRegisterPage() {
               </p>
             )}
           </div>
-          <div className="flex justify-between gap-2">
-            <Button variant="outline" onClick={back}>Back</Button>
+          <div className="flex justify-start gap-2">
             <Button onClick={next}>Next</Button>
           </div>
         </section>
+        </>
       )}
 
       {step === 3 && (
-        <section className="space-y-6">
+        <>
+          <button onClick={back} className="flex items-center gap-2 text-primary mb-3 hover:underline">
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back</span>
+          </button>
+          <section className="space-y-6">
           <div>
-            <h2 className="text-2xl font-semibold">Location of your services</h2>
+            <h2 className="text-2xl font-semibold">Where is your business located?</h2>
+            <p className="text-muted-foreground">Select the area where you plan to offer services. You can change this later.</p>
           </div>
           
           {/* ZIP Code / City Input - First Position */}
@@ -1412,7 +1419,13 @@ export default function VendorRegisterPage() {
           </div>
           
           {/* Virtual Services Switch */}
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <Label 
+              htmlFor="offersVirtual" 
+              className="text-base font-semibold cursor-pointer"
+            >
+              I offer services virtually as well.
+            </Label>
             <Switch 
               id="offersVirtual"
               checked={offersVirtual}
@@ -1421,33 +1434,32 @@ export default function VendorRegisterPage() {
                 clearError('general')
               }}
             />
-            <Label 
-              htmlFor="offersVirtual" 
-              className="text-sm font-normal cursor-pointer"
-            >
-              I offer services virtually as well.
-            </Label>
           </div>
           {errors.general && (
             <div className="bg-red-50 border border-red-200 rounded-md p-3">
               <p className="text-sm text-red-600">{errors.general}</p>
             </div>
           )}
-          <div className="flex justify-between gap-2">
-            <Button variant="outline" onClick={back}>Back</Button>
+          <div className="flex justify-start gap-2">
             <Button onClick={next}>Next</Button>
           </div>
         </section>
+        </>
       )}
 
       {step === 4 && (
-        <section className="space-y-6">
+        <>
+          <button onClick={back} className="flex items-center gap-2 text-primary mb-3 hover:underline">
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back</span>
+          </button>
+          <section className="space-y-6">
           <div>
-            <h2 className="text-2xl font-semibold">Your Rates</h2>
-            <p className="text-muted-foreground">Tell us about your pricing.</p>
+            <h2 className="text-2xl font-semibold">Rate per Hour</h2>
+            <p className="text-muted-foreground">Enter your typical hourly rate so customers have a clear sense of your pricing.</p>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="rate">What is the hourly rate for your service? *</Label>
+            <Label htmlFor="rate">Hourly Rate *</Label>
             <div className="relative">
               <Input
                 id="rate"
@@ -1467,15 +1479,20 @@ export default function VendorRegisterPage() {
               <p className="text-sm text-red-500">{errors.hourly_rate}</p>
             )}
           </div>
-          <div className="flex justify-between gap-2">
-            <Button variant="outline" onClick={back}>Back</Button>
+          <div className="flex justify-start gap-2">
             <Button onClick={next}>Next</Button>
           </div>
         </section>
+        </>
       )}
 
       {step === 5 && (
-        <section className="space-y-6">
+        <>
+          <button onClick={back} className="flex items-center gap-2 text-primary mb-3 hover:underline">
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back</span>
+          </button>
+          <section className="space-y-6">
           <div>
             <h2 className="text-2xl font-semibold">Add Your First Product</h2>
             <p className="text-muted-foreground">Adding your first product helps potential clients understand the services you offer and what sets you apart.</p>
@@ -1742,15 +1759,20 @@ export default function VendorRegisterPage() {
             </div>
           )}
 
-          <div className="flex justify-between gap-2">
-            <Button variant="outline" onClick={back}>Back</Button>
+          <div className="flex justify-start gap-2">
             <Button onClick={next}>Next</Button>
           </div>
         </section>
+        </>
       )}
 
       {step === 6 && (
-        <section className="space-y-6">
+        <>
+          <button onClick={back} className="flex items-center gap-2 text-primary mb-3 hover:underline">
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back</span>
+          </button>
+          <section className="space-y-6">
           <div>
             <h2 className="text-2xl font-semibold">Add Profile & Cover Photos</h2>
             <p className="text-muted-foreground">Upload optional profile and cover photos to make your profile stand out.</p>
@@ -1856,11 +1878,11 @@ export default function VendorRegisterPage() {
             </div>
           </div>
           
-          <div className="flex justify-between gap-2">
-            <Button variant="outline" onClick={back}>Back</Button>
+          <div className="flex justify-start gap-2">
             <Button onClick={next}>Next</Button>
           </div>
         </section>
+        </>
       )}
 
       {/* Image Crop Modal for Profile/Cover Photos */}
@@ -1892,10 +1914,25 @@ export default function VendorRegisterPage() {
       />
 
       {step === 7 && (
-        <section className="space-y-6">
+        <>
+          <button onClick={back} className="flex items-center gap-2 text-primary mb-3 hover:underline disabled:opacity-50" disabled={isSubmitting}>
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back</span>
+          </button>
+          <section className="space-y-6">
           <div>
-            <h2 className="text-2xl font-semibold">Create Account</h2>
-            <p className="text-muted-foreground">Set up your account credentials to complete registration.</p>
+            <h2 className="text-2xl font-semibold">Great! Now create your business account.</h2>
+            <p className="text-muted-foreground">
+              By continuing, you agree to Burpp's{' '}
+              <a href="/terms" target="_blank" className="text-primary font-bold">
+                Terms of Service
+              </a>
+              {' '}and acknowledge{' '}
+              <a href="/privacy" target="_blank" className="text-primary font-bold">
+                Privacy Policy
+              </a>
+              .
+            </p>
           </div>
           <div className="grid gap-4 grid-cols-2">
             <div className="space-y-2">
@@ -2045,40 +2082,9 @@ export default function VendorRegisterPage() {
                 Allow customers to call my phone number (Recommended)
               </Label>
             </div>
-            
-            <div className="flex items-start space-x-2">
-              <Checkbox 
-                id="agreeToTerms"
-                checked={agreeToTerms}
-                onCheckedChange={(checked) => {
-                  setAgreeToTerms(checked === true)
-                  clearError('agree_to_terms')
-                }}
-              />
-              <div className="flex-1">
-                <label 
-                  htmlFor="agreeToTerms" 
-                  className="text-sm font-normal cursor-pointer leading-relaxed peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  I agree to the{' '}
-                  <a href="/terms" target="_blank" className="text-primary font-bold">
-                    Terms of Service
-                  </a>
-                  {' '}and{' '}
-                  <a href="/privacy" target="_blank" className="text-primary font-bold">
-                    Privacy Policy
-                  </a>
-                  {' '}
-                </label>
-                {errors.agree_to_terms && (
-                  <p className="text-sm text-red-500 mt-1">{errors.agree_to_terms}</p>
-                )}
-              </div>
-            </div>
           </div>
           
-          <div className="flex justify-between gap-2">
-            <Button variant="outline" onClick={back} disabled={isSubmitting}>Back</Button>
+          <div className="flex justify-start gap-2">
             <Button onClick={submit} disabled={isSubmitting}>
               {isSubmitting ? (
                 <>
@@ -2091,6 +2097,7 @@ export default function VendorRegisterPage() {
             </Button>
           </div>
         </section>
+        </>
       )}
           </div>
         </div>

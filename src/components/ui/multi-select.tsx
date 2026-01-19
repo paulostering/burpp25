@@ -117,9 +117,8 @@ export function MultiSelect({
           <>
             {selectedOptions.slice(0, maxCount).map((option) => (
               <Badge
-                variant="secondary"
                 key={option.value}
-                className="mr-1 mb-1"
+                className="mr-1 mb-1 bg-primary text-white hover:bg-primary/90"
                 onClick={(e) => {
                   e.preventDefault()
                   e.stopPropagation()
@@ -144,12 +143,12 @@ export function MultiSelect({
                     handleUnselect(option.value)
                   }}
                 >
-                  <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
+                  <X className="h-3 w-3 text-white hover:text-white/80" />
                 </button>
               </Badge>
             ))}
             {selected.length > maxCount && (
-              <Badge variant="secondary" className="mr-1 mb-1">
+              <Badge className="mr-1 mb-1 bg-primary text-white">
                 +{selected.length - maxCount} more
               </Badge>
             )}
@@ -213,7 +212,7 @@ export function MultiSelect({
               </div>
               
               {/* Categories in middle - scrollable, spans full height */}
-              <CommandList className="flex-1 overflow-auto max-h-none">
+              <CommandList className="flex-1 overflow-y-auto max-h-none" style={{ WebkitOverflowScrolling: 'touch' }}>
                 <CommandEmpty>No results found.</CommandEmpty>
                 <CommandGroup className="p-0">
                   {options.map((option) => {
