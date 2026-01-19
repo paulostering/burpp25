@@ -2011,7 +2011,7 @@ export default function VendorRegisterPage() {
             <h2 className="text-2xl font-semibold">Great! Now create your business account.</h2>
             <p className="text-muted-foreground">
               By continuing, you agree to Burpp's{' '}
-              <a href="/terms" target="_blank" className="text-primary font-bold">
+              <a href="/vendor/terms" target="_blank" className="text-primary font-bold">
                 Terms of Service
               </a>
               {' '}and acknowledge{' '}
