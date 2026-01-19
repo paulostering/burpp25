@@ -1172,7 +1172,7 @@ export default function VendorRegisterPage() {
       {step === 1 && (
         <section className="space-y-6">
           <div>
-            <h1 className="text-2xl font-semibold">Start Growing Your Business, Join the Burpp Community Today</h1>
+            <h1 className="text-2xl font-semibold">Start Growing Your Business, Join the Burpp Community.</h1>
             <p className="text-muted-foreground">Tell us about your business so we can help you connect with clients.</p>
           </div>
           <div className="space-y-3">
@@ -1205,7 +1205,7 @@ export default function VendorRegisterPage() {
             )}
           </div>
           <div className="flex justify-end gap-2">
-            <Button onClick={next}>Next</Button>
+            <Button onClick={next} className="w-full md:w-auto">Next</Button>
           </div>
         </section>
       )}
@@ -1332,7 +1332,7 @@ export default function VendorRegisterPage() {
             )}
           </div>
           <div className="flex justify-start gap-2">
-            <Button onClick={next}>Next</Button>
+            <Button onClick={next} className="w-full md:w-auto">Next</Button>
           </div>
         </section>
         </>
@@ -1473,7 +1473,7 @@ export default function VendorRegisterPage() {
             </div>
           )}
           <div className="flex justify-start gap-2">
-            <Button onClick={next}>Next</Button>
+            <Button onClick={next} className="w-full md:w-auto">Next</Button>
           </div>
         </section>
         </>
@@ -1528,7 +1528,7 @@ export default function VendorRegisterPage() {
             />
           </div>
           <div className="flex justify-start gap-2">
-            <Button onClick={next}>Next</Button>
+            <Button onClick={next} className="w-full md:w-auto">Next</Button>
           </div>
         </section>
         </>
@@ -1567,7 +1567,7 @@ export default function VendorRegisterPage() {
             )}
           </div>
           <div className="flex justify-start gap-2">
-            <Button onClick={next}>Next</Button>
+            <Button onClick={next} className="w-full md:w-auto">Next</Button>
           </div>
         </section>
         </>
@@ -1847,7 +1847,7 @@ export default function VendorRegisterPage() {
           )}
 
           <div className="flex justify-start gap-2">
-            <Button onClick={next}>Next</Button>
+            <Button onClick={next} className="w-full md:w-auto">Next</Button>
           </div>
         </section>
         </>
@@ -1966,7 +1966,7 @@ export default function VendorRegisterPage() {
           </div>
           
           <div className="flex justify-start gap-2">
-            <Button onClick={next}>Next</Button>
+            <Button onClick={next} className="w-full md:w-auto">Next</Button>
           </div>
         </section>
         </>
@@ -2131,7 +2131,7 @@ export default function VendorRegisterPage() {
           </div>
           
           <div className="flex justify-start gap-2">
-            <Button onClick={submit} disabled={isSubmitting}>
+            <Button onClick={submit} disabled={isSubmitting} className="w-full md:w-auto">
               {isSubmitting ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
