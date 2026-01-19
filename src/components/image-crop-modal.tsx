@@ -124,15 +124,26 @@ export function ImageCropModal({
       Math.round(0 - safeArea / 2 + image.height * 0.5 - pixelCrop.y)
     )
 
-    // Convert to blob
+    // Convert to blob with conservative quality for better compatibility
     return new Promise((resolve, reject) => {
-      canvas.toBlob((blob) => {
-        if (blob) {
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            reject(new Error('Failed to create image blob'))
+            return
+          }
+          
+          // Verify blob has actual data
+          if (blob.size === 0) {
+            reject(new Error('Created blob is empty'))
+            return
+          }
+          
           resolve(blob)
-        } else {
-          reject(new Error('Canvas is empty'))
-        }
-      }, 'image/jpeg', 0.95)
+        },
+        'image/jpeg',
+        0.92 // Conservative quality for better compatibility across devices
+      )
     })
   }
 

@@ -673,14 +673,14 @@ export default function VendorRegisterPage() {
         
         canvas.toBlob(
           (blob) => {
-            if (blob) {
+            if (blob && blob.size > 0) {
               resolve(new File([blob], file.name, { type: 'image/jpeg' }))
             } else {
-              resolve(file)
+              resolve(file) // Fallback to original if blob creation fails
             }
           },
           'image/jpeg',
-          0.85 // Good quality compression
+          0.92 // Match the quality used in crop modal
         )
       }
       
