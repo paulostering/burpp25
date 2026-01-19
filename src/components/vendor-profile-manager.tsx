@@ -241,9 +241,9 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
     }
 
     // Check file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024 // 5MB
+    const maxSize = 15 * 1024 * 1024 // 15MB
     if (file.size > maxSize) {
-      return 'Image size must be less than 5MB'
+      return 'Image size must be less than 15MB'
     }
 
     return null
