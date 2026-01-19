@@ -244,6 +244,13 @@ export default function VendorRegisterPage() {
     }
 
     if (step === 4) {
+      // Validate phone number
+      if (!phone || phone.trim().length < 7) {
+        newErrors.phone_number = 'Please enter a valid phone number'
+      }
+    }
+
+    if (step === 5) {
       // Custom validation for hourly rate
       if (!hourlyRate || hourlyRate < 1) {
         if (!hourlyRate) {
@@ -254,7 +261,7 @@ export default function VendorRegisterPage() {
       }
     }
 
-    if (step === 5) {
+    if (step === 6) {
       // Validate products - if any products exist, they must have title and description
       const newProductErrors: Record<number, { title?: string; description?: string }> = {}
       let hasProductErrors = false
@@ -1455,6 +1462,57 @@ export default function VendorRegisterPage() {
           </button>
           <section className="space-y-6">
           <div>
+            <h2 className="text-2xl font-semibold">Add Your Business Phone Number</h2>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="phone">Phone Number *</Label>
+            <Input 
+              id="phone" 
+              value={phone} 
+              onChange={(e) => {
+                clearError('phone_number')
+                setPhone(e.target.value)
+              }}
+              maxLength={20}
+              className={`text-base ${errors.phone_number ? 'border-red-500' : ''}`}
+              placeholder="(555) 123-4567"
+            />
+            {errors.phone_number && (
+              <p className="text-sm text-red-500">{errors.phone_number}</p>
+            )}
+          </div>
+          
+          {/* Phone Contact Switch */}
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <Label 
+              htmlFor="allowPhoneContact" 
+              className="text-base font-semibold cursor-pointer"
+            >
+              I would like to allow users to contact me via phone.
+            </Label>
+            <Switch 
+              id="allowPhoneContact"
+              checked={allowPhoneContact}
+              onCheckedChange={(checked) => {
+                setAllowPhoneContact(checked)
+              }}
+            />
+          </div>
+          <div className="flex justify-start gap-2">
+            <Button onClick={next}>Next</Button>
+          </div>
+        </section>
+        </>
+      )}
+
+      {step === 5 && (
+        <>
+          <button onClick={back} className="flex items-center gap-2 text-primary mb-3 hover:underline">
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back</span>
+          </button>
+          <section className="space-y-6">
+          <div>
             <h2 className="text-2xl font-semibold">Rate per Hour</h2>
             <p className="text-muted-foreground">Enter your typical hourly rate so customers have a clear sense of your pricing.</p>
           </div>
@@ -1486,7 +1544,7 @@ export default function VendorRegisterPage() {
         </>
       )}
 
-      {step === 5 && (
+      {step === 6 && (
         <>
           <button onClick={back} className="flex items-center gap-2 text-primary mb-3 hover:underline">
             <ArrowLeft className="h-4 w-4" />
@@ -1766,7 +1824,7 @@ export default function VendorRegisterPage() {
         </>
       )}
 
-      {step === 6 && (
+      {step === 7 && (
         <>
           <button onClick={back} className="flex items-center gap-2 text-primary mb-3 hover:underline">
             <ArrowLeft className="h-4 w-4" />
@@ -1913,7 +1971,7 @@ export default function VendorRegisterPage() {
         title="Crop Image"
       />
 
-      {step === 7 && (
+      {step === 8 && (
         <>
           <button onClick={back} className="flex items-center gap-2 text-primary mb-3 hover:underline disabled:opacity-50" disabled={isSubmitting}>
             <ArrowLeft className="h-4 w-4" />
@@ -1968,40 +2026,22 @@ export default function VendorRegisterPage() {
               )}
             </div>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email *</Label>
-              <Input 
-                id="email" 
-                type="email" 
-                value={email} 
-                onChange={(e) => {
-                  clearError('email')
-                  setEmail(e.target.value)
-                }}
-                maxLength={100}
-                className={errors.email ? 'border-red-500' : ''}
-              />
-              {errors.email && (
-                <p className="text-sm text-red-500">{errors.email}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone {allowPhoneContact && '*'}</Label>
-              <Input 
-                id="phone" 
-                value={phone} 
-                onChange={(e) => {
-                  clearError('phone_number')
-                  setPhone(e.target.value)
-                }}
-                maxLength={20}
-                className={errors.phone_number ? 'border-red-500' : ''}
-              />
-              {errors.phone_number && (
-                <p className="text-sm text-red-500">{errors.phone_number}</p>
-              )}
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="email">Email *</Label>
+            <Input 
+              id="email" 
+              type="email" 
+              value={email} 
+              onChange={(e) => {
+                clearError('email')
+                setEmail(e.target.value)
+              }}
+              maxLength={100}
+              className={errors.email ? 'border-red-500' : ''}
+            />
+            {errors.email && (
+              <p className="text-sm text-red-500">{errors.email}</p>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password *</Label>
@@ -2059,29 +2099,6 @@ export default function VendorRegisterPage() {
             {errors.confirmPassword && (
               <p className="text-sm text-red-500">{errors.confirmPassword}</p>
             )}
-          </div>
-          
-          {/* Checkboxes */}
-          <div className="space-y-3">
-            <div className="flex items-start space-x-2">
-              <Checkbox 
-                id="allowPhoneContact"
-                checked={allowPhoneContact}
-                onCheckedChange={(checked) => {
-                  setAllowPhoneContact(checked === true)
-                  // Clear phone error when unchecking
-                  if (!checked) {
-                    clearError('phone_number')
-                  }
-                }}
-              />
-              <Label 
-                htmlFor="allowPhoneContact" 
-                className="text-sm font-normal cursor-pointer leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 pt-0.5"
-              >
-                Allow customers to call my phone number (Recommended)
-              </Label>
-            </div>
           </div>
           
           <div className="flex justify-start gap-2">
