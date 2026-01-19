@@ -85,46 +85,80 @@ export function ImageCropModal({
   ): Promise<Blob> => {
     const image = await createImage(imageSrc)
     const canvas = document.createElement('canvas')
-    const ctx = canvas.getContext('2d')
+    const ctx = canvas.getContext('2d', { 
+      alpha: false,
+      willReadFrequently: false 
+    })
 
     if (!ctx) {
       throw new Error('No 2d context')
     }
 
-    // Calculate bounding box of the rotated image
-    const maxSize = Math.max(image.width, image.height)
-    const safeArea = 2 * ((maxSize / 2) * Math.sqrt(2))
-
-    // Set canvas size to accommodate rotation
-    canvas.width = safeArea
-    canvas.height = safeArea
-
-    // Translate to center
-    ctx.translate(safeArea / 2, safeArea / 2)
-    ctx.rotate((rotation * Math.PI) / 180)
-    ctx.translate(-safeArea / 2, -safeArea / 2)
-
-    // Draw image
-    ctx.drawImage(
-      image,
-      safeArea / 2 - image.width * 0.5,
-      safeArea / 2 - image.height * 0.5
-    )
-
-    const data = ctx.getImageData(0, 0, safeArea, safeArea)
-
-    // Set canvas to final size
+    // Set canvas to final crop size
     canvas.width = pixelCrop.width
     canvas.height = pixelCrop.height
 
-    // Draw the cropped image
-    ctx.putImageData(
-      data,
-      Math.round(0 - safeArea / 2 + image.width * 0.5 - pixelCrop.x),
-      Math.round(0 - safeArea / 2 + image.height * 0.5 - pixelCrop.y)
-    )
+    // Fill with white background (prevents black if something goes wrong)
+    ctx.fillStyle = '#FFFFFF'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-    // Convert to blob with conservative quality for better compatibility
+    if (rotation === 0) {
+      // Simple path for no rotation - more reliable
+      ctx.drawImage(
+        image,
+        pixelCrop.x,
+        pixelCrop.y,
+        pixelCrop.width,
+        pixelCrop.height,
+        0,
+        0,
+        pixelCrop.width,
+        pixelCrop.height
+      )
+    } else {
+      // Complex path for rotation
+      const maxSize = Math.max(image.width, image.height)
+      const safeArea = 2 * ((maxSize / 2) * Math.sqrt(2))
+
+      // Create temporary canvas for rotation
+      const tempCanvas = document.createElement('canvas')
+      tempCanvas.width = safeArea
+      tempCanvas.height = safeArea
+      const tempCtx = tempCanvas.getContext('2d', { alpha: false })
+      
+      if (!tempCtx) {
+        throw new Error('Failed to create temp context')
+      }
+
+      // Fill temp canvas with white
+      tempCtx.fillStyle = '#FFFFFF'
+      tempCtx.fillRect(0, 0, safeArea, safeArea)
+
+      // Rotate and draw
+      tempCtx.translate(safeArea / 2, safeArea / 2)
+      tempCtx.rotate((rotation * Math.PI) / 180)
+      tempCtx.translate(-safeArea / 2, -safeArea / 2)
+      tempCtx.drawImage(
+        image,
+        safeArea / 2 - image.width * 0.5,
+        safeArea / 2 - image.height * 0.5
+      )
+
+      // Draw cropped portion to final canvas
+      ctx.drawImage(
+        tempCanvas,
+        safeArea / 2 - image.width * 0.5 + pixelCrop.x,
+        safeArea / 2 - image.height * 0.5 + pixelCrop.y,
+        pixelCrop.width,
+        pixelCrop.height,
+        0,
+        0,
+        pixelCrop.width,
+        pixelCrop.height
+      )
+    }
+
+    // Convert to blob with validation
     return new Promise((resolve, reject) => {
       canvas.toBlob(
         (blob) => {
@@ -133,16 +167,16 @@ export function ImageCropModal({
             return
           }
           
-          // Verify blob has actual data
-          if (blob.size === 0) {
-            reject(new Error('Created blob is empty'))
+          // Verify blob has meaningful data (not just headers)
+          if (blob.size < 1000) {
+            reject(new Error('Created image is suspiciously small - likely corrupted'))
             return
           }
           
           resolve(blob)
         },
         'image/jpeg',
-        0.92 // Conservative quality for better compatibility across devices
+        0.92
       )
     })
   }
