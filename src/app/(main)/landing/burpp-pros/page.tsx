@@ -58,7 +58,7 @@ export default function BurppProsLandingPage() {
                 </p>
               </div>
               
-              <div className="space-y-4">
+              <div className="flex items-center gap-4">
                 <Button 
                   className="text-lg px-8 py-3" 
                   size="lg"
@@ -68,7 +68,7 @@ export default function BurppProsLandingPage() {
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
                 
-                <p className="text-sm italic text-muted-foreground">
+                <p className="text-sm italic text-muted-foreground whitespace-nowrap">
                   No Credit Card Required
                 </p>
               </div>
