@@ -1250,7 +1250,7 @@ export default function VendorRegisterPage() {
             <p className="text-muted-foreground">Tell us about your business so we can help you connect with clients.</p>
           </div>
           <div className="space-y-3">
-            <Label htmlFor="business">What is the name of your business? *</Label>
+            <Label htmlFor="business">Business name or service *</Label>
             <Input 
               id="business" 
               value={businessName} 
