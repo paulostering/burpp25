@@ -689,6 +689,16 @@ export default function VendorRegisterPage() {
     })
   }
 
+  // Helper to verify image loads successfully
+  const verifyImageLoads = (url: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const img = document.createElement('img')
+      img.onload = () => resolve()
+      img.onerror = () => reject(new Error('Image failed to load'))
+      img.src = url
+    })
+  }
+
   const onPhotoSelected = async (file: File | null, type: 'profile' | 'cover') => {
     if (!file) return
 
@@ -700,37 +710,42 @@ export default function VendorRegisterPage() {
     }
 
     // Show loading state
-    toast.loading('Preparing image...')
+    const loadingToast = toast.loading('Processing image...')
 
     try {
       // Compress if needed (mobile only, large files)
       const processedFile = await compressForMobile(file)
+      
+      // Create blob URL
+      const url = URL.createObjectURL(processedFile)
+      
+      // Verify the image actually loads before setting state
+      await verifyImageLoads(url)
       
       // Set the appropriate state based on type
       if (type === 'profile') {
         setProfilePhotoFile(processedFile)
         setCroppedAreaPixels(null)
         if (profilePhotoUrl) URL.revokeObjectURL(profilePhotoUrl)
-        const url = URL.createObjectURL(processedFile)
         setProfilePhotoUrl(url)
       } else {
         setCoverPhotoFile(processedFile)
         setCroppedAreaPixels(null)
         if (coverPhotoUrl) URL.revokeObjectURL(coverPhotoUrl)
-        const url = URL.createObjectURL(processedFile)
         setCoverPhotoUrl(url)
       }
       
       setCropType(type)
       
-      // Use setTimeout to ensure state is set before opening modal
+      // Open modal after image is verified loaded
       setTimeout(() => {
         setCropModalOpen(true)
-        toast.dismiss()
+        toast.dismiss(loadingToast)
       }, 100)
     } catch (error) {
-      toast.error('Failed to process image')
-      toast.dismiss()
+      toast.dismiss(loadingToast)
+      toast.error('Failed to load image. Please try a different photo.')
+      console.error('Image load error:', error)
     }
   }
 
@@ -1800,21 +1815,25 @@ export default function VendorRegisterPage() {
                                     return
                                   }
 
-                                  toast.loading('Preparing image...')
+                                  const loadingToast = toast.loading('Processing image...')
                                   
                                   try {
                                     const processedFile = await compressForMobile(file)
                                     const imageUrl = URL.createObjectURL(processedFile)
+                                    
+                                    // Verify image loads
+                                    await verifyImageLoads(imageUrl)
+                                    
                                     setCurrentProductImageIndex(index)
                                     setProductImageToCrop(imageUrl)
                                     
                                     setTimeout(() => {
                                       setProductCropModalOpen(true)
-                                      toast.dismiss()
+                                      toast.dismiss(loadingToast)
                                     }, 100)
                                   } catch (error) {
-                                    toast.error('Failed to process image')
-                                    toast.dismiss()
+                                    toast.dismiss(loadingToast)
+                                    toast.error('Failed to load image. Please try a different photo.')
                                   }
                                 }
                                 input.click()
