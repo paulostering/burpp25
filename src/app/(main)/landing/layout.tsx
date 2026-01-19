@@ -41,6 +41,16 @@ export default function LandingLayout({
                 Dashboard
               </Button>
             )}
+            {!user && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-base px-6 whitespace-nowrap"
+                onClick={() => router.push('/login')}
+              >
+                Login
+              </Button>
+            )}
             <Button
               size="sm"
               className="text-base px-6 whitespace-nowrap"

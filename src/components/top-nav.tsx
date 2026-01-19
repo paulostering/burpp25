@@ -208,12 +208,12 @@ export function TopNav() {
             <>
               {/* Desktop Navigation */}
               <div className="hidden md:flex items-center gap-3">
+                <Link href="/login" className="text-base hover:underline px-4 whitespace-nowrap">
+                  Login
+                </Link>
                 <Link href="/burp-for-business" className="text-base hover:underline px-4 whitespace-nowrap">
                   Join as a Pro
                 </Link>
-                <Button asChild variant="ghost" size="sm" className="text-base border border-gray-300 px-6 whitespace-nowrap">
-                  <Link href="/login">Login</Link>
-                </Button>
                 <Button asChild size="sm" className="text-base px-6 whitespace-nowrap">
                   <Link href="/signup">Sign Up</Link>
                 </Button>

@@ -84,20 +84,20 @@ export default function BurppProsLandingPage() {
           <div className="lg:col-span-6">
             <div className="relative flex items-center justify-start">
               <Image
-                src="/images/vendor_landing_locksmith.png"
-                alt="Burpp Professional Locksmith"
+                src="/images/vendor_landing_photographer.jpeg"
+                alt="Burpp Professional Photographer"
                 width={600}
                 height={700}
                 className="max-h-[700px] w-auto rounded-lg"
                 priority
               />
-              {/* Locksmith Tag */}
+              {/* Photographer Tag */}
               <div className="absolute bottom-8 left-4 bg-black/80 backdrop-blur-sm px-4 py-2 rounded-lg border-l-4 border-primary">
                 <div className="text-sm font-semibold text-white">
-                  Locksmith
+                  Photographer
                 </div>
                 <div className="text-xs text-white/80">
-                  Brooklyn, NY
+                  San Diego, CA
                 </div>
               </div>
             </div>
@@ -250,14 +250,14 @@ export default function BurppProsLandingPage() {
         <div className="md:hidden space-y-6">
           <div className="relative h-64 rounded-lg overflow-hidden">
             <Image 
-              src="/images/vendor-photographer.jpeg"
+              src="/images/burpp-for-business-3.jpg"
               alt="Ready to meet customers"
               fill
               className="object-cover"
             />
             <div className="absolute bottom-4 right-4 text-white border-l-4 border-primary pl-3 pr-3 py-2 bg-black/40 backdrop-blur-sm">
-              <div className="text-sm font-semibold">Photographer</div>
-              <div className="text-xs font-bold">San Diego, CA</div>
+              <div className="text-sm font-semibold">Drumming Teacher</div>
+              <div className="text-xs font-bold">Brooklyn, NY</div>
             </div>
           </div>
           <div className="bg-white rounded-lg">
@@ -276,7 +276,7 @@ export default function BurppProsLandingPage() {
         </div>
 
         {/* Desktop: Overlay Layout */}
-        <div className="hidden md:block relative min-h-[500px] bg-cover bg-center bg-no-repeat rounded-lg overflow-hidden" style={{ backgroundImage: "url('/images/vendor-photographer.jpeg')" }}>
+        <div className="hidden md:block relative min-h-[500px] bg-cover bg-center bg-no-repeat rounded-lg overflow-hidden" style={{ backgroundImage: "url('/images/burpp-for-business-3.jpg')" }}>
           <div className="absolute left-8 top-1/2 -translate-y-1/2 bg-white rounded-lg p-8 max-w-md">
             <h2 className="text-3xl font-bold text-black mb-4">Ready to meet your new customers?</h2>
             <p className="text-xl text-black mb-8">It&apos;s free, easy, and only takes a few minutes.</p>
@@ -291,8 +291,8 @@ export default function BurppProsLandingPage() {
             </Button>
           </div>
           <div className="absolute bottom-10 right-10 text-white border-l-4 border-primary pl-4 pr-4 py-2 bg-black/40 backdrop-blur-sm">
-            <div className="text-lg font-semibold">Photographer</div>
-            <div className="text-sm font-bold">San Diego, CA</div>
+            <div className="text-lg font-semibold">Drumming Teacher</div>
+            <div className="text-sm font-bold">Brooklyn, NY</div>
           </div>
         </div>
       </div>

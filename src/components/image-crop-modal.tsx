@@ -117,8 +117,8 @@ export function ImageCropModal({
       )
     } else {
       // Complex path for rotation
-      const maxSize = Math.max(image.width, image.height)
-      const safeArea = 2 * ((maxSize / 2) * Math.sqrt(2))
+    const maxSize = Math.max(image.width, image.height)
+    const safeArea = 2 * ((maxSize / 2) * Math.sqrt(2))
 
       // Create temporary canvas for rotation
       const tempCanvas = document.createElement('canvas')
@@ -139,10 +139,10 @@ export function ImageCropModal({
       tempCtx.rotate((rotation * Math.PI) / 180)
       tempCtx.translate(-safeArea / 2, -safeArea / 2)
       tempCtx.drawImage(
-        image,
-        safeArea / 2 - image.width * 0.5,
-        safeArea / 2 - image.height * 0.5
-      )
+      image,
+      safeArea / 2 - image.width * 0.5,
+      safeArea / 2 - image.height * 0.5
+    )
 
       // Draw cropped portion to final canvas
       ctx.drawImage(
@@ -284,43 +284,43 @@ export function ImageCropModal({
         <div className="space-y-4 pt-4">
           {/* Zoom & Rotation Controls - Side by Side */}
           <div className="grid grid-cols-2 gap-4">
-            {/* Zoom Control */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm text-gray-600">
-                <div className="flex items-center gap-2">
-                  <ZoomOut className="h-4 w-4" />
-                  <span>Zoom</span>
-                </div>
+          {/* Zoom Control */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm text-gray-600">
+              <div className="flex items-center gap-2">
+                <ZoomOut className="h-4 w-4" />
+                <span>Zoom</span>
+              </div>
                 <span className="text-xs">{zoom.toFixed(1)}x</span>
-              </div>
-              <Slider
-                value={[zoom]}
-                onValueChange={(value) => setZoom(value[0])}
-                min={1}
-                max={5}
-                step={0.1}
-                className="w-full"
-              />
             </div>
+            <Slider
+              value={[zoom]}
+              onValueChange={(value) => setZoom(value[0])}
+              min={1}
+              max={5}
+              step={0.1}
+              className="w-full"
+            />
+          </div>
 
-            {/* Rotation Control */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm text-gray-600">
-                <div className="flex items-center gap-2">
-                  <RotateCcw className="h-4 w-4" />
-                  <span>Rotation</span>
-                </div>
-                <span className="text-xs">{rotation}°</span>
+          {/* Rotation Control */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm text-gray-600">
+              <div className="flex items-center gap-2">
+                <RotateCcw className="h-4 w-4" />
+                <span>Rotation</span>
               </div>
-              <Slider
-                value={[rotation]}
-                onValueChange={(value) => setRotation(value[0])}
-                min={0}
-                max={360}
-                step={1}
-                className="w-full"
-              />
+              <span className="text-xs">{rotation}°</span>
             </div>
+            <Slider
+              value={[rotation]}
+              onValueChange={(value) => setRotation(value[0])}
+              min={0}
+              max={360}
+              step={1}
+              className="w-full"
+            />
+          </div>
           </div>
         </div>
 

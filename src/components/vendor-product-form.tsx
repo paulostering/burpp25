@@ -74,7 +74,7 @@ export function VendorProductForm({ vendorId, productId, initialData }: VendorPr
     
     // Create preview URL using blob (faster than FileReader)
     const imageUrl = URL.createObjectURL(file)
-    setImageToCrop(imageUrl)
+      setImageToCrop(imageUrl)
     
     // Use setTimeout to ensure state is set before opening modal
     setTimeout(() => {
@@ -86,8 +86,8 @@ export function VendorProductForm({ vendorId, productId, initialData }: VendorPr
   const handleCropComplete = async (croppedBlob: Blob) => {
     // Convert blob to URL for preview (faster than FileReader)
     const dataUrl = URL.createObjectURL(croppedBlob)
-    setCroppedImageUrl(dataUrl)
-    setPreviewUrl(dataUrl)
+      setCroppedImageUrl(dataUrl)
+      setPreviewUrl(dataUrl)
     setCropModalOpen(false)
   }
 

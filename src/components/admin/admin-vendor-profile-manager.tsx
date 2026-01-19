@@ -239,7 +239,7 @@ export function AdminVendorProfileManager({ vendor, stats: _stats, categories, o
     toast.loading('Preparing image...')
     
     const url = URL.createObjectURL(file)
-    setCropType(type)
+      setCropType(type)
     setImageToCrop(url)
     
     // Use setTimeout to ensure state is set before opening modal

@@ -213,7 +213,7 @@ export function MultiSelect({
                   ref={searchInputRef}
                   placeholder="Search..." 
                 />
-              </div>
+            </div>
               
               {/* Categories in middle - scrollable, spans full height */}
               <CommandList className="flex-1 overflow-y-auto max-h-none" style={{ WebkitOverflowScrolling: 'touch' }}>
