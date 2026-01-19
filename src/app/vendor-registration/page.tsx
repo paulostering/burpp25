@@ -310,6 +310,26 @@ export default function VendorRegisterPage() {
     }
   }
 
+  const formatPhoneNumber = (value: string) => {
+    // Remove all non-numeric characters
+    const phoneNumber = value.replace(/\D/g, '')
+    
+    // Format as (XXX) XXX-XXXX
+    if (phoneNumber.length <= 3) {
+      return phoneNumber
+    } else if (phoneNumber.length <= 6) {
+      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`
+    } else {
+      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`
+    }
+  }
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatPhoneNumber(e.target.value)
+    setPhone(formatted)
+    clearError('phone_number')
+  }
+
   const handleGenerateTitle = async () => {
     setIsGeneratingTitle(true)
     try {
@@ -1475,13 +1495,11 @@ export default function VendorRegisterPage() {
             <Input 
               id="phone" 
               value={phone} 
-              onChange={(e) => {
-                clearError('phone_number')
-                setPhone(e.target.value)
-              }}
-              maxLength={20}
+              onChange={handlePhoneChange}
+              maxLength={14}
+              type="tel"
+              inputMode="tel"
               className={`h-12 text-base ${errors.phone_number ? 'border-red-500' : ''}`}
-              placeholder="(555) 123-4567"
             />
             {errors.phone_number && (
               <p className="text-sm text-red-500">{errors.phone_number}</p>
