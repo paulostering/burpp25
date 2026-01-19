@@ -638,7 +638,58 @@ export default function VendorRegisterPage() {
     return null
   }
 
-  const onPhotoSelected = (file: File | null, type: 'profile' | 'cover') => {
+  // Helper to compress large images on mobile only
+  const compressForMobile = async (file: File): Promise<File> => {
+    // Only compress on mobile and if file is large
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+    const shouldCompress = isMobile && file.size > 5 * 1024 * 1024 // 5MB threshold on mobile
+    
+    if (!shouldCompress) {
+      return file // Return original on desktop or small files
+    }
+
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      const img = document.createElement('img')
+      
+      img.onload = () => {
+        // Compress to max 2000px on longest side for mobile
+        const maxDim = 2000
+        let width = img.width
+        let height = img.height
+        
+        if (width > height && width > maxDim) {
+          height = (height * maxDim) / width
+          width = maxDim
+        } else if (height > maxDim) {
+          width = (width * maxDim) / height
+          height = maxDim
+        }
+        
+        canvas.width = width
+        canvas.height = height
+        ctx?.drawImage(img, 0, 0, width, height)
+        
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              resolve(new File([blob], file.name, { type: 'image/jpeg' }))
+            } else {
+              resolve(file)
+            }
+          },
+          'image/jpeg',
+          0.85 // Good quality compression
+        )
+      }
+      
+      img.onerror = () => resolve(file)
+      img.src = URL.createObjectURL(file)
+    })
+  }
+
+  const onPhotoSelected = async (file: File | null, type: 'profile' | 'cover') => {
     if (!file) return
 
     // Validate image
@@ -651,28 +702,36 @@ export default function VendorRegisterPage() {
     // Show loading state
     toast.loading('Preparing image...')
 
-    // Set the appropriate state based on type
-    if (type === 'profile') {
-      setProfilePhotoFile(file)
-      setCroppedAreaPixels(null)
-      if (profilePhotoUrl) URL.revokeObjectURL(profilePhotoUrl)
-      const url = URL.createObjectURL(file)
-      setProfilePhotoUrl(url)
-    } else {
-      setCoverPhotoFile(file)
-      setCroppedAreaPixels(null)
-      if (coverPhotoUrl) URL.revokeObjectURL(coverPhotoUrl)
-      const url = URL.createObjectURL(file)
-      setCoverPhotoUrl(url)
-    }
-    
-    setCropType(type)
-    
-    // Use setTimeout to ensure state is set before opening modal
-    setTimeout(() => {
-      setCropModalOpen(true)
+    try {
+      // Compress if needed (mobile only, large files)
+      const processedFile = await compressForMobile(file)
+      
+      // Set the appropriate state based on type
+      if (type === 'profile') {
+        setProfilePhotoFile(processedFile)
+        setCroppedAreaPixels(null)
+        if (profilePhotoUrl) URL.revokeObjectURL(profilePhotoUrl)
+        const url = URL.createObjectURL(processedFile)
+        setProfilePhotoUrl(url)
+      } else {
+        setCoverPhotoFile(processedFile)
+        setCroppedAreaPixels(null)
+        if (coverPhotoUrl) URL.revokeObjectURL(coverPhotoUrl)
+        const url = URL.createObjectURL(processedFile)
+        setCoverPhotoUrl(url)
+      }
+      
+      setCropType(type)
+      
+      // Use setTimeout to ensure state is set before opening modal
+      setTimeout(() => {
+        setCropModalOpen(true)
+        toast.dismiss()
+      }, 100)
+    } catch (error) {
+      toast.error('Failed to process image')
       toast.dismiss()
-    }, 100)
+    }
   }
 
   const handleCropComplete = async (croppedBlob: Blob) => {
@@ -1727,7 +1786,7 @@ export default function VendorRegisterPage() {
                                 const input = document.createElement('input')
                                 input.type = 'file'
                                 input.accept = 'image/*'
-                                input.onchange = (e) => {
+                                input.onchange = async (e) => {
                                   const file = (e.target as HTMLInputElement).files?.[0]
                                   if (!file) return
 
@@ -1742,14 +1801,21 @@ export default function VendorRegisterPage() {
                                   }
 
                                   toast.loading('Preparing image...')
-                                  const imageUrl = URL.createObjectURL(file)
-                                  setCurrentProductImageIndex(index)
-                                  setProductImageToCrop(imageUrl)
                                   
-                                  setTimeout(() => {
-                                    setProductCropModalOpen(true)
+                                  try {
+                                    const processedFile = await compressForMobile(file)
+                                    const imageUrl = URL.createObjectURL(processedFile)
+                                    setCurrentProductImageIndex(index)
+                                    setProductImageToCrop(imageUrl)
+                                    
+                                    setTimeout(() => {
+                                      setProductCropModalOpen(true)
+                                      toast.dismiss()
+                                    }, 100)
+                                  } catch (error) {
+                                    toast.error('Failed to process image')
                                     toast.dismiss()
-                                  }, 100)
+                                  }
                                 }
                                 input.click()
                               }}
@@ -1784,7 +1850,7 @@ export default function VendorRegisterPage() {
                             const input = document.createElement('input')
                             input.type = 'file'
                             input.accept = 'image/*'
-                            input.onchange = (e) => {
+                            input.onchange = async (e) => {
                               const file = (e.target as HTMLInputElement).files?.[0]
                               if (!file) return
 
@@ -1799,14 +1865,21 @@ export default function VendorRegisterPage() {
                               }
 
                               toast.loading('Preparing image...')
-                              const imageUrl = URL.createObjectURL(file)
-                              setCurrentProductImageIndex(index)
-                              setProductImageToCrop(imageUrl)
                               
-                              setTimeout(() => {
-                                setProductCropModalOpen(true)
+                              try {
+                                const processedFile = await compressForMobile(file)
+                                const imageUrl = URL.createObjectURL(processedFile)
+                                setCurrentProductImageIndex(index)
+                                setProductImageToCrop(imageUrl)
+                                
+                                setTimeout(() => {
+                                  setProductCropModalOpen(true)
+                                  toast.dismiss()
+                                }, 100)
+                              } catch (error) {
+                                toast.error('Failed to process image')
                                 toast.dismiss()
-                              }, 100)
+                              }
                             }
                             input.click()
                           }}
