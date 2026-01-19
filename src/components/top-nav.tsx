@@ -31,6 +31,35 @@ export function TopNav() {
   const [firstName, setFirstName] = useState<string | null>(null)
   const [roleLoading, setRoleLoading] = useState(true)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [registrationEnabled, setRegistrationEnabled] = useState(true)
+
+  // Check registration setting
+  useEffect(() => {
+    const checkRegistration = async () => {
+      try {
+        const supabase = createClient()
+        const { data } = await supabase
+          .from('app_settings')
+          .select('setting_value')
+          .eq('setting_key', 'user_registration_enabled')
+          .single()
+
+        if (data) {
+          const value = data.setting_value
+          if (typeof value === 'boolean') {
+            setRegistrationEnabled(value)
+          } else if (typeof value === 'string') {
+            setRegistrationEnabled(value.toLowerCase().replace(/"/g, '') === 'true')
+          }
+        }
+      } catch (error) {
+        // Default to enabled on error
+        setRegistrationEnabled(true)
+      }
+    }
+
+    checkRegistration()
+  }, [])
 
   // Check user role and get profile photo
   useEffect(() => {
@@ -81,7 +110,7 @@ export function TopNav() {
   const isVendorDashboard = pathname?.includes('/vendor/') && pathname?.includes('/dashboard')
   // Show condensed search on non-homepage pages, but not for vendors
   const isHomePage = pathname === '/' || pathname === '/home'
-  const showCondensedSearch = !isHomePage && !isAuthPage && !isRegistrationPage && !isVendorDashboard && !isVendor && !roleLoading
+  const showCondensedSearch = !isHomePage && !isAuthPage && !isRegistrationPage && !isVendorDashboard && !isVendor && !roleLoading && registrationEnabled
 
   // Get user initial from first name
   const getUserInitial = () => {
@@ -106,7 +135,7 @@ export function TopNav() {
     <header className={`border-b bg-white ${isMessagesPage ? '' : 'sticky top-0'} z-50`}>
       <div className="flex h-20 items-center justify-between px-6 py-5">
         <div className="flex items-center gap-4 md:gap-8 flex-1 min-w-0">
-          <Link href="/" className="flex items-center gap-2 font-semibold flex-shrink-0">
+          <Link href={registrationEnabled ? "/" : "/pros"} className="flex items-center gap-2 font-semibold flex-shrink-0">
             <Image 
               src="/images/burpp_logo.png" 
               alt="Burpp Logo" 
@@ -202,7 +231,7 @@ export function TopNav() {
                     <SheetTitle>Navigation Menu</SheetTitle>
                   </VisuallyHidden>
                   <div className="flex items-center justify-between mb-8">
-                    <Link href="/" onClick={() => setMobileMenuOpen(false)}>
+                    <Link href={registrationEnabled ? "/" : "/pros"} onClick={() => setMobileMenuOpen(false)}>
                       <Image 
                         src="/images/burpp_logo.png" 
                         alt="Burpp Logo" 

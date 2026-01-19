@@ -4,8 +4,56 @@ import { Footer } from "@/components/footer"
 import { Card, CardContent } from "@/components/ui/card"
 import Image from "next/image"
 import { Search, MessageCircle } from "lucide-react"
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { createClient } from "@/lib/supabase/client"
 
 export default function HowToUse() {
+  const router = useRouter()
+  const [shouldRender, setShouldRender] = useState(false)
+  
+  // Redirect to /pros if registration is disabled
+  useEffect(() => {
+    const checkAndRedirect = async () => {
+      try {
+        const supabase = createClient()
+        const { data } = await supabase
+          .from('app_settings')
+          .select('setting_value')
+          .eq('setting_key', 'user_registration_enabled')
+          .single()
+
+        let registrationEnabled = true
+        if (data) {
+          const value = data.setting_value
+          if (typeof value === 'boolean') {
+            registrationEnabled = value
+          } else if (typeof value === 'string') {
+            registrationEnabled = value.toLowerCase().replace(/"/g, '') === 'true'
+          }
+        }
+
+        if (!registrationEnabled) {
+          router.replace('/pros')
+          return
+        }
+        
+        setShouldRender(true)
+      } catch (error) {
+        setShouldRender(true)
+      }
+    }
+
+    checkAndRedirect()
+  }, [router])
+  
+  if (!shouldRender) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    )
+  }
   
   return (
     <div className="space-y-24">

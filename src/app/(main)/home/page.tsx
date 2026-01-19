@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useEffect } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { SearchHero } from "@/components/search-hero"
 import { MobileSearchHero } from "@/components/mobile-search-hero"
 import { Footer } from "@/components/footer"
@@ -8,9 +8,48 @@ import { FeaturedCategories } from "@/components/featured-categories"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
+import { createClient } from "@/lib/supabase/client"
 
 function HomeContent() {
   const router = useRouter()
+  const [shouldRender, setShouldRender] = useState(false)
+  
+  // Check registration setting and redirect if disabled
+  useEffect(() => {
+    const checkRegistrationAndRedirect = async () => {
+      try {
+        const supabase = createClient()
+        const { data } = await supabase
+          .from('app_settings')
+          .select('setting_value')
+          .eq('setting_key', 'user_registration_enabled')
+          .single()
+
+        let registrationEnabled = true
+        if (data) {
+          const value = data.setting_value
+          if (typeof value === 'boolean') {
+            registrationEnabled = value
+          } else if (typeof value === 'string') {
+            registrationEnabled = value.toLowerCase().replace(/"/g, '') === 'true'
+          }
+        }
+
+        // Redirect to /pros if registration is disabled
+        if (!registrationEnabled) {
+          router.replace('/pros')
+          return
+        }
+        
+        setShouldRender(true)
+      } catch (error) {
+        // On error, allow page to load
+        setShouldRender(true)
+      }
+    }
+
+    checkRegistrationAndRedirect()
+  }, [router])
   
   // Check for password reset token and redirect immediately
   useEffect(() => {
@@ -44,6 +83,15 @@ function HomeContent() {
     window.addEventListener('hashchange', checkHash)
     return () => window.removeEventListener('hashchange', checkHash)
   }, [])
+  
+  // Don't render anything until we've checked registration
+  if (!shouldRender) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    )
+  }
   
   return (
     <div className="space-y-24">

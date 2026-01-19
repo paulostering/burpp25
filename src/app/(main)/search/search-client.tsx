@@ -10,6 +10,7 @@ import { Footer } from '@/components/footer'
 import type { VendorProfile } from '@/types/db'
 import { getCategories } from '@/lib/categories-cache'
 import type { Category } from '@/types/db'
+import { createClient } from '@/lib/supabase/client'
 
 export function SearchClient() {
   const searchParams = useSearchParams()
@@ -20,6 +21,42 @@ export function SearchClient() {
   const [sortBy, setSortBy] = useState<'rating' | 'hourly'>('rating')
   const [categoryName, setCategoryName] = useState<string | undefined>()
   const [categories, setCategories] = useState<Category[]>([])
+  const [shouldRender, setShouldRender] = useState(false)
+
+  // Redirect to /pros if registration is disabled
+  useEffect(() => {
+    const checkAndRedirect = async () => {
+      try {
+        const supabase = createClient()
+        const { data } = await supabase
+          .from('app_settings')
+          .select('setting_value')
+          .eq('setting_key', 'user_registration_enabled')
+          .single()
+
+        let registrationEnabled = true
+        if (data) {
+          const value = data.setting_value
+          if (typeof value === 'boolean') {
+            registrationEnabled = value
+          } else if (typeof value === 'string') {
+            registrationEnabled = value.toLowerCase().replace(/"/g, '') === 'true'
+          }
+        }
+
+        if (!registrationEnabled) {
+          router.replace('/pros')
+          return
+        }
+        
+        setShouldRender(true)
+      } catch (error) {
+        setShouldRender(true)
+      }
+    }
+
+    checkAndRedirect()
+  }, [router])
 
   const categoryParam = searchParams.get('category') || undefined
   const q = searchParams.get('q') || undefined
@@ -127,6 +164,15 @@ export function SearchClient() {
 
     loadCategories()
   }, [activeCategoryId])
+
+  // Don't render anything until registration check completes
+  if (!shouldRender) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    )
+  }
 
   if (loading) {
     return (
