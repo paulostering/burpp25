@@ -25,7 +25,7 @@ export default function PrivacyPolicy() {
               We're committed to protecting your personal information and being transparent about how we collect, use, and share your data.
             </p>
             <p className="text-sm text-primary-foreground/70">
-              Last Updated: January 1, 2025
+              Last Updated: January 19, 2026
             </p>
           </div>
         </div>
