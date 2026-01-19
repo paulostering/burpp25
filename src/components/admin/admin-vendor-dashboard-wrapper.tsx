@@ -108,7 +108,7 @@ export function AdminVendorDashboardWrapper({ vendor: initialVendor, stats, cate
           >
             <div className="flex items-center space-x-2">
               <Package className="h-5 w-5" />
-              <span>Product Offering</span>
+              <span>Products</span>
             </div>
           </button>
           <button

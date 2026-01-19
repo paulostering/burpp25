@@ -412,19 +412,19 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
           {isEditing ? (
             <>
               <Button variant="outline" onClick={handleCancel} disabled={isLoading}>
-                <X className="h-4 w-4 mr-2" />
-                Cancel
+                <X className="h-4 w-4 md:mr-2" />
+                <span className="hidden md:inline">Cancel</span>
               </Button>
               <Button onClick={handleSave} disabled={isLoading}>
                 {isLoading ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Saving...
+                    <Loader2 className="h-4 w-4 md:mr-2 animate-spin" />
+                    <span className="hidden md:inline">Saving...</span>
                   </>
                 ) : (
                   <>
-                    <Save className="h-4 w-4 mr-2" />
-                    Save Changes
+                    <Save className="h-4 w-4 md:mr-2" />
+                    <span className="hidden md:inline">Save Changes</span>
                   </>
                 )}
               </Button>
