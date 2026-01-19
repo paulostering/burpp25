@@ -188,15 +188,14 @@ export default function BurppProsLandingPage() {
               <div className="space-y-2.5">
                 <Quote className="h-5 w-5 text-primary opacity-20" />
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  "Burpp has completely transformed how I connect with clients. I've booked more jobs in the past month than the previous three months combined."
+                  "I didn't realize how much time I was wasting bouncing between Google, texts, and recommendations until I tried Burpp. It's such a relief to have one place where real service providers actually exist and are easy to find. It feels like someone finally built something for real life."
                 </p>
                 <div className="flex items-center gap-2.5 pt-0.5">
                   <Avatar className="h-9 w-9 shrink-0">
-                    <AvatarFallback className="bg-primary/10 text-primary">SM</AvatarFallback>
+                    <AvatarFallback className="bg-primary/10 text-primary">EN</AvatarFallback>
                   </Avatar>
                   <div>
-                    <div className="font-semibold text-sm">Sarah Martinez</div>
-                    <div className="text-xs text-muted-foreground">Home Cleaning Pro</div>
+                    <div className="font-semibold text-sm">Elizabeth N.</div>
                   </div>
                 </div>
               </div>
@@ -209,15 +208,14 @@ export default function BurppProsLandingPage() {
               <div className="space-y-2.5">
                 <Quote className="h-5 w-5 text-primary opacity-20" />
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  "I love that Burpp lets me offer both virtual and in-person sessions. The messaging feature makes it easy to coordinate with clients."
+                  "Burpp solves a problem I complain about all the time: knowing I need help, but not wanting to hunt for it. The platform feels intuitive, modern, and actually useful. It's not overwhelming. It just works—and that alone makes it stand out."
                 </p>
                 <div className="flex items-center gap-2.5 pt-0.5">
                   <Avatar className="h-9 w-9 shrink-0">
-                    <AvatarFallback className="bg-primary/10 text-primary">JD</AvatarFallback>
+                    <AvatarFallback className="bg-primary/10 text-primary">AH</AvatarFallback>
                   </Avatar>
                   <div>
-                    <div className="font-semibold text-sm">James Davis</div>
-                    <div className="text-xs text-muted-foreground">Personal Trainer</div>
+                    <div className="font-semibold text-sm">Alex H.</div>
                   </div>
                 </div>
               </div>
@@ -230,15 +228,14 @@ export default function BurppProsLandingPage() {
               <div className="space-y-2.5">
                 <Quote className="h-5 w-5 text-primary opacity-20" />
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  "Setting up my profile was quick and free. Within a week, I had my first booking. No commission fees eating into my earnings."
+                  "What I love about Burpp is that it connects people who need things done with independent professionals in a way that feels human, not corporate. It feels like a smarter, calmer way to get help—without the usual friction."
                 </p>
                 <div className="flex items-center gap-2.5 pt-0.5">
                   <Avatar className="h-9 w-9 shrink-0">
-                    <AvatarFallback className="bg-primary/10 text-primary">EW</AvatarFallback>
+                    <AvatarFallback className="bg-primary/10 text-primary">BM</AvatarFallback>
                   </Avatar>
                   <div>
-                    <div className="font-semibold text-sm">Emily Wilson</div>
-                    <div className="text-xs text-muted-foreground">Event Planner</div>
+                    <div className="font-semibold text-sm">Brenda M.</div>
                   </div>
                 </div>
               </div>
