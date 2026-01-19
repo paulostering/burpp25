@@ -1164,7 +1164,7 @@ export default function VendorRegisterPage() {
                 clearError('business_name')
                 setBusinessName(e.target.value)
               }}
-              className={errors.business_name ? 'border-red-500' : ''}
+              className={`h-12 ${errors.business_name ? 'border-red-500' : ''}`}
             />
             {errors.business_name && (
               <p className="text-sm text-red-500">{errors.business_name}</p>
@@ -1241,7 +1241,7 @@ export default function VendorRegisterPage() {
                 clearError('profile_title')
                 setProfileTitle(e.target.value)
               }}
-              className={errors.profile_title ? 'border-red-500' : ''}
+              className={`h-12 ${errors.profile_title ? 'border-red-500' : ''}`}
               placeholder="e.g., Professional Plumber with 10+ Years Experience"
             />
             {errors.profile_title && (
@@ -1295,7 +1295,7 @@ export default function VendorRegisterPage() {
                 setAbout(value)
               }}
               rows={6}
-              className={cn('text-base', errors.about && 'border-red-500')}
+              className={cn('text-base py-3', errors.about && 'border-red-500')}
               placeholder="Tell potential clients about your business, experience, and what makes you unique..."
               maxLength={200}
             />
@@ -1349,10 +1349,10 @@ export default function VendorRegisterPage() {
                     setIsLocationDropdownOpen(true)
                   }
                 }}
-                placeholder="Enter city or zip code"
-                className={`pr-12 ${errors.zip_code ? 'border-red-500' : ''}`}
-                autoComplete="off"
-              />
+                    placeholder="Enter city or zip code"
+                    className={`h-12 pr-12 ${errors.zip_code ? 'border-red-500' : ''}`}
+                    autoComplete="off"
+                  />
               <Button
                 type="button"
                 variant="ghost"
@@ -1413,7 +1413,7 @@ export default function VendorRegisterPage() {
                 setRadius(parseInt(value))
               }}
             >
-              <SelectTrigger id="radius" className="w-full text-base">
+              <SelectTrigger id="radius" className="w-full text-base h-12">
                 <SelectValue placeholder="Select distance" />
               </SelectTrigger>
               <SelectContent className="text-base">
@@ -1427,12 +1427,17 @@ export default function VendorRegisterPage() {
           
           {/* Virtual Services Switch */}
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
-            <Label 
-              htmlFor="offersVirtual" 
-              className="text-base font-semibold cursor-pointer"
-            >
-              I offer services virtually as well.
-            </Label>
+            <div className="flex-1">
+              <Label 
+                htmlFor="offersVirtual" 
+                className="text-base font-semibold cursor-pointer block mb-1"
+              >
+                Virtual Services
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Indicate whether you offer your services virtually.
+              </p>
+            </div>
             <Switch 
               id="offersVirtual"
               checked={offersVirtual}
@@ -1463,6 +1468,7 @@ export default function VendorRegisterPage() {
           <section className="space-y-6">
           <div>
             <h2 className="text-2xl font-semibold">Add Your Business Phone Number</h2>
+            <p className="text-muted-foreground">This will help customers contact your business.</p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="phone">Phone Number *</Label>
@@ -1474,7 +1480,7 @@ export default function VendorRegisterPage() {
                 setPhone(e.target.value)
               }}
               maxLength={20}
-              className={`text-base ${errors.phone_number ? 'border-red-500' : ''}`}
+              className={`h-12 text-base ${errors.phone_number ? 'border-red-500' : ''}`}
               placeholder="(555) 123-4567"
             />
             {errors.phone_number && (
@@ -1484,12 +1490,17 @@ export default function VendorRegisterPage() {
           
           {/* Phone Contact Switch */}
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
-            <Label 
-              htmlFor="allowPhoneContact" 
-              className="text-base font-semibold cursor-pointer"
-            >
-              I would like to allow users to contact me via phone.
-            </Label>
+            <div className="flex-1">
+              <Label 
+                htmlFor="allowPhoneContact" 
+                className="text-base font-semibold cursor-pointer block mb-1"
+              >
+                Phone Contact
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                I would like to allow clients to contact me by phone.
+              </p>
+            </div>
             <Switch 
               id="allowPhoneContact"
               checked={allowPhoneContact}
@@ -1527,7 +1538,7 @@ export default function VendorRegisterPage() {
                 value={hourlyRateInput}
                 onChange={handleHourlyRateChange}
                 required
-                className={`pr-16 text-base ${errors.hourly_rate ? 'border-red-500' : ''}`}
+                className={`h-12 pr-16 text-base ${errors.hourly_rate ? 'border-red-500' : ''}`}
               />
               <div className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-base font-medium pointer-events-none">
                 $/HR
@@ -1621,7 +1632,7 @@ export default function VendorRegisterPage() {
                             setProductErrors(updatedErrors)
                           }
                         }}
-                        className={productErrors[index]?.title ? 'border-red-500' : ''}
+                        className={`h-12 ${productErrors[index]?.title ? 'border-red-500' : ''}`}
                         placeholder="e.g., Professional Wedding Photography Package"
                       />
                       {productErrors[index]?.title && (
@@ -1648,7 +1659,7 @@ export default function VendorRegisterPage() {
                             setProductErrors(updatedErrors)
                           }
                         }}
-                        className={productErrors[index]?.description ? 'border-red-500' : ''}
+                        className={`text-base py-3 ${productErrors[index]?.description ? 'border-red-500' : ''}`}
                         rows={4}
                         placeholder="Describe what's included, the process, timeline, and what makes your service unique..."
                       />
@@ -2003,7 +2014,7 @@ export default function VendorRegisterPage() {
                   setFirstName(e.target.value)
                 }}
                 maxLength={50}
-                className={errors.first_name ? 'border-red-500' : ''}
+                className={`h-12 ${errors.first_name ? 'border-red-500' : ''}`}
               />
               {errors.first_name && (
                 <p className="text-sm text-red-500">{errors.first_name}</p>
@@ -2019,7 +2030,7 @@ export default function VendorRegisterPage() {
                   setLastName(e.target.value)
                 }}
                 maxLength={50}
-                className={errors.last_name ? 'border-red-500' : ''}
+                className={`h-12 ${errors.last_name ? 'border-red-500' : ''}`}
               />
               {errors.last_name && (
                 <p className="text-sm text-red-500">{errors.last_name}</p>
@@ -2036,9 +2047,9 @@ export default function VendorRegisterPage() {
                 clearError('email')
                 setEmail(e.target.value)
               }}
-              maxLength={100}
-              className={errors.email ? 'border-red-500' : ''}
-            />
+                maxLength={100}
+                className={`h-12 ${errors.email ? 'border-red-500' : ''}`}
+              />
             {errors.email && (
               <p className="text-sm text-red-500">{errors.email}</p>
             )}
@@ -2053,7 +2064,7 @@ export default function VendorRegisterPage() {
                 clearError('password')
                 setPassword(e.target.value)
               }}
-              className={errors.password ? 'border-red-500' : ''}
+              className={`h-12 ${errors.password ? 'border-red-500' : ''}`}
             />
             {errors.password && (
               <p className="text-sm text-red-500">{errors.password}</p>
@@ -2094,7 +2105,7 @@ export default function VendorRegisterPage() {
                 clearError('confirmPassword')
                 setConfirmPassword(e.target.value)
               }}
-              className={errors.confirmPassword ? 'border-red-500' : ''}
+              className={`h-12 ${errors.confirmPassword ? 'border-red-500' : ''}`}
             />
             {errors.confirmPassword && (
               <p className="text-sm text-red-500">{errors.confirmPassword}</p>
