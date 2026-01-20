@@ -406,25 +406,26 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
       {/* Header with Edit Toggle */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-semibold text-gray-900">Manage My Profile</h1>
+          <h1 className="text-3xl font-semibold text-gray-900">Manage Profile</h1>
         </div>
         <div className="flex space-x-3">
           {isEditing ? (
             <>
-              <Button variant="outline" onClick={handleCancel} disabled={isLoading}>
-                <X className="h-4 w-4 md:mr-2" />
-                <span className="hidden md:inline">Cancel</span>
+              {/* Desktop buttons */}
+              <Button variant="outline" onClick={handleCancel} disabled={isLoading} className="hidden md:flex">
+                <X className="h-4 w-4 mr-2" />
+                Cancel
               </Button>
-              <Button onClick={handleSave} disabled={isLoading}>
+              <Button onClick={handleSave} disabled={isLoading} className="hidden md:flex">
                 {isLoading ? (
                   <>
-                    <Loader2 className="h-4 w-4 md:mr-2 animate-spin" />
-                    <span className="hidden md:inline">Saving...</span>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Saving...
                   </>
                 ) : (
                   <>
-                    <Save className="h-4 w-4 md:mr-2" />
-                    <span className="hidden md:inline">Save Changes</span>
+                    <Save className="h-4 w-4 mr-2" />
+                    Save Changes
                   </>
                 )}
               </Button>
@@ -432,7 +433,7 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
           ) : (
             <Button size="sm" className="text-base" onClick={() => setIsEditing(true)}>
               <Edit className="h-4 w-4 mr-2" />
-              Edit Profile
+              Edit
             </Button>
           )}
         </div>
@@ -880,6 +881,31 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
         aspectRatio={cropType === 'profile' ? 1 : 446 / 192}
         title={cropType === 'profile' ? 'Crop Profile Photo' : 'Crop Cover Photo'}
       />
+
+      {/* Mobile Sticky Footer - Only show when editing */}
+      {isEditing && (
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-50">
+          <div className="flex items-center justify-between gap-3">
+            <Button onClick={handleSave} disabled={isLoading} className="flex-1">
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save
+                </>
+              )}
+            </Button>
+            <Button variant="outline" onClick={handleCancel} disabled={isLoading} className="flex-1">
+              <X className="h-4 w-4 mr-2" />
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
