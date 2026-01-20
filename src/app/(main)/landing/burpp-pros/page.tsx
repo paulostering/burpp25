@@ -48,6 +48,9 @@ export default function BurppProsLandingPage() {
           {/* Single Left Column */}
           <div className="max-w-2xl">
             <div className="space-y-8">
+              <div className="inline-flex items-center bg-amber-400 text-amber-950 px-4 py-1.5 rounded-full">
+                <span className="text-sm font-semibold">Currently Onboarding Pros Only</span>
+              </div>
               <div className="space-y-6">
                 <h1 className="text-4xl md:text-5xl font-normal tracking-tight">
                   Share your skills.
