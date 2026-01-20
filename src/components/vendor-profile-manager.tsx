@@ -267,7 +267,7 @@ export function VendorProfileManager({ vendor, categories, onProfileUpdate }: Ve
       const url = URL.createObjectURL(file)
       
       // Set state and open modal after a brief delay to ensure state updates complete
-      setCropType(type)
+        setCropType(type)
       setImageToCrop(url)
       
       // Use setTimeout to ensure state is set before opening modal

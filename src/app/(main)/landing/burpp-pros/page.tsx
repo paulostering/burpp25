@@ -56,17 +56,17 @@ export default function BurppProsLandingPage() {
                 <p className="text-lg text-muted-foreground">
                   A simpler way for independent professionals to get discovered, booked, and build real client relationships—without bidding wars, algorithms, or marketplace chaos.
                 </p>
-              </div>
-              
+            </div>
+
               <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 items-center">
-                <Button 
+                  <Button 
                   className="text-lg px-8 py-3 w-full md:w-auto" 
-                  size="lg"
+                    size="lg"
                   onClick={() => router.push('/vendor-registration')}
-                >
+                  >
                   Claim Your Free Profile
                   <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
+                  </Button>
                 
                 <p className="text-sm italic text-muted-foreground whitespace-nowrap">
                   No Credit Card Required

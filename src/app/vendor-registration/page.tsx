@@ -721,25 +721,25 @@ export default function VendorRegisterPage() {
       
       // Verify the image actually loads before setting state
       await verifyImageLoads(url)
-      
-      // Set the appropriate state based on type
-      if (type === 'profile') {
+
+    // Set the appropriate state based on type
+    if (type === 'profile') {
         setProfilePhotoFile(processedFile)
-        setCroppedAreaPixels(null)
-        if (profilePhotoUrl) URL.revokeObjectURL(profilePhotoUrl)
-        setProfilePhotoUrl(url)
-      } else {
+      setCroppedAreaPixels(null)
+      if (profilePhotoUrl) URL.revokeObjectURL(profilePhotoUrl)
+      setProfilePhotoUrl(url)
+    } else {
         setCoverPhotoFile(processedFile)
-        setCroppedAreaPixels(null)
-        if (coverPhotoUrl) URL.revokeObjectURL(coverPhotoUrl)
-        setCoverPhotoUrl(url)
-      }
-      
-      setCropType(type)
+      setCroppedAreaPixels(null)
+      if (coverPhotoUrl) URL.revokeObjectURL(coverPhotoUrl)
+      setCoverPhotoUrl(url)
+    }
+    
+    setCropType(type)
       
       // Open modal after image is verified loaded
       setTimeout(() => {
-        setCropModalOpen(true)
+    setCropModalOpen(true)
         toast.dismiss(loadingToast)
       }, 100)
     } catch (error) {
@@ -1290,7 +1290,7 @@ export default function VendorRegisterPage() {
             <ArrowLeft className="h-4 w-4" />
             <span>Back</span>
           </button>
-          <section className="space-y-6">
+        <section className="space-y-6">
           <div>
             <h2 className="text-2xl font-semibold">Put Your Best Foot Forward</h2>
             <p className="text-muted-foreground">Create a compelling profile to attract potential clients.</p>
@@ -1418,7 +1418,7 @@ export default function VendorRegisterPage() {
             <ArrowLeft className="h-4 w-4" />
             <span>Back</span>
           </button>
-          <section className="space-y-6">
+        <section className="space-y-6">
           <div>
             <h2 className="text-2xl font-semibold">Where is your business located?</h2>
             <p className="text-muted-foreground">Select the area where you plan to offer services. You can change this later.</p>
@@ -1427,12 +1427,12 @@ export default function VendorRegisterPage() {
           {/* ZIP Code / City Input - First Position */}
           <div className="space-y-2">
             <Label htmlFor="location">Enter the ZIP code or city for your service area.</Label>
-            <div className="relative">
-              <Input 
+                <div className="relative">
+                  <Input 
                 id="location" 
                 value={locationQuery} 
-                onChange={(e) => {
-                  clearError('zip_code')
+                    onChange={(e) => {
+                      clearError('zip_code')
                   const value = e.target.value
                   setLocationQuery(value)
                   searchLocations(value)
@@ -1442,26 +1442,26 @@ export default function VendorRegisterPage() {
                   if (locationSuggestions.length > 0) {
                     setIsLocationDropdownOpen(true)
                   }
-                }}
+                    }}
                     placeholder="Enter city or zip code"
                     className={`h-12 pr-12 ${errors.zip_code ? 'border-red-500' : ''}`}
                     autoComplete="off"
                   />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={getCurrentLocation}
-                disabled={isGettingLocation}
-                className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-100"
-                title="Use current location"
-              >
-                {isGettingLocation ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <MapPin className="h-4 w-4" />
-                )}
-              </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={getCurrentLocation}
+                    disabled={isGettingLocation}
+                    className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-100"
+                    title="Use current location"
+                  >
+                    {isGettingLocation ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <MapPin className="h-4 w-4" />
+                    )}
+                  </Button>
               
               {/* Location Suggestions Dropdown */}
               {isLocationDropdownOpen && locationSuggestions.length > 0 && (
@@ -1491,22 +1491,22 @@ export default function VendorRegisterPage() {
                   ))}
                 </div>
               )}
-            </div>
-            {errors.zip_code && (
-              <p className="text-sm text-red-500">{errors.zip_code}</p>
-            )}
-          </div>
+                </div>
+                {errors.zip_code && (
+                  <p className="text-sm text-red-500">{errors.zip_code}</p>
+                )}
+              </div>
           
           {/* Travel Distance - Always shown since in-person is always true */}
-          <div className="space-y-2">
+              <div className="space-y-2">
             <Label htmlFor="radius">How far are you willing to travel to service a client?</Label>
             <Select
               value={radius?.toString()}
               onValueChange={(value) => {
-                clearError('service_radius')
+                        clearError('service_radius')
                 setRadius(parseInt(value))
-              }}
-            >
+                      }}
+                    >
               <SelectTrigger id="radius" className="w-full text-base h-12">
                 <SelectValue placeholder="Select distance" />
               </SelectTrigger>
@@ -1517,7 +1517,7 @@ export default function VendorRegisterPage() {
                 <SelectItem value="100">100 miles</SelectItem>
               </SelectContent>
             </Select>
-          </div>
+                </div>
           
           {/* Virtual Services Switch */}
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
@@ -1531,7 +1531,7 @@ export default function VendorRegisterPage() {
               <p className="text-sm text-muted-foreground">
                 Indicate whether you offer your services virtually.
               </p>
-            </div>
+              </div>
             <Switch 
               id="offersVirtual"
               checked={offersVirtual}
@@ -1540,7 +1540,7 @@ export default function VendorRegisterPage() {
                 clearError('general')
               }}
             />
-          </div>
+            </div>
           {errors.general && (
             <div className="bg-red-50 border border-red-200 rounded-md p-3">
               <p className="text-sm text-red-600">{errors.general}</p>
@@ -1653,7 +1653,7 @@ export default function VendorRegisterPage() {
             <ArrowLeft className="h-4 w-4" />
             <span>Back</span>
           </button>
-          <section className="space-y-6">
+        <section className="space-y-6">
           <div>
             <h2 className="text-2xl font-semibold">Add Your First Product</h2>
             <p className="text-muted-foreground">Adding your first product helps potential clients understand the services you offer and what sets you apart.</p>
@@ -1793,27 +1793,27 @@ export default function VendorRegisterPage() {
                           />
                           {/* Action buttons in top right corner */}
                           <div className="absolute top-3 right-3 flex gap-2">
-                            <Button
-                              type="button"
+                        <Button
+                          type="button"
                               variant="secondary"
                               size="sm"
-                              onClick={() => {
-                                const input = document.createElement('input')
-                                input.type = 'file'
-                                input.accept = 'image/*'
+                          onClick={() => {
+                            const input = document.createElement('input')
+                            input.type = 'file'
+                            input.accept = 'image/*'
                                 input.onchange = async (e) => {
-                                  const file = (e.target as HTMLInputElement).files?.[0]
-                                  if (!file) return
+                              const file = (e.target as HTMLInputElement).files?.[0]
+                              if (!file) return
 
-                                  if (!file.type.startsWith('image/')) {
-                                    toast.error('Please select an image file')
-                                    return
-                                  }
+                              if (!file.type.startsWith('image/')) {
+                                toast.error('Please select an image file')
+                                return
+                              }
 
                                   if (file.size > 15 * 1024 * 1024) {
                                     toast.error('Image must be less than 15MB')
-                                    return
-                                  }
+                                return
+                              }
 
                                   const loadingToast = toast.loading('Processing image...')
                                   
@@ -1824,42 +1824,42 @@ export default function VendorRegisterPage() {
                                     // Verify image loads
                                     await verifyImageLoads(imageUrl)
                                     
-                                    setCurrentProductImageIndex(index)
-                                    setProductImageToCrop(imageUrl)
+                                setCurrentProductImageIndex(index)
+                                setProductImageToCrop(imageUrl)
                                     
-                                    setTimeout(() => {
-                                      setProductCropModalOpen(true)
+                                setTimeout(() => {
+                                  setProductCropModalOpen(true)
                                       toast.dismiss(loadingToast)
                                     }, 100)
                                   } catch (error) {
                                     toast.dismiss(loadingToast)
                                     toast.error('Failed to load image. Please try a different photo.')
                                   }
-                                }
-                                input.click()
-                              }}
+                            }
+                            input.click()
+                          }}
                               className="h-8 px-3 text-xs bg-white/95 hover:bg-white shadow-md"
-                            >
+                        >
                               <Camera className="h-3 w-3 mr-1" />
                               Change
-                            </Button>
-                            <Button
-                              type="button"
+                        </Button>
+                          <Button
+                            type="button"
                               variant="secondary"
-                              size="sm"
-                              onClick={() => {
-                                const updated = [...products]
-                                updated[index].imageUrl = null
-                                updated[index].imageFile = null
-                                updated[index].croppedImageBlob = null
-                                setProducts(updated)
-                              }}
+                            size="sm"
+                            onClick={() => {
+                              const updated = [...products]
+                              updated[index].imageUrl = null
+                              updated[index].imageFile = null
+                              updated[index].croppedImageBlob = null
+                              setProducts(updated)
+                            }}
                               className="h-8 px-3 text-xs bg-white/95 hover:bg-white shadow-md text-red-600 hover:text-red-700"
-                            >
+                          >
                               <X className="h-3 w-3 mr-1" />
-                              Remove
-                            </Button>
-                          </div>
+                            Remove
+                          </Button>
+                      </div>
                         </div>
                       ) : (
                         <Button
@@ -1951,7 +1951,7 @@ export default function VendorRegisterPage() {
             <ArrowLeft className="h-4 w-4" />
             <span>Back</span>
           </button>
-          <section className="space-y-6">
+        <section className="space-y-6">
           <div>
             <h2 className="text-2xl font-semibold">Add Profile & Cover Photos</h2>
             <p className="text-muted-foreground">Upload optional profile and cover photos to make your profile stand out.</p>
@@ -2098,7 +2098,7 @@ export default function VendorRegisterPage() {
             <ArrowLeft className="h-4 w-4" />
             <span>Back</span>
           </button>
-          <section className="space-y-6">
+        <section className="space-y-6">
           <div>
             <h2 className="text-2xl font-semibold">Great! Now create your business account.</h2>
             <p className="text-muted-foreground">
@@ -2147,22 +2147,22 @@ export default function VendorRegisterPage() {
               )}
             </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email *</Label>
-            <Input 
-              id="email" 
-              type="email" 
-              value={email} 
-              onChange={(e) => {
-                clearError('email')
-                setEmail(e.target.value)
-              }}
+            <div className="space-y-2">
+              <Label htmlFor="email">Email *</Label>
+              <Input 
+                id="email" 
+                type="email" 
+                value={email} 
+                onChange={(e) => {
+                  clearError('email')
+                  setEmail(e.target.value)
+                }}
                 maxLength={100}
                 className={`h-12 ${errors.email ? 'border-red-500' : ''}`}
               />
-            {errors.email && (
-              <p className="text-sm text-red-500">{errors.email}</p>
-            )}
+              {errors.email && (
+                <p className="text-sm text-red-500">{errors.email}</p>
+              )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password *</Label>

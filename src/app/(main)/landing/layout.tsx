@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Footer } from '@/components/footer'
 import { useAuth } from '@/contexts/auth-context'
+import { X } from 'lucide-react'
+import { useState, useEffect } from 'react'
 
 export default function LandingLayout({
   children,
@@ -14,9 +16,41 @@ export default function LandingLayout({
 }) {
   const router = useRouter()
   const { user } = useAuth()
+  const [showBanner, setShowBanner] = useState(true)
+
+  // Check if banner was dismissed
+  useEffect(() => {
+    const dismissed = localStorage.getItem('prosOnlyBannerDismissed')
+    if (dismissed === 'true') {
+      setShowBanner(false)
+    }
+  }, [])
+
+  const dismissBanner = () => {
+    setShowBanner(false)
+    localStorage.setItem('prosOnlyBannerDismissed', 'true')
+  }
 
   return (
     <>
+      {/* Alert Banner */}
+      {showBanner && (
+        <div className="bg-primary text-white py-2.5 px-4">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="flex-1 text-center">
+              <span className="text-sm font-medium">Currently Onboarding Pros Only</span>
+            </div>
+            <button 
+              onClick={dismissBanner}
+              className="p-1 hover:bg-white/20 rounded transition-colors"
+              aria-label="Dismiss banner"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
+      
       <header className="border-b bg-white sticky top-0 z-50">
         <div className="flex h-20 items-center justify-between px-6 py-5">
           <Link href="/" className="flex items-center gap-2 font-semibold flex-shrink-0">
