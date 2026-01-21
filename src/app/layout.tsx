@@ -13,8 +13,8 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Burpp - Services you need, all in one",
-  description: "Burpp - Services you need, all in one. Connect with trusted local professionals for everything from home services to personal training.",
+  title: "Burpp - Services you need, all in one place.",
+  description: "Burpp - Services you need, all in one place.. Connect with trusted local professionals for everything from home services to personal training.",
   icons: {
     icon: [
       { url: "/favicon.ico" },
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   },
   manifest: "/site.webmanifest",
   openGraph: {
-    title: "Burpp - Services you need, all in one",
+    title: "Burpp - Services you need, all in one place.",
     description: "Connect with trusted local professionals for everything from home services to personal training.",
     type: "website",
     url: "https://burpp.com",
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Burpp - Services you need, all in one",
+    title: "Burpp - Services you need, all in one place.",
     description: "Connect with trusted local professionals for everything from home services to personal training.",
   },
 };
