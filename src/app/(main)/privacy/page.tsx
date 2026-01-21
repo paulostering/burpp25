@@ -221,7 +221,7 @@ export default function PrivacyPolicy() {
           <div id="children" className="mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-6">Children's Privacy</h2>
             <p className="text-lg text-gray-600 mb-4">
-              The Service is intended for general audiences and is not directed to children under 13. We do not knowingly collect personal information from children under 13.
+              The Service is intended for general audiences and is not directed to children under 18. We do not knowingly collect personal information from children under 18.
             </p>
             <p className="text-lg text-gray-600">
               If you become aware that a child has provided us with personal information without parental consent, please contact us immediately.
