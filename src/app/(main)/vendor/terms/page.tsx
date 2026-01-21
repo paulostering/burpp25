@@ -95,7 +95,7 @@ export default function VendorTermsOfService() {
                     <li>How services are performed</li>
                     <li>Pricing, scheduling, and scope of work</li>
                     <li>Any required licenses, permits, certifications, or insurance</li>
-                    <li>Compliance with all applicable laws and regulations</li>
+                    <li>Compliance with all applicable laws and regulations of your city, state, and jurisdiction</li>
                   </ul>
                 </CardContent>
               </Card>
